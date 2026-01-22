@@ -1,0 +1,26 @@
+[
+  {
+    "type": "Annotation",
+    "body": [
+      {
+        "type": "TextualBody",
+        "value": "zxc",
+        "purpose": "commenting",
+        "created": "2024-05-29T23:31:50.387Z",
+        "creator": {
+          "name": "Living Labs Network"
+        },
+        "modified": "2024-05-29T23:31:50.422Z"
+      }
+    ],
+    "target": {
+      "selector": {
+        "type": "FragmentSelector",
+        "conformsTo": "http://www.w3.org/TR/media-frags/",
+        "value": "xywh=pixel:1640.29736328125,3137.545166015625,2288.786865234375,610.343017578125"
+      }
+    },
+    "@context": "http://www.w3.org/ns/anno.jsonld",
+    "id": "#67798a66-ab1a-4af6-b4df-204e2ab008fe"
+  }
+]

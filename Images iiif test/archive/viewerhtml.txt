@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Beehive Design Collective</title>
+
+  <!-- facebook opengraph metadata. We use apache SSI to determine
+       a filename to include based on poster name and language.
+       File should include the OpenGraph tags for that poster/language
+       combo.  Eg, if poster=mr and lang=en, file should be in
+       ./opengraph-partials/mr.en.html
+
+       Due to weird bug in apache SSI, this gets even weirder -- in general,
+       we kind of regret trying to use SSI, now years later.
+
+       https://stackoverflow.com/questions/41977344/get-parts-of-document-uri-using-regex-and-ssi
+       https://bz.apache.org/bugzilla/show_bug.cgi?id=57448
+       -->
+
+  <!--#if expr='v("QUERY_STRING") =~ /(^|&|;)poster=([^&;]+)($|&|;)/ && $2 =~ /(.*)/' -->
+    <!--#set var="poster" value="$0" -->
+  <!--#endif -->
+
+  <!--#if expr='v("QUERY_STRING") =~ /(^|&|;)lang=([^&;]+)($|&|;)/ && $2 =~ /(.*)/' -->
+    <!--#set var="lang" value="$0" -->
+  <!--#else -->
+    <!--#set var="lang" value="en" -->
+  <!--#endif -->
+
+  <!--#set var="og_filepath" value="opengraph_partials/${poster}.${lang}.html" -->
+
+  <!-- if the file doesn't exist, an error message will be shown, change
+       from default to avoid interfering with HTML and provide diagnostics. -->
+  <!--#config errmsg="<meta name='beehive_og_no_file_found' content='No file found for inclusion at `${og_filepath}`' />" -->
+  <!--#include virtual="${og_filepath}" -->
+  <!--#config errmsg="[an error occurred while processing this directive]"-->
+
+  <!-- END facebook opengraph SSI inclusion -->
+
+  <!-- One custom font from google, Cardo, used for body text -->
+  <link href='//fonts.googleapis.com/css?family=Cardo&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+
+  <!-- maximum scale keeps ipads from doing weird things on orientation change -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+    <link href="./css/viewer.css" rel="stylesheet" type="text/css">
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+    <script src="./openseadragon-bin-4.1.0/openseadragon.min.js"></script>
+
+    <script type="text/javascript" src="./js/jquery.easyModal.min.js"></script>
+
+    <script type="text/javascript" src="./js/viewer.js">
+    </script>
+  </head>
+
+  <body>
+
+
+  <div class="content">
+      <div id="openseadragon"></div>
+
+      <!-- button to toggle mode to add annotations live. We don't
+           really use except for testing/dev. Starts out hidden, we
+          show it if admin interface.  -->
+      <a id="map-annotate-button" onclick="annotate(); return false;"
+        style="display:none;"
+        href="http://annotorious.github.io/demos/openseadragon-preview.html#">DEFINE REGION</a>
+  </div>
+
+  <!-- this is where the overlay controls live. It will be added by
+    JS into the openseadragon canvas
+    element. And positioned and styled further by CSS. -->
+  <div id="overlayControls">
+    <div class="controlContentWrapper">
+      <div class="controlsHeader controlsSection">
+        <a href="#" class="controlsMinimize"><img src="./images/collapse.png" class="controlsMinimizeImg tiny-icon" alt="Minimize" title="Minimize" data-i18n-title-key="minimize"></a>
+        <h1 class="controls-header-label">
+          <a id="titleLink" href="https://beehivecollective.org">Beehive Design Collective</a>
+        </h1>
+      </div>
+
+
+
+      <div class="controls-story-list-expander controlsSection" style="display:none;">
+        <div class="controls-text-nav">
+          <div class="controls-prev-next">
+
+            <a href="#" class="controls-text-nav-prev" style="visibility:hidden;"> <img src="./images/left.png" alt="" class="tiny-icon nav-prev-icon"> <span data-i18n-key="previous">Previous</span></a>
+
+            <a href="#" class="controls-text-nav-next"><span data-i18n-key="next">Next</span> <img src="./images/right.png" alt="" class="tiny-icon nav-next-icon"></a>
+          </div>
+
+          <a href="#" class="scene-expander"><span data-i18n-key="scenes">Scenes</span> <img src="./images/expand.png" alt="" id="sceneExpanderImg" class="scene-expander-icon tiny-icon"/></a>
+        </div>
+      </div>
+
+      <div class="controls-slide-container">
+        <div id="slideContainerOverlay" class="slide-container-overlay" style="display: none;">
+        </div>
+
+
+
+        <div class="controls-story-list controlsSection" style="display:none">
+          <ul id="storyList" class="story-list storyList">
+          </ul>
+        </div>
+        <div class="controlsText controlsSection" style="display:none">
+
+          <h3 id="storyHeading">
+            <span id="storyLabel"></span>
+          </h3>
+
+          <div id="storyText" class="storyText"></div>
+
+        <!-- instructional text shown only on first scene, and only
+           if applicable  -->
+        <p id="fullScreenInstruction" class="full-screen-instruction" style="display:none"><a href="#"><img src="./images/fullscreen_blue_07.png" /><span data-i18n-key="full_screen_instruction"></span></a></p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- our own nav's that we'll use instead of OpenSeadragon's -->
+  <div id="navControls">
+    <a id="zoomInBtn" href="#" class="hexagon" title="Zoom in" data-i18n-title-key="zoom_in"></a>
+    <a id="zoomOutBtn" href="#" class="hexagon" title="Zoom out" data-i18n-title-key="zoom_out"></a>
+    <a id="fullPosterBtn" href="#" class="hexagon" title="Whole poster" data-i18n-title-key="full_poster"></a>
+    <a id="fullPageBtn" href="#" class="hexagon" title="Toggle full screen" data-i18n-title-key="full_screen"></a>
+    <a id="makePermaLink" href="#" class="hexagon" title="Share link to the current view of the poster" data-i18n-title-key="share_link"></a>
+    <!-- the minimized control panel, starts out hidden -->
+    <a id="showControlsBtn" href="#" class="hexagon" title = "Show the text box" data-i18n-title-key="show_text_box" style="display:none"></a>
+  </div>
+
+  <div id="linkModal" style="display:none">
+    <h2 data-i18n-key="share_link">
+      Share link to the current view of the poster
+    </h2>
+    <div class="container" style="width: 100%">
+      <input type="text" id="linkModalUrlField" readonly>
+    </div>
+  </div>
+
+  </body>
+</html>

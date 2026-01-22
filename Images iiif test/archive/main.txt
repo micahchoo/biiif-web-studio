@@ -1,0 +1,84 @@
+// Importing functions from different modules
+import * as Story from './story.js';
+import * as initFunctions from './init.js';
+import * as utils from './utils.js';
+import * as UI from './ui.js';
+import * as adminFunctions from './admin.js';
+
+// Initialize global variables
+var beehive_poster;
+var beehive_lang;
+
+// Set poster and language from query params
+window.initFunctions.setPosterAndLang();
+
+// Initialize OpenSeadragon viewer
+window.initFunctions.setupOpenSeadragonViewer();
+
+// Add controls to the viewer
+window.initFunctions.addControls();
+
+// Load poster data
+window.initFunctions.loadPosterData();
+
+// Go to the initial view
+window.initFunctions.gotoInitialView();
+
+// Apply internationalization values
+UI.applyI18nValues(beehive_lang);
+
+// Adjust story list height limit
+UI.storyListHeightLimit();
+
+// Add event listeners for window resize
+jQuery(document).ready(function($) {
+    $(window).resize(function(event) {
+        UI.storyListHeightLimit();
+    });
+});
+
+// Add admin helper UI if in admin mode
+if (utils.paramsToHash(document.location.search).admin === "true") {
+    adminFunctions.addAdminHelperUI();
+}
+
+// Add event listeners for OpenSeadragon viewer
+openSeadragonViewer.addHandler('animation-finish', function(target, info) {
+    // If the animation finished after we explicitly loaded a scene,
+    // do NOT re-calculate and load a DIFFERENT scene!
+    if (sceneTransitionMode) {
+        sceneTransitionMode = false;
+        return;
+    }
+
+    var bounds = target.eventSource.viewport.getBounds();
+    var bestLi = utils.calcProximateScene(utils.subtractPanelFromViewport(bounds));
+
+    if (bestLi == null) {
+        // Unload any story, but leave 'next' button.
+        $(".controlsText").hide();
+    } else if ($(".controlsText").data("beehive-story-li") == undefined || bestLi != $(".controlsText").data("beehive-story-li").get(0)) {
+        // Load it unless it's already loaded.
+        Story.loadStory(bestLi, false);
+    }
+});
+
+// Add event listener for keydown events
+$(document).on("keydown", function(event) {
+    var x = 1;
+
+    // Pass it to the OSD viewer
+    var newEvent = jQuery.Event('keypress');
+    newEvent.which = event.which;
+    newEvent.keyCode = event.keyCode;
+    $("#openseadragon .openseadragon-container").focus().trigger(newEvent);
+});
+
+// Exporting functions for external use
+export {
+    Story,
+    initFunctions,
+    utils,
+    UI,
+    adminFunctions
+};
