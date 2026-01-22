@@ -1,0 +1,522 @@
+{
+  "context": "http://iiif.io/api/presentation/3/context.json",
+  "id": "https://example.org/iiif/1769047377112/collection",
+  "type": "Collection",
+  "label": {
+    "en": [
+      "New Collection"
+    ]
+  },
+  "items": [
+    {
+      "context": "http://iiif.io/api/presentation/3/context.json",
+      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop",
+      "type": "Collection",
+      "label": {
+        "en": [
+          "Biiif Workshop"
+        ]
+      },
+      "items": [
+        {
+          "context": "http://iiif.io/api/presentation/3/context.json",
+          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/.git",
+          "type": "Collection",
+          "label": {
+            "en": [
+              ""
+            ]
+          },
+          "items": [
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/.git/logs",
+              "type": "Collection",
+              "label": {
+                "en": [
+                  "Logs"
+                ]
+              },
+              "items": [
+                {
+                  "context": "http://iiif.io/api/presentation/3/context.json",
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/.git/logs/refs",
+                  "type": "Collection",
+                  "label": {
+                    "en": [
+                      "Refs"
+                    ]
+                  },
+                  "items": [
+                    {
+                      "context": "http://iiif.io/api/presentation/3/context.json",
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/.git/logs/refs/remotes",
+                      "type": "Collection",
+                      "label": {
+                        "en": [
+                          "Remotes"
+                        ]
+                      },
+                      "items": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/.git/objects",
+              "type": "Collection",
+              "label": {
+                "en": [
+                  "Objects"
+                ]
+              },
+              "items": []
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/.git/refs",
+              "type": "Collection",
+              "label": {
+                "en": [
+                  "Refs"
+                ]
+              },
+              "items": [
+                {
+                  "context": "http://iiif.io/api/presentation/3/context.json",
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/.git/refs/remotes",
+                  "type": "Collection",
+                  "label": {
+                    "en": [
+                      "Remotes"
+                    ]
+                  },
+                  "items": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "context": "http://iiif.io/api/presentation/3/context.json",
+          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection",
+          "type": "Collection",
+          "label": {
+            "en": [
+              "Cats"
+            ]
+          },
+          "items": [
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_abyssinian",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Abyssinian"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_abyssinian/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Abyssinian"
+                    ]
+                  },
+                  "height": 400,
+                  "width": 600,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_abyssinian/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_abyssinian/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/bce1f9c6-ce9a-4d9c-a9c9-b2e34eabad58",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_abyssinian/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_balinese",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Balinese"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_balinese/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Balinese"
+                    ]
+                  },
+                  "height": 552,
+                  "width": 736,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_balinese/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_balinese/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/3253d22f-6faa-4e61-a3a7-70088eb4fd97",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_balinese/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Chartreux"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Chartreux"
+                    ]
+                  },
+                  "height": 1080,
+                  "width": 1920,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/b2002ac2-03ce-4109-a9ca-6f67fe467f09",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1/page/annotations",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1/annotation/1769047390911",
+                          "type": "Annotation",
+                          "motivation": "tagging",
+                          "body": {
+                            "type": "TextualBody",
+                            "value": "eyes\n",
+                            "format": "text/plain",
+                            "language": "en"
+                          },
+                          "target": {
+                            "source": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1",
+                            "selector": {
+                              "type": "FragmentSelector",
+                              "value": "xywh=1011,147,364,230"
+                            }
+                          }
+                        },
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1/annotation/1769047412147",
+                          "type": "Annotation",
+                          "motivation": "commenting",
+                          "body": {
+                            "type": "TextualBody",
+                            "value": "moustachje",
+                            "format": "text/plain",
+                            "language": "en"
+                          },
+                          "target": {
+                            "source": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1",
+                            "selector": {
+                              "type": "FragmentSelector",
+                              "value": "xywh=1292,562,186,193"
+                            }
+                          }
+                        },
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1/annotation/1769047434692",
+                          "type": "Annotation",
+                          "motivation": "supplementing",
+                          "body": {
+                            "type": "TextualBody",
+                            "value": "asdasdasd",
+                            "format": "text/plain",
+                            "language": "en"
+                          },
+                          "target": {
+                            "source": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_chartreux/canvas/1",
+                            "selector": {
+                              "type": "FragmentSelector",
+                              "value": "xywh=398,503,562,252"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_egyptian-mau",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Egyptian Mau"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_egyptian-mau/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Egyptian Mau"
+                    ]
+                  },
+                  "height": 805,
+                  "width": 1024,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_egyptian-mau/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_egyptian-mau/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/e458adf5-ac6f-44e7-8b36-0d35a4b8534e",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_egyptian-mau/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_himalayan",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Himalayan"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_himalayan/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Himalayan"
+                    ]
+                  },
+                  "height": 960,
+                  "width": 1280,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_himalayan/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_himalayan/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/f71f1d88-d46f-4f2b-ace8-2de54f77d22a",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_himalayan/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_norwegian-forest-cat",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Norwegian Forest Cat"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_norwegian-forest-cat/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Norwegian Forest Cat"
+                    ]
+                  },
+                  "height": 600,
+                  "width": 900,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_norwegian-forest-cat/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_norwegian-forest-cat/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/ab527842-682e-4263-875d-407c9115902c",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_norwegian-forest-cat/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_persian",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Persian"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_persian/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Persian"
+                    ]
+                  },
+                  "height": 533,
+                  "width": 800,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_persian/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_persian/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/501b14bb-d3f6-4048-be82-fa85df95b8a4",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_persian/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "context": "http://iiif.io/api/presentation/3/context.json",
+              "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_somali",
+              "type": "Manifest",
+              "label": {
+                "en": [
+                  "Somali"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_somali/canvas/1",
+                  "type": "Canvas",
+                  "label": {
+                    "none": [
+                      "Somali"
+                    ]
+                  },
+                  "height": 790,
+                  "width": 1280,
+                  "items": [
+                    {
+                      "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_somali/canvas/1/page/paint",
+                      "type": "AnnotationPage",
+                      "items": [
+                        {
+                          "id": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_somali/canvas/1/annotation/paint",
+                          "type": "Annotation",
+                          "motivation": "painting",
+                          "body": {
+                            "id": "blob:https://30al66xgf4hgspgl34y8kvdekeccq1zypruqrro9kniyjfr72e-h852644758.scf.usercontent.goog/542c069e-83ff-4584-956a-b2abd8c58e3d",
+                            "type": "Image",
+                            "format": "image/jpeg"
+                          },
+                          "target": "https://example.org/iiif/1769047377112/collection/biiif-workshop/collection/_somali/canvas/1"
+                        }
+                      ]
+                    }
+                  ],
+                  "annotations": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

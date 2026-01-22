@@ -1,0 +1,5 @@
+{
+  "name": "Biiif Web Studio",
+  "description": "A web-based IIIF Manifest generation and annotation studio. Replicates biiif folder-to-manifest logic in the browser and enhances annotation workflows with AI assistance.",
+  "requestFramePermissions": []
+}
