@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { IIIFItem, IIIFAnnotation, IIIFCanvas, AppSettings, getIIIFValue } from '../types';
 import { Icon } from './Icon';
 import { useToast } from './Toast';
-import { RIGHTS_OPTIONS, VIEWING_DIRECTIONS, DUBLIN_CORE_MAP, BEHAVIOR_OPTIONS, DEFAULT_MAP_CONFIG } from '../constants';
+import { RIGHTS_OPTIONS, VIEWING_DIRECTIONS, DUBLIN_CORE_MAP, BEHAVIOR_OPTIONS, BEHAVIOR_DEFINITIONS, BEHAVIOR_CONFLICTS, getConflictingBehaviors, DEFAULT_MAP_CONFIG } from '../constants';
 
 declare const L: any;
 
@@ -219,24 +219,85 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({ resource, onUpda
                     <label className="block text-xs font-bold text-slate-700 mb-2 flex justify-between">
                         Behaviors <span className="text-[9px] text-slate-400 font-mono bg-slate-50 px-1 rounded">behavior</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
-                        {(BEHAVIOR_OPTIONS[resource.type as keyof typeof BEHAVIOR_OPTIONS] || []).map(b => (
-                            <label key={b} className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer p-2 rounded border border-slate-100 hover:bg-slate-50">
-                                <input 
-                                    type="checkbox" 
-                                    checked={(resource.behavior || []).includes(b)}
-                                    onChange={e => {
-                                        const current = new Set(resource.behavior || []);
-                                        if (e.target.checked) current.add(b);
-                                        else current.delete(b);
-                                        onUpdateResource({ behavior: Array.from(current) });
-                                    }}
-                                    className="rounded text-iiif-blue"
-                                />
-                                {b}
-                            </label>
-                        ))}
+                    <div className="space-y-1.5">
+                        {(BEHAVIOR_OPTIONS[resource.type as keyof typeof BEHAVIOR_OPTIONS] || []).map(b => {
+                            const def = BEHAVIOR_DEFINITIONS[b];
+                            const currentBehaviors = resource.behavior || [];
+                            const isChecked = currentBehaviors.includes(b);
+                            const conflicts = getConflictingBehaviors(b);
+                            const hasConflict = conflicts.some(c => currentBehaviors.includes(c));
+                            const conflictingWith = conflicts.filter(c => currentBehaviors.includes(c));
+
+                            return (
+                                <label
+                                    key={b}
+                                    className={`flex items-start gap-2 text-xs cursor-pointer p-2.5 rounded-lg border transition-all ${
+                                        hasConflict && isChecked
+                                            ? 'border-red-300 bg-red-50'
+                                            : isChecked
+                                                ? 'border-blue-200 bg-blue-50'
+                                                : 'border-slate-100 hover:bg-slate-50'
+                                    }`}
+                                    title={def?.description || b}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={e => {
+                                            const current = new Set(currentBehaviors);
+                                            if (e.target.checked) {
+                                                current.add(b);
+                                                // Auto-remove conflicting behaviors
+                                                conflicts.forEach(c => current.delete(c));
+                                            } else {
+                                                current.delete(b);
+                                            }
+                                            onUpdateResource({ behavior: Array.from(current) });
+                                        }}
+                                        className="rounded text-iiif-blue mt-0.5 shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className={`font-semibold ${hasConflict && isChecked ? 'text-red-700' : 'text-slate-700'}`}>
+                                                {def?.label || b}
+                                            </span>
+                                            {def?.category && (
+                                                <span className={`text-[8px] px-1.5 py-0.5 rounded uppercase font-bold ${
+                                                    def.category === 'time' ? 'bg-purple-100 text-purple-600' :
+                                                    def.category === 'layout' ? 'bg-amber-100 text-amber-600' :
+                                                    def.category === 'browsing' ? 'bg-emerald-100 text-emerald-600' :
+                                                    def.category === 'page' ? 'bg-blue-100 text-blue-600' :
+                                                    'bg-slate-100 text-slate-600'
+                                                }`}>
+                                                    {def.category}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {def?.description && (
+                                            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">{def.description}</p>
+                                        )}
+                                        {hasConflict && isChecked && (
+                                            <p className="text-[10px] text-red-600 mt-1 flex items-center gap-1">
+                                                <Icon name="warning" className="text-xs"/> Conflicts with: {conflictingWith.join(', ')}
+                                            </p>
+                                        )}
+                                    </div>
+                                </label>
+                            );
+                        })}
                     </div>
+                    {(resource.behavior || []).length > 0 && (
+                        <div className="mt-3 p-2 bg-slate-50 rounded border border-slate-100">
+                            <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Active Behaviors</div>
+                            <div className="flex flex-wrap gap-1">
+                                {(resource.behavior || []).map(b => (
+                                    <span key={b} className="text-[10px] bg-iiif-blue text-white px-2 py-0.5 rounded-full font-semibold">
+                                        {BEHAVIOR_DEFINITIONS[b]?.label || b}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         )}

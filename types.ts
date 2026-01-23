@@ -166,3 +166,208 @@ export function getIIIFValue(map?: Record<string, string[]>, preferredLang: stri
   const values = map[preferredLang] || map['en'] || map['none'] || map['@none'] || Object.values(map)[0];
   return Array.isArray(values) ? values[0] || '' : '';
 }
+
+// ============================================================================
+// LanguageString - Immutable wrapper for IIIF Language Maps
+// ============================================================================
+
+export type LanguageMap = Record<string, string[]>;
+
+/**
+ * LanguageString - Immutable utility class for IIIF language maps
+ *
+ * Provides consistent locale handling with fallback chains,
+ * immutable updates, and simplified component code.
+ *
+ * @example
+ * const label = new LanguageString(manifest.label);
+ * const text = label.get('en'); // Falls back through chain if 'en' not found
+ * const updated = label.set('en', 'New Title'); // Returns new instance
+ */
+export class LanguageString {
+  private readonly map: LanguageMap;
+
+  constructor(input?: LanguageMap | string | null) {
+    if (!input) {
+      this.map = {};
+    } else if (typeof input === 'string') {
+      this.map = { none: [input] };
+    } else {
+      // Deep clone to ensure immutability
+      this.map = Object.fromEntries(
+        Object.entries(input).map(([k, v]) => [k, [...v]])
+      );
+    }
+  }
+
+  /**
+   * Get the first value for a locale with fallback chain
+   * Fallback order: locale → 'none' → '@none' → 'en' → first available
+   */
+  get(locale: string = 'none'): string {
+    const fallbacks = [locale, 'none', '@none', 'en'];
+
+    for (const loc of fallbacks) {
+      const values = this.map[loc];
+      if (values && values.length > 0 && values[0]) {
+        return values[0];
+      }
+    }
+
+    // Last resort: first non-empty value from any locale
+    for (const values of Object.values(this.map)) {
+      if (values && values.length > 0 && values[0]) {
+        return values[0];
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Get all values for a specific locale
+   */
+  getAll(locale: string): string[] {
+    return this.map[locale] ? [...this.map[locale]] : [];
+  }
+
+  /**
+   * Get all locale-value pairs
+   */
+  entries(): Array<{ locale: string; values: string[] }> {
+    return Object.entries(this.map).map(([locale, values]) => ({
+      locale,
+      values: [...values]
+    }));
+  }
+
+  /**
+   * Set/replace the value for a locale (returns new instance)
+   */
+  set(locale: string, value: string): LanguageString {
+    return new LanguageString({
+      ...this.map,
+      [locale]: [value]
+    });
+  }
+
+  /**
+   * Set multiple values for a locale (returns new instance)
+   */
+  setAll(locale: string, values: string[]): LanguageString {
+    return new LanguageString({
+      ...this.map,
+      [locale]: [...values]
+    });
+  }
+
+  /**
+   * Append a value to a locale's array (returns new instance)
+   */
+  append(locale: string, value: string): LanguageString {
+    return new LanguageString({
+      ...this.map,
+      [locale]: [...(this.map[locale] || []), value]
+    });
+  }
+
+  /**
+   * Remove a locale entirely (returns new instance)
+   */
+  remove(locale: string): LanguageString {
+    const newMap = { ...this.map };
+    delete newMap[locale];
+    return new LanguageString(newMap);
+  }
+
+  /**
+   * Merge with another LanguageString (returns new instance)
+   * Other's values override this's values for matching locales
+   */
+  merge(other: LanguageString): LanguageString {
+    return new LanguageString({
+      ...this.map,
+      ...other.toJSON()
+    });
+  }
+
+  /**
+   * Check if any locale has content
+   */
+  isEmpty(): boolean {
+    return Object.values(this.map).every(
+      arr => !arr || arr.length === 0 || arr.every(s => !s || !s.trim())
+    );
+  }
+
+  /**
+   * Check if a specific locale has content
+   */
+  hasLocale(locale: string): boolean {
+    const values = this.map[locale];
+    return !!(values && values.length > 0 && values.some(v => v && v.trim()));
+  }
+
+  /**
+   * Get list of available locales with content
+   */
+  get locales(): string[] {
+    return Object.keys(this.map).filter(k => this.hasLocale(k));
+  }
+
+  /**
+   * Get the primary locale (first non-empty)
+   */
+  get primaryLocale(): string | null {
+    return this.locales[0] || null;
+  }
+
+  /**
+   * Export as IIIF-compliant language map
+   */
+  toJSON(): LanguageMap {
+    // Return copy to maintain immutability
+    return Object.fromEntries(
+      Object.entries(this.map).map(([k, v]) => [k, [...v]])
+    );
+  }
+
+  /**
+   * Create from static value with default locale
+   */
+  static of(value: string, locale: string = 'none'): LanguageString {
+    return new LanguageString({ [locale]: [value] });
+  }
+
+  /**
+   * Create empty LanguageString
+   */
+  static empty(): LanguageString {
+    return new LanguageString();
+  }
+
+  /**
+   * Check equality with another LanguageString
+   */
+  equals(other: LanguageString): boolean {
+    const thisKeys = Object.keys(this.map).sort();
+    const otherKeys = Object.keys(other.map).sort();
+
+    if (thisKeys.length !== otherKeys.length) return false;
+    if (thisKeys.join(',') !== otherKeys.join(',')) return false;
+
+    return thisKeys.every(key => {
+      const thisVals = this.map[key];
+      const otherVals = other.map[key];
+      if (thisVals.length !== otherVals.length) return false;
+      return thisVals.every((v, i) => v === otherVals[i]);
+    });
+  }
+
+  /**
+   * String representation for debugging
+   */
+  toString(): string {
+    return this.get() || '[empty]';
+  }
+}

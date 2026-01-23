@@ -4,7 +4,62 @@ import { storage } from './storage';
 import { DEFAULT_INGEST_PREFS, MIME_TYPE_MAP } from '../constants';
 import { load } from 'js-yaml';
 import { extractMetadata } from './metadataHarvester';
+import { getTileWorkerPool, generateDerivativeAsync } from './tileWorker';
 
+/**
+ * Queue for background tile pre-generation
+ * Derivatives are generated asynchronously after ingest completes
+ */
+interface TileGenerationTask {
+  assetId: string;
+  file: File;
+  sizes: number[];
+}
+
+const tileGenerationQueue: TileGenerationTask[] = [];
+let isProcessingTiles = false;
+
+/**
+ * Process tile generation queue in background
+ * Runs non-blocking after ingest completes
+ */
+async function processTileQueue(onProgress?: (msg: string, percent: number) => void): Promise<void> {
+  if (isProcessingTiles || tileGenerationQueue.length === 0) return;
+
+  isProcessingTiles = true;
+  const pool = getTileWorkerPool();
+  const totalTasks = tileGenerationQueue.length;
+  let completed = 0;
+
+  while (tileGenerationQueue.length > 0) {
+    const task = tileGenerationQueue.shift();
+    if (!task) continue;
+
+    try {
+      const result = await pool.generateDerivatives(task.assetId, task.file, task.sizes);
+
+      // Save each derivative to storage
+      for (const [size, blob] of result.derivatives) {
+        const sizeKey = size === 150 ? 'thumb' : size === 600 ? 'small' : 'medium';
+        await storage.saveDerivative(task.assetId, sizeKey, blob);
+      }
+
+      completed++;
+      if (onProgress) {
+        const percent = Math.round((completed / totalTasks) * 100);
+        onProgress(`Pre-generating tiles (${completed}/${totalTasks})...`, percent);
+      }
+    } catch (e) {
+      console.warn(`Background tile generation failed for ${task.assetId}:`, e);
+    }
+  }
+
+  isProcessingTiles = false;
+}
+
+/**
+ * Generate derivative synchronously (fallback for immediate thumbnail needs)
+ */
 const generateDerivative = async (file: Blob, width: number): Promise<Blob | null> => {
     try {
         const bitmap = await createImageBitmap(file);
@@ -119,10 +174,18 @@ const processNode = async (
             const assetId = `${id.split('/').pop()}-${file.name.replace(/[^a-zA-Z0-9-_]/g, '')}`;
             
             await storage.saveAsset(file, assetId);
-            
+
             if (file.type.startsWith('image/')) {
+                // Generate thumbnail immediately for UI display
                 const thumb = await generateDerivative(file, 150);
                 if (thumb) await storage.saveDerivative(assetId, 'thumb', thumb);
+
+                // Queue larger derivatives for background generation
+                tileGenerationQueue.push({
+                    assetId,
+                    file,
+                    sizes: [600, 1200] // Pre-generate medium sizes in background
+                });
             }
 
             const extractedMeta = await extractMetadata(file);
@@ -269,9 +332,27 @@ export const ingestTree = async (
             rootClone.items.push(newRoot);
         }
         await storage.saveProject(rootClone);
+
+        // Start background tile pre-generation (non-blocking)
+        if (tileGenerationQueue.length > 0) {
+            report.warnings.push(`Background tile generation queued for ${tileGenerationQueue.length} images`);
+            processTileQueue(onProgress).catch(e =>
+                console.warn('Background tile generation error:', e)
+            );
+        }
+
         return { root: rootClone, report };
     } else {
         await storage.saveProject(newRoot);
+
+        // Start background tile pre-generation (non-blocking)
+        if (tileGenerationQueue.length > 0) {
+            report.warnings.push(`Background tile generation queued for ${tileGenerationQueue.length} images`);
+            processTileQueue(onProgress).catch(e =>
+                console.warn('Background tile generation error:', e)
+            );
+        }
+
         return { root: newRoot, report };
     }
 };

@@ -1,8 +1,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { IIIFManifest, IIIFItem, ConnectionType } from '../../types';
+import { IIIFManifest, IIIFItem, IIIFCanvas, IIIFAnnotationPage, IIIFAnnotation, ConnectionType } from '../../types';
 import { Icon } from '../Icon';
 import { useToast } from '../Toast';
+import { saveAs } from 'file-saver';
 
 interface BoardItem {
   id: string; resourceId: string; x: number; y: number; w: number; h: number;
@@ -106,6 +107,157 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
   const activeItem = items.find(i => i.id === activeId);
   const activeConn = connections.find(c => c.id === selectedConnectionId);
 
+  /**
+   * Export board as IIIF Manifest
+   * Creates a single large Canvas with annotations for positioned items
+   * and linking annotations for connections between items.
+   */
+  const exportBoardAsManifest = useCallback(() => {
+    if (items.length === 0) {
+      showToast("No items on board to export", "warning");
+      return;
+    }
+
+    // Calculate board bounds with padding
+    const padding = 100;
+    const minX = Math.min(...items.map(i => i.x)) - padding;
+    const minY = Math.min(...items.map(i => i.y)) - padding;
+    const maxX = Math.max(...items.map(i => i.x + i.w)) + padding;
+    const maxY = Math.max(...items.map(i => i.y + i.h)) + padding;
+    const boardWidth = Math.max(maxX - minX, 2000);
+    const boardHeight = Math.max(maxY - minY, 2000);
+
+    const boardId = `urn:field-studio:board:${crypto.randomUUID()}`;
+    const canvasId = `${boardId}/canvas/1`;
+
+    // Create painting annotations for each board item
+    const paintingAnnotations: IIIFAnnotation[] = items.map((item, idx) => {
+      // Normalize coordinates relative to board origin
+      const normX = item.x - minX;
+      const normY = item.y - minY;
+
+      return {
+        id: `${canvasId}/annotation/item-${idx}`,
+        type: "Annotation",
+        motivation: "painting",
+        label: { none: [item.label] },
+        body: item.blobUrl ? {
+          id: item.blobUrl,
+          type: "Image" as const,
+          format: "image/jpeg",
+          width: item.w,
+          height: item.h
+        } : {
+          type: "TextualBody" as const,
+          value: item.label,
+          format: "text/plain"
+        },
+        target: `${canvasId}#xywh=${Math.round(normX)},${Math.round(normY)},${Math.round(item.w)},${Math.round(item.h)}`,
+        _layout: { x: normX, y: normY, w: item.w, h: item.h }
+      };
+    });
+
+    // Create linking annotations for connections
+    const linkingAnnotations: IIIFAnnotation[] = connections.map((conn, idx) => {
+      const fromItem = items.find(i => i.id === conn.fromId);
+      const toItem = items.find(i => i.id === conn.toId);
+      if (!fromItem || !toItem) return null;
+
+      const fromCenter = { x: fromItem.x - minX + fromItem.w / 2, y: fromItem.y - minY + fromItem.h / 2 };
+      const toCenter = { x: toItem.x - minX + toItem.w / 2, y: toItem.y - minY + toItem.h / 2 };
+
+      // Map connection types to IIIF motivations
+      const motivationMap: Record<ConnectionType, string> = {
+        'depicts': 'linking',
+        'transcribes': 'linking',
+        'relatesTo': 'linking',
+        'contradicts': 'linking',
+        'precedes': 'linking'
+      };
+
+      return {
+        id: `${canvasId}/annotation/link-${idx}`,
+        type: "Annotation",
+        motivation: motivationMap[conn.type] || "linking",
+        label: { none: [conn.label || conn.type] },
+        body: {
+          type: "TextualBody",
+          value: JSON.stringify({
+            relationshipType: conn.type,
+            label: conn.label,
+            fromResource: fromItem.resourceId,
+            toResource: toItem.resourceId,
+            fromPosition: fromCenter,
+            toPosition: toCenter
+          }),
+          format: "application/json"
+        },
+        // Target both connected resources using SpecificResource
+        target: [
+          `${canvasId}#xywh=${Math.round(fromCenter.x - 10)},${Math.round(fromCenter.y - 10)},20,20`,
+          `${canvasId}#xywh=${Math.round(toCenter.x - 10)},${Math.round(toCenter.y - 10)},20,20`
+        ]
+      };
+    }).filter(Boolean) as IIIFAnnotation[];
+
+    // Build the annotation pages
+    const paintingPage: IIIFAnnotationPage = {
+      id: `${canvasId}/page/painting`,
+      type: "AnnotationPage",
+      label: { none: ["Board Items"] },
+      items: paintingAnnotations
+    };
+
+    const linkingPage: IIIFAnnotationPage = {
+      id: `${canvasId}/page/linking`,
+      type: "AnnotationPage",
+      label: { none: ["Connections"] },
+      items: linkingAnnotations
+    };
+
+    // Create the board Canvas
+    const boardCanvas: IIIFCanvas = {
+      id: canvasId,
+      type: "Canvas",
+      label: { none: ["Research Board Canvas"] },
+      width: boardWidth,
+      height: boardHeight,
+      items: [paintingPage],
+      annotations: linkingAnnotations.length > 0 ? [linkingPage] : undefined
+    };
+
+    // Build the manifest with board metadata
+    const manifest: IIIFManifest = {
+      "@context": "http://iiif.io/api/presentation/3/context.json",
+      id: boardId,
+      type: "Manifest",
+      label: { none: [`Research Board - ${new Date().toLocaleDateString()}`] },
+      summary: { none: [`Spatial synthesis board with ${items.length} items and ${connections.length} connections. Generated by IIIF Field Studio.`] },
+      metadata: [
+        { label: { en: ["Board Items"] }, value: { none: [items.length.toString()] } },
+        { label: { en: ["Connections"] }, value: { none: [connections.length.toString()] } },
+        { label: { en: ["Canvas Size"] }, value: { none: [`${boardWidth} × ${boardHeight} pixels`] } },
+        { label: { en: ["Export Date"] }, value: { none: [new Date().toISOString()] } }
+      ],
+      behavior: ["individuals"],
+      viewingDirection: "left-to-right",
+      items: [boardCanvas],
+      // Include seeAlso for linked resources
+      seeAlso: items.map(item => ({
+        id: item.resourceId,
+        type: "Dataset",
+        label: { none: [item.label] },
+        format: "application/ld+json"
+      }))
+    };
+
+    // Export as JSON file
+    const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/ld+json' });
+    const filename = `board-export-${new Date().toISOString().split('T')[0]}.json`;
+    saveAs(blob, filename);
+    showToast(`Board exported as IIIF Manifest: ${filename}`, "success");
+  }, [items, connections, showToast]);
+
   return (
     <div className="flex flex-col h-full bg-slate-100 overflow-hidden relative font-sans">
       <div className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
@@ -127,9 +279,21 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
-            <span>{items.length} Nodes</span>
-            <span>{connections.length} Links</span>
+        <div className="flex items-center gap-4">
+            <div className="text-xs font-bold text-slate-400">
+                <span>{items.length} Nodes</span>
+                <span className="mx-2">•</span>
+                <span>{connections.length} Links</span>
+            </div>
+            <button
+                onClick={exportBoardAsManifest}
+                disabled={items.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-iiif-blue text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                title="Export board as IIIF Manifest"
+            >
+                <Icon name="file_download" className="text-sm"/>
+                Export Manifest
+            </button>
         </div>
       </div>
 
