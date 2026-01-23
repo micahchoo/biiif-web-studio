@@ -48,7 +48,10 @@ const processNode = async (
     let cleanName = node.name.startsWith('_') ? node.name.substring(1) : node.name;
     if (cleanName === 'root') cleanName = 'My Archive';
 
-    const id = `${baseUrl}/${type.toLowerCase()}/${crypto.randomUUID()}`;
+    const uuid = typeof crypto.randomUUID === 'function' 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const id = `${baseUrl}/${type.toLowerCase()}/${uuid}`;
     const lang = ymlMeta.language || 'none';
     const label = ymlMeta.label ? { [lang]: [ymlMeta.label] } : { none: [cleanName] };
 

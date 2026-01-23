@@ -62,17 +62,26 @@ export const Viewer: React.FC<ViewerProps> = ({ item, manifestItems, onSelect, o
 
   // Safely resolve image URL for OSD
   useEffect(() => {
+      let url: string | null = null;
       if (item?._blobUrl) {
           setResolvedImageUrl(item._blobUrl);
-      } else if (item?._fileRef) {
-          const url = URL.createObjectURL(item._fileRef);
-          setResolvedImageUrl(url);
-          return () => URL.revokeObjectURL(url);
+      } else if (item?._fileRef && item._fileRef instanceof Blob) {
+          try {
+            url = URL.createObjectURL(item._fileRef);
+            setResolvedImageUrl(url);
+          } catch (e) {
+            console.error("Failed to create object URL", e);
+            setResolvedImageUrl(null);
+          }
       } else if (paintingBody?.id) {
           setResolvedImageUrl(paintingBody.id);
       } else {
           setResolvedImageUrl(null);
       }
+      
+      return () => { 
+          if (url) URL.revokeObjectURL(url); 
+      };
   }, [item, paintingBody?.id]);
 
   useEffect(() => {

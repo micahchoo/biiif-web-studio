@@ -19,17 +19,37 @@ class SearchService {
   }
 
   reset() {
-    // FlexSearch via esm.sh exports the library as default.
-    // We access Document from the default export.
-    const FlexSearchLib = (FlexSearch as any).default || FlexSearch;
-    this.index = new FlexSearchLib.Document({
-      document: {
-        id: "id",
-        index: ["label", "text"],
-        store: ["id", "type", "label", "context"]
-      },
-      tokenize: "forward"
-    });
+    // Since we are using Vite with node_modules, FlexSearch should be imported directly.
+    // However, depending on the build, it might be a default export or named.
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let Document = (FlexSearch as any).Document;
+    
+    // If not found on top level, try default (common in some CJS/ESM interop scenarios)
+    if (!Document && (FlexSearch as any).default) {
+        Document = (FlexSearch as any).default.Document;
+    }
+
+    if (!Document) {
+      // Fallback: If FlexSearch is the Document constructor itself (rare but possible in some builds)
+      // or if we are using a specific build.
+      // Let's assume standard usage from npm package first.
+      console.error("FlexSearch Document constructor not found. FlexSearch keys:", Object.keys(FlexSearch));
+      return;
+    }
+
+    try {
+      this.index = new Document({
+        document: {
+          id: "id",
+          index: ["label", "text"],
+          store: ["id", "type", "label", "context"]
+        },
+        tokenize: "forward"
+      });
+    } catch (e) {
+      console.error("Failed to initialize FlexSearch index", e);
+    }
     this.itemMap.clear();
   }
 
