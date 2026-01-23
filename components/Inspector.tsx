@@ -4,6 +4,7 @@ import { IIIFItem, IIIFCanvas, AppSettings, IIIFManifest, getIIIFValue } from '.
 import { Icon } from './Icon';
 import { MuseumLabel } from './MuseumLabel';
 import { ShareButton } from './ShareButton';
+import { ProvenancePanel } from './ProvenancePanel';
 import { RESOURCE_TYPE_CONFIG } from '../constants';
 
 interface InspectorProps {
@@ -38,7 +39,7 @@ const IIIF_SPECS: Record<string, {
 };
 
 export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource, settings, visible, onClose, isMobile }) => {
-  const [tab, setTab] = useState<'metadata' | 'learn'>('metadata');
+  const [tab, setTab] = useState<'metadata' | 'provenance' | 'learn'>('metadata');
   const [showAddMenu, setShowAddMenu] = useState(false);
 
   if (!visible || !resource) return null;
@@ -102,8 +103,16 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
 
         {/* Tabs */}
         <div className={`flex border-b shrink-0 ${settings.fieldMode ? 'bg-black border-slate-800' : 'bg-white'}`}>
-            {['metadata', 'learn'].map(t => (
-                <button key={t} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${tab === t ? (settings.fieldMode ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-iiif-blue border-b-2 border-iiif-blue bg-blue-50/20') : 'text-slate-400 hover:text-slate-600'}`} onClick={() => setTab(t as any)}>{t}</button>
+            {['metadata', 'provenance', 'learn'].map(t => (
+                <button
+                  key={t}
+                  className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${tab === t ? (settings.fieldMode ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-iiif-blue border-b-2 border-iiif-blue bg-blue-50/20') : 'text-slate-400 hover:text-slate-600'}`}
+                  onClick={() => setTab(t as any)}
+                  aria-selected={tab === t}
+                  role="tab"
+                >
+                  {t === 'provenance' ? 'History' : t}
+                </button>
             ))}
         </div>
 
@@ -186,6 +195,10 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
                     </div>
                 </div>
             </div>
+        )}
+
+        {tab === 'provenance' && (
+            <ProvenancePanel resourceId={resource.id} fieldMode={settings.fieldMode} />
         )}
 
         {tab === 'learn' && spec && (

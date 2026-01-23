@@ -408,12 +408,12 @@ Based on feedback from simulated expert reviews (Archivist, IIIF Expert, Human F
 
 ### Critical Priority (Must Address)
 
-| Item | Expert | Rationale |
-|------|--------|-----------|
-| **Virtualized data model** | Architect | Current monolithic state tree prevents scaling beyond ~100 items |
-| **Focus management + ARIA audit** | HF Engineer | Accessibility compliance is legally required in many contexts |
-| **Viewer compatibility testing** | IIIF Expert | Must verify exports work in Mirador 3, UV4, Annona |
-| **Provenance logging system** | Archivist | Professional archival practice requires chain of custody |
+| Item | Expert | Status | Rationale |
+|------|--------|--------|-----------|
+| **Virtualized data model** | Architect | ✅ Implemented | `services/virtualizedData.ts` - LRU cache + lazy loading |
+| **Focus management + ARIA audit** | HF Engineer | ✅ Implemented | `services/accessibility.ts` - FocusTrap, ARIA utilities |
+| **Viewer compatibility testing** | IIIF Expert | ✅ Implemented | `services/viewerCompatibility.ts` - Multi-viewer validation |
+| **Provenance logging system** | Archivist | ✅ Implemented | `services/provenanceService.ts` + ProvenancePanel component |
 
 ### High Priority
 
