@@ -139,6 +139,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <NavItem icon="inventory_2" label="Archive" active={currentMode === 'archive'} onClick={() => onModeChange('archive')} fieldMode={fieldMode} />
         <NavItem icon="library_books" label="Collections" active={currentMode === 'collections'} onClick={() => onModeChange('collections')} fieldMode={fieldMode} />
         <NavItem icon="dashboard" label="Boards" active={currentMode === 'boards'} onClick={() => onModeChange('boards')} fieldMode={fieldMode} />
+        <NavItem icon="schedule" label="Timeline" active={currentMode === 'timeline'} onClick={() => onModeChange('timeline')} fieldMode={fieldMode} />
+        <NavItem icon="map" label="Map" active={currentMode === 'map'} onClick={() => onModeChange('map')} fieldMode={fieldMode} />
         <NavItem icon="search" label="Search" active={currentMode === 'search'} onClick={() => onModeChange('search')} fieldMode={fieldMode} />
       </div>
 

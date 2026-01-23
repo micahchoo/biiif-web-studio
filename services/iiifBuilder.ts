@@ -5,6 +5,31 @@ import { DEFAULT_INGEST_PREFS, MIME_TYPE_MAP } from '../constants';
 import { load } from 'js-yaml';
 import { extractMetadata } from './metadataHarvester';
 
+// Range Generation Patterns
+interface RangePattern {
+  name: string;
+  regex: RegExp;
+  groupIndex: number;
+  labelTransform?: (match: string) => string;
+}
+
+const RANGE_PATTERNS: RangePattern[] = [
+  // ch01_page01.jpg, ch02_page01.jpg -> Chapter 1, Chapter 2
+  { name: 'chapter', regex: /^ch(?:apter)?[_-]?(\d+)/i, groupIndex: 1, labelTransform: (m) => `Chapter ${parseInt(m)}` },
+  // section1_001.jpg, section2_001.jpg -> Section 1, Section 2
+  { name: 'section', regex: /^(?:sec(?:tion)?|part)[_-]?(\d+)/i, groupIndex: 1, labelTransform: (m) => `Section ${parseInt(m)}` },
+  // vol1_page1.jpg, vol2_page1.jpg -> Volume 1, Volume 2
+  { name: 'volume', regex: /^vol(?:ume)?[_-]?(\d+)/i, groupIndex: 1, labelTransform: (m) => `Volume ${parseInt(m)}` },
+  // 2023-01-15_001.jpg, 2023-01-16_001.jpg -> 2023-01-15, 2023-01-16
+  { name: 'date', regex: /^(\d{4}[-_]\d{2}[-_]\d{2})/i, groupIndex: 1, labelTransform: (m) => m.replace(/_/g, '-') },
+  // roll01_frame01.jpg, roll02_frame01.jpg -> Roll 1, Roll 2
+  { name: 'roll', regex: /^roll[_-]?(\d+)/i, groupIndex: 1, labelTransform: (m) => `Roll ${parseInt(m)}` },
+  // side_a_track01.mp3, side_b_track01.mp3 -> Side A, Side B
+  { name: 'side', regex: /^side[_-]?([ab])/i, groupIndex: 1, labelTransform: (m) => `Side ${m.toUpperCase()}` },
+  // Generic prefix pattern: prefix_001.jpg groups by prefix
+  { name: 'prefix', regex: /^([a-zA-Z]+)[_-]\d+/i, groupIndex: 1, labelTransform: (m) => m.charAt(0).toUpperCase() + m.slice(1) },
+];
+
 export const buildTree = (files: File[]): FileTree => {
   const root: FileTree = { name: 'root', path: '', files: new Map(), directories: new Map() };
   
@@ -89,6 +114,57 @@ const getUniqueLabel = (baseLabel: string, reservedLabels: Set<string>): string 
         }
     }
     return newLabel;
+};
+
+// Auto Range Generation
+export const generateRangesFromCanvases = (canvases: IIIFCanvas[], manifestId: string): IIIFRange[] | undefined => {
+  if (canvases.length < 3) return undefined; // Need at least 3 items to form meaningful ranges
+
+  // Try each pattern
+  for (const pattern of RANGE_PATTERNS) {
+    const groups = new Map<string, IIIFCanvas[]>();
+
+    for (const canvas of canvases) {
+      const label = canvas.label?.['none']?.[0] || canvas.label?.['en']?.[0] || '';
+      const match = label.match(pattern.regex);
+
+      if (match && match[pattern.groupIndex]) {
+        const groupKey = match[pattern.groupIndex];
+        if (!groups.has(groupKey)) groups.set(groupKey, []);
+        groups.get(groupKey)!.push(canvas);
+      }
+    }
+
+    // Check if pattern matched enough items (at least 50% of canvases)
+    const matchedCount = Array.from(groups.values()).reduce((sum, arr) => sum + arr.length, 0);
+    if (matchedCount >= canvases.length * 0.5 && groups.size >= 2) {
+      // Create ranges from groups
+      const ranges: IIIFRange[] = [];
+      const sortedKeys = Array.from(groups.keys()).sort((a, b) => {
+        const numA = parseInt(a) || 0;
+        const numB = parseInt(b) || 0;
+        if (numA !== numB) return numA - numB;
+        return a.localeCompare(b);
+      });
+
+      for (const key of sortedKeys) {
+        const groupCanvases = groups.get(key)!;
+        const rangeLabel = pattern.labelTransform ? pattern.labelTransform(key) : key;
+
+        const range: IIIFRange = {
+          id: `${manifestId}/range/${pattern.name}-${key}`,
+          type: 'Range',
+          label: { none: [rangeLabel] },
+          items: groupCanvases.map(c => ({ id: c.id, type: 'Canvas' as const }))
+        };
+        ranges.push(range);
+      }
+
+      return ranges;
+    }
+  }
+
+  return undefined;
 };
 
 // Helper to group files by basename for sidecar detection
@@ -292,6 +368,9 @@ const processNode = async (node: FileTree, baseUrl: string, report: IngestReport
             report.filesProcessed += (1 + sidecars.length);
         }
 
+        // Auto-generate ranges from filename patterns
+        const autoRanges = generateRangesFromCanvases(items, id);
+
         const manifest: any = {
             "@context": "http://iiif.io/api/presentation/3/context.json",
             id,
@@ -299,6 +378,7 @@ const processNode = async (node: FileTree, baseUrl: string, report: IngestReport
             label,
             summary,
             items,
+            structures: autoRanges,
             behavior,
             viewingDirection,
             provider, homepage, requiredStatement,
@@ -311,6 +391,11 @@ const processNode = async (node: FileTree, baseUrl: string, report: IngestReport
                 }
             ]
         };
+
+        if (autoRanges && autoRanges.length > 0) {
+            report.warnings.push(`Auto-generated ${autoRanges.length} ranges for ${cleanName}`);
+        }
+
         report.manifestsCreated++;
         return manifest as IIIFManifest;
     } else {

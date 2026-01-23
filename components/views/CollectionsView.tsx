@@ -1,8 +1,9 @@
 
 import React, { useState, useRef } from 'react';
-import { IIIFItem, IIIFCollection, IIIFManifest, AbstractionLevel } from '../../types';
+import { IIIFItem, IIIFCollection, IIIFManifest, IIIFCanvas, AbstractionLevel } from '../../types';
 import { Icon } from '../Icon';
 import { RangeEditor } from '../RangeEditor';
+import { useToast } from '../Toast';
 
 interface CollectionsViewProps {
   root: IIIFItem | null;
@@ -10,10 +11,20 @@ interface CollectionsViewProps {
   abstractionLevel?: AbstractionLevel;
 }
 
+interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  nodeId: string | null;
+  nodeType: string | null;
+}
+
 export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate, abstractionLevel = 'standard' }) => {
+  const { showToast } = useToast();
   const [selectedId, setSelectedId] = useState<string | null>(root?.id || null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [previewTab, setPreviewTab] = useState<'details' | 'structure' | 'json'>('details');
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, nodeId: null, nodeType: null });
 
   // Helper to find a node by ID
   const findNode = (node: IIIFItem, id: string): IIIFItem | null => {
@@ -115,7 +126,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate
   const handleDelete = () => {
       if (!root || !selectedId || selectedId === root.id) return;
       if (!confirm("Are you sure you want to delete this item?")) return;
-      
+
       const newRoot = cloneTree(root);
       const findParent = (node: IIIFItem, childId: string): IIIFItem | null => {
           if (!node.items) return null;
@@ -135,6 +146,128 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate
           onUpdate(newRoot);
           setSelectedId(null);
       }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, nodeId: string, nodeType: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setContextMenu({
+          visible: true,
+          x: e.clientX,
+          y: e.clientY,
+          nodeId,
+          nodeType
+      });
+  };
+
+  const closeContextMenu = () => {
+      setContextMenu({ visible: false, x: 0, y: 0, nodeId: null, nodeType: null });
+  };
+
+  const handleConvertToManifest = () => {
+      if (!root || !contextMenu.nodeId) return;
+      const newRoot = cloneTree(root);
+      const node = findNode(newRoot, contextMenu.nodeId);
+
+      if (node && node.type === 'Collection') {
+          // Convert Collection to Manifest
+          // Move nested Collections/Manifests as Canvases (if possible) or flatten
+          const collection = node as IIIFCollection;
+
+          // Create Canvases from child items
+          const canvases: IIIFCanvas[] = [];
+          const collectCanvases = (item: IIIFItem) => {
+              if (item.type === 'Canvas') {
+                  canvases.push(item as IIIFCanvas);
+              } else if (item.items) {
+                  item.items.forEach(collectCanvases);
+              }
+          };
+          if (collection.items) {
+              collection.items.forEach(collectCanvases);
+          }
+
+          // Transform to Manifest
+          (node as any).type = 'Manifest';
+          (node as any)["@context"] = "http://iiif.io/api/presentation/3/context.json";
+          node.items = canvases;
+
+          onUpdate(newRoot);
+          showToast(`Converted to Manifest with ${canvases.length} canvases`, 'success');
+      }
+      closeContextMenu();
+  };
+
+  const handleConvertToCollection = () => {
+      if (!root || !contextMenu.nodeId) return;
+      const newRoot = cloneTree(root);
+      const node = findNode(newRoot, contextMenu.nodeId);
+
+      if (node && node.type === 'Manifest') {
+          // Convert Manifest to Collection
+          // Each Canvas becomes a separate Manifest
+          const manifest = node as IIIFManifest;
+          const newItems: IIIFManifest[] = [];
+
+          if (manifest.items && manifest.items.length > 0) {
+              manifest.items.forEach((canvas, idx) => {
+                  const newManifest: IIIFManifest = {
+                      "@context": "http://iiif.io/api/presentation/3/context.json",
+                      id: `${manifest.id}/manifest/${idx + 1}`,
+                      type: 'Manifest',
+                      label: canvas.label || { none: [`Item ${idx + 1}`] },
+                      items: [canvas as IIIFCanvas]
+                  };
+                  newItems.push(newManifest);
+              });
+          }
+
+          // Transform to Collection
+          (node as any).type = 'Collection';
+          node.items = newItems;
+          delete (node as any).structures;
+
+          onUpdate(newRoot);
+          showToast(`Converted to Collection with ${newItems.length} manifests`, 'success');
+      }
+      closeContextMenu();
+  };
+
+  const handleDuplicateItem = () => {
+      if (!root || !contextMenu.nodeId || contextMenu.nodeId === root.id) return;
+      const newRoot = cloneTree(root);
+
+      const findParent = (node: IIIFItem, childId: string): IIIFItem | null => {
+          if (!node.items) return null;
+          if (node.items.some(i => i.id === childId)) return node;
+          for (const child of node.items) {
+              const p = findParent(child, childId);
+              if (p) return p;
+          }
+          return null;
+      };
+
+      const parent = findParent(newRoot, contextMenu.nodeId);
+      const original = findNode(newRoot, contextMenu.nodeId);
+
+      if (parent && parent.items && original) {
+          const duplicate = cloneTree(original);
+          // Update IDs to avoid conflicts
+          const updateIds = (item: IIIFItem) => {
+              item.id = item.id.replace(/[^/]+$/, crypto.randomUUID());
+              if (item.label?.['none']) {
+                  item.label['none'] = [item.label['none'][0] + ' (copy)'];
+              }
+              if (item.items) item.items.forEach(updateIds);
+          };
+          updateIds(duplicate);
+
+          const idx = parent.items.findIndex(i => i.id === contextMenu.nodeId);
+          parent.items.splice(idx + 1, 0, duplicate);
+          onUpdate(newRoot);
+          showToast('Item duplicated', 'success');
+      }
+      closeContextMenu();
   };
 
   const handleUpdateManifest = (updatedManifest: IIIFManifest) => {
@@ -159,7 +292,49 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate
   );
 
   return (
-    <div className="flex h-full bg-slate-100">
+    <div className="flex h-full bg-slate-100" onClick={closeContextMenu}>
+      {/* Context Menu */}
+      {contextMenu.visible && (
+          <div
+              className="fixed bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50 min-w-[180px]"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+              onClick={(e) => e.stopPropagation()}
+          >
+              {contextMenu.nodeType === 'Collection' && (
+                  <button
+                      onClick={handleConvertToManifest}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 flex items-center gap-2"
+                  >
+                      <Icon name="menu_book" className="text-blue-500" />
+                      Convert to Manifest
+                  </button>
+              )}
+              {contextMenu.nodeType === 'Manifest' && (
+                  <button
+                      onClick={handleConvertToCollection}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 flex items-center gap-2"
+                  >
+                      <Icon name="folder" className="text-amber-500" />
+                      Convert to Collection
+                  </button>
+              )}
+              <button
+                  onClick={handleDuplicateItem}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 flex items-center gap-2"
+              >
+                  <Icon name="content_copy" className="text-slate-500" />
+                  Duplicate
+              </button>
+              <div className="border-t my-1"></div>
+              <button
+                  onClick={() => { setSelectedId(contextMenu.nodeId); closeContextMenu(); handleDelete(); }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+              >
+                  <Icon name="delete" />
+                  Delete
+              </button>
+          </div>
+      )
       {/* Sidebar / Tree Editor */}
       <div className="w-1/3 min-w-[300px] flex flex-col border-r border-slate-200 bg-white">
         <div className="h-14 border-b px-4 flex items-center justify-between bg-slate-50">
@@ -176,12 +351,13 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate
             </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-            <TreeNode 
-                node={root} 
-                selectedId={selectedId} 
-                onSelect={setSelectedId} 
+            <TreeNode
+                node={root}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
                 onDrop={handleDrop}
                 onDragStart={handleDragStart}
+                onContextMenu={handleContextMenu}
             />
         </div>
       </div>
@@ -274,8 +450,9 @@ const TreeNode: React.FC<{
     onSelect: (id: string) => void;
     onDragStart: (e: React.DragEvent, id: string) => void;
     onDrop: (e: React.DragEvent, targetId: string, position: 'inside' | 'before' | 'after') => void;
+    onContextMenu: (e: React.MouseEvent, nodeId: string, nodeType: string) => void;
     level?: number;
-}> = ({ node, selectedId, onSelect, onDragStart, onDrop, level = 0 }) => {
+}> = ({ node, selectedId, onSelect, onDragStart, onDrop, onContextMenu, level = 0 }) => {
     const [expanded, setExpanded] = useState(true);
     const [dragOver, setDragOver] = useState<'none' | 'top' | 'middle' | 'bottom'>('none');
     
@@ -318,7 +495,7 @@ const TreeNode: React.FC<{
 
     return (
         <div style={{ paddingLeft: level > 0 ? 12 : 0 }}>
-            <div 
+            <div
                 className={`
                     relative flex items-center gap-2 p-1.5 rounded cursor-pointer border-2 transition-colors select-none
                     ${isSelected ? 'bg-blue-50 border-blue-200' : 'bg-transparent border-transparent hover:bg-slate-100'}
@@ -327,6 +504,7 @@ const TreeNode: React.FC<{
                     ${dragOver === 'middle' ? 'bg-amber-50 border-amber-300' : ''}
                 `}
                 onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+                onContextMenu={(e) => onContextMenu(e, node.id, node.type)}
                 draggable
                 onDragStart={(e) => onDragStart(e, node.id)}
                 onDragOver={handleDragOver}
@@ -348,13 +526,14 @@ const TreeNode: React.FC<{
             {hasChildren && expanded && (
                 <div>
                     {(node as IIIFCollection).items.map(child => (
-                        <TreeNode 
-                            key={child.id} 
-                            node={child} 
-                            selectedId={selectedId} 
-                            onSelect={onSelect} 
+                        <TreeNode
+                            key={child.id}
+                            node={child}
+                            selectedId={selectedId}
+                            onSelect={onSelect}
                             onDragStart={onDragStart}
                             onDrop={onDrop}
+                            onContextMenu={onContextMenu}
                             level={level + 1}
                         />
                     ))}

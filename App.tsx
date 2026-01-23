@@ -9,6 +9,9 @@ import { BoardView } from './components/views/BoardView';
 import { Viewer } from './components/views/Viewer';
 import { CollectionsView } from './components/views/CollectionsView';
 import { SearchView } from './components/views/SearchView';
+import { TimelineView } from './components/views/TimelineView';
+import { MapView } from './components/views/MapView';
+import { CSVImportDialog } from './components/CSVImportDialog';
 import { Inspector } from './components/Inspector';
 import { StatusBar } from './components/StatusBar';
 import { CommandPalette } from './components/CommandPalette';
@@ -34,7 +37,8 @@ const MainApp: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [stagingTree, setStagingTree] = useState<FileTree | null>(null);
   const [showExport, setShowExport] = useState(false);
-  
+  const [showCSVImport, setShowCSVImport] = useState(false);
+
   // Field Mode State
   const [fieldMode, setFieldMode] = useState(false);
   // Save State
@@ -269,6 +273,8 @@ const MainApp: React.FC = () => {
                  }
             }} />;
         case 'search': return <SearchView root={root} onSelect={(id) => setSelectedId(id)} />;
+        case 'timeline': return <TimelineView root={root} onSelect={(item) => { setSelectedId(item.id); setCurrentMode('viewer'); }} />;
+        case 'map': return <MapView root={root} onSelect={(item) => { setSelectedId(item.id); setCurrentMode('viewer'); }} />;
         default: return null;
     }
   };
@@ -278,11 +284,14 @@ const MainApp: React.FC = () => {
       { id: 'goto-collections', label: 'Go to Collections', icon: 'library_books', section: 'Navigation', action: () => setCurrentMode('collections'), shortcut: 'Cmd+2' },
       { id: 'goto-boards', label: 'Go to Boards', icon: 'dashboard', section: 'Navigation', action: () => setCurrentMode('boards'), shortcut: 'Cmd+3' },
       { id: 'goto-search', label: 'Search', icon: 'search', section: 'Navigation', action: () => setCurrentMode('search'), shortcut: 'Cmd+4' },
+      { id: 'goto-timeline', label: 'Timeline View', icon: 'timeline', section: 'Navigation', action: () => setCurrentMode('timeline'), shortcut: 'Cmd+5' },
+      { id: 'goto-map', label: 'Map View', icon: 'map', section: 'Navigation', action: () => setCurrentMode('map'), shortcut: 'Cmd+6' },
       { id: 'toggle-sidebar', label: 'Toggle Sidebar', icon: 'vertical_split', section: 'View', action: () => setShowSidebar(s => !s), shortcut: 'Cmd+B' },
       { id: 'toggle-inspector', label: 'Toggle Inspector', icon: 'info', section: 'View', action: () => setShowInspector(i => !i), shortcut: 'Cmd+I' },
       { id: 'toggle-fieldmode', label: 'Toggle Field Mode', icon: 'visibility', section: 'View', action: () => setFieldMode(f => !f) },
       { id: 'export', label: 'Export Archive', icon: 'archive', section: 'Actions', action: () => setShowExport(true) },
       { id: 'import', label: 'Import Files', icon: 'upload_file', section: 'Actions', action: () => document.querySelector<HTMLInputElement>('input[type="file"]')?.click() },
+      { id: 'import-csv', label: 'Import CSV Metadata', icon: 'table_chart', section: 'Actions', action: () => setShowCSVImport(true) },
       { id: 'qc', label: 'QC Dashboard', icon: 'health_and_safety', section: 'Actions', action: () => setShowQCDashboard(true) },
   ] as any[];
 
@@ -335,6 +344,7 @@ const MainApp: React.FC = () => {
       />
       {stagingTree && <StagingArea initialTree={stagingTree} existingRoot={root} onIngest={handleIngest} onCancel={() => setStagingTree(null)} />}
       {showExport && root && <ExportDialog root={root} onClose={() => setShowExport(false)} />}
+      {showCSVImport && root && <CSVImportDialog root={root} onApply={handleUpdateRoot} onClose={() => setShowCSVImport(false)} />}
       {showQCDashboard && <QCDashboard issuesMap={validationIssuesMap} totalItems={totalItems} onSelect={(id) => { setSelectedId(id); setShowQCDashboard(false); }} onClose={() => setShowQCDashboard(false)} />}
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
     </div>

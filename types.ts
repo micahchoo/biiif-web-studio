@@ -1,6 +1,7 @@
 
-export type AppMode = 'archive' | 'collections' | 'boards' | 'search' | 'viewer';
+export type AppMode = 'archive' | 'collections' | 'boards' | 'search' | 'viewer' | 'timeline' | 'map';
 export type ViewType = 'files' | 'iiif';
+export type LanguageMap = Record<string, string[]>;
 export type IIIFMotivation = 'painting' | 'supplementing' | 'commenting' | 'tagging' | 'linking' | 'identifying' | 'describing' | string;
 export type ConnectionType = 'depicts' | 'transcribes' | 'relatesTo' | 'contradicts' | 'precedes';
 export type AbstractionLevel = 'simple' | 'standard' | 'advanced';
