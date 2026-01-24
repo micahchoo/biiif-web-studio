@@ -127,7 +127,8 @@ const MainApp: React.FC = () => {
         if (encodedState) {
             const contentState = contentStateService.decode(encodedState);
             if (contentState) {
-                const targetId = contentState.id || (contentState.target && contentState.target.id);
+                const target = contentState.target;
+                const targetId = contentState.id || (target && typeof target !== 'string' && !Array.isArray(target) ? target.source && typeof target.source === 'object' ? (target.source as any).id : target.source : typeof target === 'string' ? target : null);
                 if (targetId) {
                   setSelectedId(targetId);
                   setCurrentMode('viewer');

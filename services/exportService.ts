@@ -43,7 +43,7 @@ class ExportService {
                         child.id = `../${childType}/${childIdVal}.json`;
                     } else if (child.type === 'Canvas') {
                         const origCanvas = (originalItem as any).items?.[idx] as IIIFCanvas;
-                        if (origCanvas && origCanvas._fileRef && options.includeAssets) {
+                        if (origCanvas && origCanvas._fileRef && origCanvas._fileRef.name && options.includeAssets) {
                             const filename = origCanvas._fileRef.name;
                             const baseFileName = filename.replace(/\.[^/.]+$/, ''); // Remove extension
                             const assetId = `${idVal}-${baseFileName}`;

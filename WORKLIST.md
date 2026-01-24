@@ -10,24 +10,24 @@
 
 These tasks focus on implementing the advanced IIIF APIs (Authorization, Content Search, Content State) to enable deep linking, secure access, and rich discovery.
 
-- [ ] **Content State API Support** - Deep linking and view initialization.
+- [x] **Content State API Support** - Deep linking and view initialization. ✅
   - **Rationale**: Allow researchers to share exact views (zoom, time) via URL (Expert: Technical Expert).
-  - **Mechanics**: Implement `iiif-content` query param parsing using base64url decoding. Support Drag-and-Drop of content state. Implement "Copy View" generating a JSON-LD Annotation with `contentState` motivation.
+  - **Mechanics**: COMPLETED: Enhanced `services/contentState.ts` with full Content State API 1.0 implementation. `ShareButton.tsx` updated with Copy View Link, Embed Code, JSON export, and drag-and-drop. Added `useContentStateFromUrl` and `useContentStateDrop` hooks.
   - **Source**: `IIIF Content State API 1.0`, `ARCHITECTURE_INSPIRATION.md` (Deep Linking Pattern).
 
-- [ ] **Authorization Flow 2.0** - Support for restricted content.
+- [x] **Authorization Flow 2.0** - Support for restricted content. ✅
   - **Rationale**: Enable access to sensitive field materials while respecting archival access controls (Expert: Technical Expert).
-  - **Mechanics**: Implement "Probe-First" pattern (`AuthProbeService2`). Build UI for `AuthAccessService2` (login tabs). Handle `AuthAccessTokenService2` via postMessage for token retrieval. Support "Tiered Access" by rendering `substitute` resources on 401.
+  - **Mechanics**: COMPLETED: `services/authService.ts` implements probe-first pattern with AuthProbeService2, AuthAccessService2 (login window), and AuthAccessTokenService2 (postMessage). `components/AuthDialog.tsx` provides UI for active/kiosk/external profiles with tiered access and substitute resource support.
   - **Source**: `IIIF Authorization Flow API 2.0`, `ARCHITECTURE_INSPIRATION.md` (Probe-First Authorization).
 
-- [ ] **Content Search API 2.0** - In-object search.
+- [x] **Content Search API 2.0** - In-object search. ✅
   - **Rationale**: Scalable search for large collections beyond client-side limits (Expert: Solutions Architect).
-  - **Mechanics**: Integrate `SearchService2` client. Render results as Annotations using `TextQuoteSelector` for highlighting. Support `autocomplete` service.
+  - **Mechanics**: COMPLETED: `services/contentSearchService.ts` implements SearchService2 client with autocomplete, pagination, and TextQuoteSelector support. `components/SearchPanel.tsx` provides search UI with result highlighting, canvas grouping, and keyboard navigation. Includes local search fallback for manifests without server-side search.
   - **Source**: `IIIF Content Search API 2.0`, `ARCHITECTURE_INSPIRATION.md` (Annotation-Based Search).
 
-- [ ] **Advanced AV Support** - Richer audio/video presentation.
+- [x] **Advanced AV Support** - Richer audio/video presentation. ✅
   - **Rationale**: Support complex archival objects like oral histories with transcripts or music with scores (Expert: Technical Expert).
-  - **Mechanics**: Implement `accompanyingCanvas` property to render auxiliary content alongside main canvas. Support `placeholderCanvas` for video poster frames. Implement `timeMode` (trim/scale/loop) behaviors.
+  - **Mechanics**: COMPLETED: `services/avService.ts` implements accompanyingCanvas extraction, placeholderCanvas poster frames, timeMode behaviors (trim/scale/loop), VTT parsing, and sync point generation. `components/AVPlayer.tsx` provides full AV player with synchronized transcript panel, keyboard shortcuts, and time mode support.
   - **Source**: `Presentation API 3.0` (Audio Recipe), `ARCHITECTURE_INSPIRATION.md` (Canvas-Bound Accompaniment).
 
 ---
@@ -117,7 +117,12 @@ graph LR
 
 ## ✅ Completed Items
 
-### Recent Accomplishments (Phase 3)
+### Recent Accomplishments (Phase 4 - Discovery & Access) ✅ SPRINT COMPLETE
+- [x] **Content Search API 2.0** - SearchService2 client, autocomplete, TextQuoteSelector highlighting.
+- [x] **Advanced AV Support** - accompanyingCanvas, placeholderCanvas, timeMode, VTT parsing.
+- [x] **Authorization Flow 2.0** - Probe-first auth with login UI, token handling, tiered access.
+- [x] **Content State API 1.0** - Full deep linking with share button, embed code, drag-and-drop.
+- [x] **Static Site Export (Wax Pattern)** - Full static exhibition generator with IIIF tiles, Lunr.js search, item pages.
 - [x] **Static Export: Offline Viewer Bundling** - Self-contained exports with local viewer assets.
 - [x] **Ingest: Smart Sidecar Detection** - Auto-linking of transcriptions/captions during ingest.
 - [x] **Accessibility: ARIA & Keyboard Audit** - Full accessibility pass on Sidebar and Inspector.
@@ -181,9 +186,9 @@ graph LR
     "source": "biiif (IIIF Static Site Generator), ARCHITECTURE_INSPIRATION.md (Local-First Pattern)"
   },
   {
-    "feature": "Static Site Export (Wax/Jekyll Integration)",
+    "feature": "Static Site Export (Wax/Jekyll Integration) ✅",
     "rationale": "Provide a low-cost, high-durability publication path for archival collections without requiring a complex backend.",
-    "mechanics": "Develop an export worker that transforms the internal Vault state into a 'Wax-compatible' YAML metadata file and a processed image derivative set. Implement a 'Manifest Partitioning' pattern to split large manifests into smaller, Jekyll-consumable collection files.",
+    "mechanics": "COMPLETED: services/staticSiteExporter.ts - Generates complete static exhibition sites with pre-computed IIIF tiles, item pages, search index (Lunr.js), YAML/JSON metadata, gallery views, and OpenSeadragon viewer. Integrated into ExportDialog.tsx as 'Wax Exhibition' format with full configuration UI.",
     "source": "Wax (Exhibitions Framework), IIIF Presentation API 3.0 (Collections)"
   },
   {
