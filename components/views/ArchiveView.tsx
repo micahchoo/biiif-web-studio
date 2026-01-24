@@ -147,6 +147,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string } | null>(null);
   const [activeItem, setActiveItem] = useState<IIIFCanvas | null>(null);
+  const [lastClickedId, setLastClickedId] = useState<string | null>(null); // For shift+click range selection
 
   // Rubber-band selection state
   const [rubberBand, setRubberBand] = useState<RubberBandState>({
@@ -265,15 +266,31 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
   };
 
   const handleItemClick = (e: React.MouseEvent, asset: IIIFItem) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      if (e.shiftKey && lastClickedId) {
+          // Shift+click: range selection
+          e.stopPropagation();
+          const startIdx = filteredAssets.findIndex(a => a.id === lastClickedId);
+          const endIdx = filteredAssets.findIndex(a => a.id === asset.id);
+          if (startIdx !== -1 && endIdx !== -1) {
+              const [minIdx, maxIdx] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
+              const rangeIds = filteredAssets.slice(minIdx, maxIdx + 1).map(a => a.id);
+              const newSet = new Set(selectedIds);
+              rangeIds.forEach(id => newSet.add(id));
+              setSelectedIds(newSet);
+          }
+      } else if (e.metaKey || e.ctrlKey) {
+          // Ctrl/Cmd+click: toggle selection
           e.stopPropagation();
           const newSet = new Set(selectedIds);
           if (newSet.has(asset.id)) newSet.delete(asset.id);
           else newSet.add(asset.id);
           setSelectedIds(newSet);
+          setLastClickedId(asset.id);
       } else {
+          // Regular click: select single item
           onSelect(asset);
-          setSelectedIds(new Set([asset.id])); 
+          setSelectedIds(new Set([asset.id]));
+          setLastClickedId(asset.id);
       }
   };
 
@@ -282,7 +299,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
     setContextMenu({ x: e.clientX, y: e.clientY, id });
   };
 
-  const handleDelete = (idsToDelete: string[]) => {
+  const handleDelete = useCallback((idsToDelete: string[]) => {
       if (!onUpdate || !root) return;
       if (!confirm(`Permanently remove ${idsToDelete.length} item(s)?`)) return;
       const newRoot = JSON.parse(JSON.stringify(root));
@@ -300,7 +317,39 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
       onUpdate(newRoot);
       setSelectedIds(new Set());
       showToast("Archive modified", "success");
-  };
+  }, [onUpdate, root, showToast]);
+
+  // Keyboard shortcuts for selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere with input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      // Ctrl/Cmd+A: Select all
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        setSelectedIds(new Set(filteredAssets.map(a => a.id)));
+        showToast(`Selected ${filteredAssets.length} items`, 'info');
+      }
+
+      // Escape: Clear selection and close detail view
+      if (e.key === 'Escape') {
+        if (selectedIds.size > 0) {
+          setSelectedIds(new Set());
+          setActiveItem(null);
+        }
+      }
+
+      // Delete/Backspace: Delete selected (with confirmation)
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
+        e.preventDefault();
+        handleDelete(Array.from(selectedIds));
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [filteredAssets, selectedIds, showToast, handleDelete]);
 
   useEffect(() => {
       const close = () => setContextMenu(null);
@@ -493,48 +542,39 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
         </div>
       </div>
 
-      {/* Desktop Relative Bar - Pushes content down */}
+      {/* Desktop Selection Bar - Integrated into header area */}
       {!isMobile && selectedIds.size > 0 && (
-          <div className="w-full flex justify-center py-4 bg-slate-50 border-b border-slate-200 z-10 animate-in slide-in-from-top-2">
-              <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 shadow-xl rounded-2xl p-1 flex items-center gap-1 ring-1 ring-black/10 overflow-x-auto no-scrollbar max-w-full">
-                  <div className="px-4 border-r border-slate-700 py-2 shrink-0">
-                      <span className="text-[10px] font-black uppercase text-slate-500 block leading-none">Selection</span>
-                      <span className="text-sm font-bold text-white leading-none">{selectedIds.size} Items</span>
-                  </div>
-                  <div className="flex p-1 gap-1 shrink-0">
-                      <button onClick={handleCreateManifestFromSelection} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-800 rounded-xl transition-all text-white group whitespace-nowrap">
-                          <Icon name="auto_stories" className="text-green-400" />
-                          <div className="text-left">
-                              <div className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Synthesize</div>
-                              <div className="text-xs font-bold">Group</div>
-                          </div>
-                      </button>
-                      
-                      {selectionDNA.hasGPS && (
-                          <button onClick={() => setView('map')} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-800 rounded-xl transition-all text-white group whitespace-nowrap">
-                              <Icon name="explore" className="text-blue-400" />
-                              <div className="text-left">
-                                  <div className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Spatial</div>
-                                  <div className="text-xs font-bold">Map</div>
-                              </div>
-                          </button>
-                      )}
-
-                      <button onClick={() => onCatalogSelection?.(Array.from(selectedIds))} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-800 rounded-xl transition-all text-white group whitespace-nowrap">
-                          <Icon name="table_chart" className="text-amber-400" />
-                          <div className="text-left">
-                              <div className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Edit in</div>
-                              <div className="text-xs font-bold">Catalog</div>
-                          </div>
-                      </button>
-
-                      <div className="w-px h-8 bg-slate-700 mx-1"></div>
-                      
-                      <button onClick={() => setSelectedIds(new Set())} className="p-3 text-slate-500 hover:text-white hover:bg-red-500/20 rounded-xl transition-all">
-                          <Icon name="close" />
-                      </button>
-                  </div>
+          <div className="w-full px-6 py-2 bg-slate-800 border-b border-slate-700 z-10 animate-in slide-in-from-top-2 flex items-center gap-4">
+              <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-bold text-white">{selectedIds.size} selected</span>
               </div>
+              <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={handleCreateManifestFromSelection} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-all text-white text-xs font-medium whitespace-nowrap">
+                      <Icon name="auto_stories" className="text-green-400 text-sm" />
+                      Group into Manifest
+                  </button>
+
+                  {selectionDNA.hasGPS && (
+                      <button onClick={() => setView('map')} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-all text-white text-xs font-medium whitespace-nowrap">
+                          <Icon name="explore" className="text-blue-400 text-sm" />
+                          View on Map
+                      </button>
+                  )}
+
+                  <button onClick={() => onCatalogSelection?.(Array.from(selectedIds))} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-all text-white text-xs font-medium whitespace-nowrap">
+                      <Icon name="table_chart" className="text-amber-400 text-sm" />
+                      Edit Metadata
+                  </button>
+
+                  <button onClick={() => onBatchEdit(Array.from(selectedIds))} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-all text-white text-xs font-medium whitespace-nowrap">
+                      <Icon name="edit" className="text-purple-400 text-sm" />
+                      Batch Edit
+                  </button>
+              </div>
+              <div className="flex-1"></div>
+              <button onClick={() => setSelectedIds(new Set())} className="p-1.5 text-slate-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-all" title="Clear selection">
+                  <Icon name="close" className="text-sm" />
+              </button>
           </div>
       )}
 

@@ -198,13 +198,13 @@ graph LR
 - [x] **Selector Abstraction** - ✅ Now integrated into Viewer.tsx for region parsing, share URLs, and evidence extraction.
 - [x] **Migrate App.tsx to Vault** - Full migration to Vault state management.
 - [x] **UX: Metadata Complexity Slider** - Progressive disclosure of metadata fields.
-- [ ] **Search: Autocomplete Service** - Logic ready. ⚠️ PARTIAL: UI disconnected.
+- [x] **Search: Autocomplete Service** - ✅ Wired to SearchView with recent searches, type filters, and word suggestions.
 - [x] **Annotation: Polygon Tool** - ✅ `PolygonAnnotationTool` now wired into Viewer.tsx with draw button in toolbar.
 - [x] **Extension Preservation** - ✅ SpecBridge now preserves vendor extension properties during v2→v3 upgrade.
-- [ ] **Content-Addressable Storage (Hashing)** - Service ready. ⚠️ PARTIAL: Unused.
+- [x] **Content-Addressable Storage (Hashing)** - ✅ fileIntegrity service wired into iiifBuilder.ts for duplicate detection during ingest.
 - [x] **Activity Stream** - ✅ Now integrated into ExportDialog as "Activity Log (Change Discovery)" export format.
 - [x] **Ingest: Visual Preview Wizard** - 6-step ingest flow with preview.
-- [ ] **CSV/Spreadsheet Sync** - Component ready. ⚠️ PARTIAL: Unused.
+- [x] **CSV/Spreadsheet Sync** - ✅ MetadataSpreadsheet has full CSV export/import functionality wired and active.
 
 ### Core Infrastructure (Phase 1 & 2)
 - [x] **Vault: Normalized State** - O(1) entity lookup and normalization.
@@ -213,7 +213,7 @@ graph LR
 - [x] **Service Worker Image API** - IIIF Image API 3.0 Level 2 implementation.
 - [x] **IndexedDB Storage** - Local-first persistence.
 - [x] **Search Service** - Full-text search using FlexSearch.
-- [ ] **Virtualized Data Model** - Service ready. ⚠️ PARTIAL: Unused.
+- [ ] **Virtualized Data Model** - Service ready with LRU cache and React hooks. Requires architectural refactoring to integrate with current state management.
 
 ### User Interface (Phase 1 & 2)
 - [x] **3-Panel Layout** - Resizable workspace.

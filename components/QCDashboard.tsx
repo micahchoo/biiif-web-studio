@@ -30,6 +30,17 @@ export const QCDashboard: React.FC<QCDashboardProps> = ({ issuesMap, totalItems,
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [showAddMenu, setShowAddMenu] = useState(false);
 
+  // Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const allIssues = useMemo(() => Object.values(issuesMap).flat(), [issuesMap]);
   const categoryIssues = useMemo(() => allIssues.filter(i => i.category === activeCategory), [allIssues, activeCategory]);
   

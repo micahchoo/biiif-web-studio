@@ -270,7 +270,23 @@ export const contentStateService = {
   generateLink: (baseUrl: string, viewport: ViewportState): string => {
     const state = contentStateService.createContentState(viewport);
     const encoded = contentStateService.encode(state);
-    const url = new URL(baseUrl);
+
+    // Ensure the base URL is properly formed
+    let cleanBaseUrl = baseUrl;
+
+    // Handle cases where pathname might be just "/" or missing
+    if (cleanBaseUrl.endsWith('/')) {
+      // Remove trailing slash for cleaner URL
+      cleanBaseUrl = cleanBaseUrl.slice(0, -1);
+    }
+
+    // If it's just the origin with no path, add the app base path
+    const appBasePath = import.meta.env.BASE_URL || '/';
+    if (cleanBaseUrl === window.location.origin) {
+      cleanBaseUrl = window.location.origin + appBasePath.replace(/\/$/, '');
+    }
+
+    const url = new URL(cleanBaseUrl);
     url.searchParams.set('iiif-content', encoded);
     return url.toString();
   },

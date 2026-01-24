@@ -4,7 +4,7 @@ import { IIIFItem, getIIIFValue } from '../types';
 import { exportService, ExportOptions, VirtualFile } from '../services/exportService';
 import { staticSiteExporter, StaticSiteConfig } from '../services/staticSiteExporter';
 import { archivalPackageService, ArchivalPackageOptions } from '../services/archivalPackageService';
-import { activityStreamService } from '../services/activityStream';
+import { activityStream as activityStreamService } from '../services/activityStream';
 import { validator, ValidationIssue } from '../services/validator';
 import { Icon } from './Icon';
 import { ExportDryRun } from './ExportDryRun';
@@ -27,6 +27,17 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState({ status: '', percent: 0 });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Escape key to close (unless processing)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !processing) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, processing]);
   
   const [virtualFiles, setVirtualFiles] = useState<VirtualFile[]>([]);
   const [integrityIssues, setIntegrityIssues] = useState<ValidationIssue[]>([]);

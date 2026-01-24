@@ -391,6 +391,39 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
                         </div>
                     )}
 
+                    {/* Required Statement (standard+) */}
+                    {isFieldVisible('requiredStatement', settings.metadataComplexity) && (
+                        <div className={`pt-4 border-t ${settings.fieldMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                            <label className={`block text-[10px] font-black mb-1 uppercase tracking-widest ${settings.fieldMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                Required Statement (Attribution)
+                            </label>
+                            <div className="space-y-2">
+                                <DebouncedInput
+                                    placeholder="Attribution Label (e.g., 'Courtesy of')"
+                                    value={getIIIFValue(resource.requiredStatement?.label, settings.language) || ''}
+                                    onChange={(val: string) => onUpdateResource({
+                                        requiredStatement: {
+                                            label: { [settings.language]: [val] },
+                                            value: resource.requiredStatement?.value || { [settings.language]: [''] }
+                                        }
+                                    })}
+                                    className={`w-full text-xs p-2 rounded-lg outline-none font-bold shadow-sm border ${settings.fieldMode ? 'bg-slate-900 text-white border-slate-800' : 'bg-white text-slate-900 border-slate-300'}`}
+                                />
+                                <DebouncedInput
+                                    placeholder="Attribution Value (e.g., institution name)"
+                                    value={getIIIFValue(resource.requiredStatement?.value, settings.language) || ''}
+                                    onChange={(val: string) => onUpdateResource({
+                                        requiredStatement: {
+                                            label: resource.requiredStatement?.label || { [settings.language]: ['Attribution'] },
+                                            value: { [settings.language]: [val] }
+                                        }
+                                    })}
+                                    className={`w-full text-xs p-2 rounded-lg outline-none shadow-sm border ${settings.fieldMode ? 'bg-slate-900 text-white border-slate-800' : 'bg-white text-slate-900 border-slate-300'}`}
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     {isFieldVisible('viewingDirection', settings.metadataComplexity) && (resource.type === 'Manifest' || resource.type === 'Range') && (
                         <div className={`pt-4 border-t ${settings.fieldMode ? 'border-slate-800' : 'border-slate-100'}`}>
                             <label htmlFor="viewingdir-field" className={`block text-[10px] font-black mb-1 uppercase tracking-widest ${settings.fieldMode ? 'text-slate-500' : 'text-slate-400'}`}>

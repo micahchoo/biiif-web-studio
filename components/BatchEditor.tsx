@@ -75,7 +75,18 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({ ids, root, onApply, on
     const snapshot = loadBatchSnapshot();
     setExistingSnapshot(snapshot);
   }, []);
-  
+
+  // Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Rename State
   const [renamePattern, setRenamePattern] = useState('{orig}');
   

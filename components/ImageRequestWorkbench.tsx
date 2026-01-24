@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { IIIFCanvas, IIIFItem } from '../types';
 import { Icon } from './Icon';
 import { useToast } from './Toast';
@@ -19,12 +19,50 @@ interface ImageApiParams {
 
 export const ImageRequestWorkbench: React.FC<ImageRequestWorkbenchProps> = ({ canvas, onClose }) => {
   const { showToast } = useToast();
-  
+
   const paintingBody = canvas.items?.[0]?.items?.[0]?.body as any;
   const service = paintingBody?.service?.[0];
-  const imageId = service?.id || paintingBody?.id || '';
+
+  // Get the image ID and ensure it has the correct base path
+  const rawImageId = service?.id || paintingBody?.id || '';
+  const baseUrl = import.meta.env.BASE_URL || '/';
+
+  // If the URL is relative or missing the base path, add it
+  const imageId = useMemo(() => {
+    if (!rawImageId) return '';
+
+    // If it's an absolute URL (http/https), use as-is
+    if (rawImageId.startsWith('http://') || rawImageId.startsWith('https://')) {
+      // Check if it's pointing to our local service and needs the base path
+      const origin = window.location.origin;
+      if (rawImageId.startsWith(origin) && !rawImageId.includes(baseUrl)) {
+        // Insert base path after origin
+        return rawImageId.replace(origin, origin + baseUrl.replace(/\/$/, ''));
+      }
+      return rawImageId;
+    }
+
+    // If it's a relative URL starting with /, add base path
+    if (rawImageId.startsWith('/') && !rawImageId.startsWith(baseUrl)) {
+      return baseUrl.replace(/\/$/, '') + rawImageId;
+    }
+
+    return rawImageId;
+  }, [rawImageId, baseUrl]);
+
   const isImageService = !!service;
-  
+
+  // Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const [params, setParams] = useState<ImageApiParams>({
     region: 'full',
     size: 'max',
@@ -65,8 +103,8 @@ export const ImageRequestWorkbench: React.FC<ImageRequestWorkbenchProps> = ({ ca
   const url = isImageService ? `${imageId}/${params.region}/${params.size}/${params.rotation}/${params.quality}.${params.format}` : imageId;
 
   return (
-    <div className="fixed inset-0 z-[800] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto">
-        <div className="bg-white w-full max-w-6xl h-[90vh] rounded-2xl shadow-2xl border border-slate-200 flex overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl border border-slate-200 flex overflow-hidden animate-in fade-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
             
             <div className="flex-1 bg-slate-900 relative flex flex-col overflow-hidden">
                 <div className="h-12 border-b border-white/10 flex items-center px-6 justify-between bg-black/20 shrink-0">

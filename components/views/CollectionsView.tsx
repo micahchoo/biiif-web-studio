@@ -16,11 +16,22 @@ interface CollectionsViewProps {
   abstractionLevel?: AbstractionLevel;
   onReveal?: (id: string, mode: any) => void;
   onSynthesize?: (id: string) => void;
+  onSelect?: (id: string) => void; // Notify parent of selection change
+  selectedId?: string | null; // Optional external control of selected ID
 }
 
-export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate, abstractionLevel = 'standard', onReveal, onSynthesize }) => {
+export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate, abstractionLevel = 'standard', onReveal, onSynthesize, onSelect, selectedId: externalSelectedId }) => {
   const { showToast } = useToast();
-  const [selectedId, setSelectedId] = useState<string | null>(root?.id || null);
+  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(root?.id || null);
+
+  // Use external selectedId if provided, otherwise use internal state
+  const selectedId = externalSelectedId !== undefined ? externalSelectedId : internalSelectedId;
+
+  // Handle selection - update internal state and notify parent
+  const handleSelect = (id: string) => {
+    setInternalSelectedId(id);
+    onSelect?.(id);
+  };
 
   const findNode = (node: IIIFItem, id: string): IIIFItem | null => {
     if (node.id === id) return node;
@@ -147,7 +158,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate
       <div className="flex-1 flex min-h-0">
         <div className="w-80 flex flex-col border-r border-slate-200 bg-white shadow-inner overflow-y-auto p-4 custom-scrollbar">
             {root ? (
-                <TreeNode node={root} selectedId={selectedId} onSelect={setSelectedId} onDrop={handleReorderDrag} level={0} />
+                <TreeNode node={root} selectedId={selectedId} onSelect={handleSelect} onDrop={handleReorderDrag} level={0} />
             ) : null}
         </div>
 
@@ -163,26 +174,35 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate
                             <h2 className="font-bold text-slate-800 truncate">{getIIIFValue(selectedNode.label)}</h2>
                         </div>
                         <div className="flex gap-2">
-                             <button 
+                             <button
                                 onClick={() => onReveal?.(selectedNode.id, 'archive')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 hover:text-iiif-blue transition-all"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-iiif-blue hover:bg-slate-100 rounded-lg transition-all"
+                                title="Show this item in the Archive grid view"
                              >
-                                <Icon name="inventory_2" className="text-xs"/> Reveal in Archive
+                                <Icon name="inventory_2" className="text-sm"/> Archive
                              </button>
-                             {selectedNode.type === 'Manifest' && (
-                                <button 
-                                    onClick={() => onSynthesize?.(selectedNode.id)}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-100 transition-all shadow-sm"
+                             {selectedNode.type === 'Canvas' && (
+                                <button
+                                    onClick={() => onReveal?.(selectedNode.id, 'viewer')}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-iiif-blue hover:bg-slate-100 rounded-lg transition-all"
+                                    title="Open this canvas in the image viewer"
                                 >
-                                    <Icon name="layers" className="text-xs"/> Synthesis Workbench
+                                    <Icon name="visibility" className="text-sm"/> View
                                 </button>
                              )}
-                             {selectedNode.type === 'Canvas' && (
-                                <button 
-                                    onClick={() => onReveal?.(selectedNode.id, 'viewer')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 hover:text-iiif-blue transition-all"
+                             {selectedNode.type === 'Manifest' && (
+                                <button
+                                    onClick={() => {
+                                      // Open first canvas of manifest in viewer
+                                      const firstCanvas = (selectedNode as any).items?.[0];
+                                      if (firstCanvas) {
+                                        onReveal?.(firstCanvas.id, 'viewer');
+                                      }
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-iiif-blue hover:bg-slate-100 rounded-lg transition-all"
+                                    title="Open the first canvas of this manifest in the viewer"
                                 >
-                                    <Icon name="visibility" className="text-xs"/> View in Workbench
+                                    <Icon name="play_arrow" className="text-sm"/> Preview
                                 </button>
                              )}
                         </div>
@@ -197,15 +217,28 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ root, onUpdate
                                 
                                 <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
                                     <h4 className="text-xs font-black uppercase text-slate-400 mb-4 tracking-widest">Behavior Policies</h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {(['individuals', 'paged', 'continuous', 'unordered'] as const).map(b => (
-                                            <button 
-                                                key={b} 
-                                                onClick={() => handleUpdate(selectedId!, { behavior: [b] })}
-                                                className={`p-3 rounded-lg border text-left flex items-center justify-between transition-all ${selectedNode.behavior?.includes(b) ? 'bg-iiif-blue text-white border-iiif-blue shadow-lg scale-[1.02]' : 'bg-white text-slate-600 border-slate-200 hover:border-iiif-blue'}`}
+                                    <p className="text-xs text-slate-500 mb-4">
+                                        Behaviors tell IIIF viewers how to display the content. Choose the one that best matches your material.
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {([
+                                          { key: 'individuals', label: 'Individuals', desc: 'Each canvas is shown separately (photos, single pages)' },
+                                          { key: 'paged', label: 'Paged', desc: 'Two-page spreads like an open book (manuscripts, books)' },
+                                          { key: 'continuous', label: 'Continuous', desc: 'Scrolling view for long content (scrolls, panoramas)' },
+                                          { key: 'unordered', label: 'Unordered', desc: 'No specific order (collections of related items)' }
+                                        ] as const).map(b => (
+                                            <button
+                                                key={b.key}
+                                                onClick={() => handleUpdate(selectedId!, { behavior: [b.key] })}
+                                                className={`p-4 rounded-lg border text-left transition-all ${selectedNode.behavior?.includes(b.key) ? 'bg-iiif-blue text-white border-iiif-blue shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:border-iiif-blue hover:bg-blue-50'}`}
                                             >
-                                                <span className="text-xs font-bold capitalize">{b}</span>
-                                                {selectedNode.behavior?.includes(b) && <Icon name="check_circle" className="text-sm"/>}
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-sm font-bold">{b.label}</span>
+                                                    {selectedNode.behavior?.includes(b.key) && <Icon name="check_circle" className="text-sm"/>}
+                                                </div>
+                                                <span className={`text-xs ${selectedNode.behavior?.includes(b.key) ? 'text-white/80' : 'text-slate-400'}`}>
+                                                    {b.desc}
+                                                </span>
                                             </button>
                                         ))}
                                     </div>

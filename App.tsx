@@ -152,7 +152,9 @@ const MainApp: React.FC = () => {
     preloadedManifest?: string | null;
   }>({});
 
-  const [settings, setSettings] = useState<AppSettings>({
+  // Load settings from localStorage with defaults
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const defaults: AppSettings = {
       defaultBaseUrl: 'http://localhost',
       language: 'en',
       theme: 'light',
@@ -166,7 +168,28 @@ const MainApp: React.FC = () => {
       showTechnicalIds: false,
       metadataTemplate: METADATA_TEMPLATES.ARCHIVIST,
       metadataComplexity: 'standard'
+    };
+    try {
+      const stored = localStorage.getItem('iiif-field-settings');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Merge stored settings with defaults (in case new settings were added)
+        return { ...defaults, ...parsed };
+      }
+    } catch (e) {
+      console.warn('Failed to load settings from localStorage:', e);
+    }
+    return defaults;
   });
+
+  // Persist settings to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('iiif-field-settings', JSON.stringify(settings));
+    } catch (e) {
+      console.warn('Failed to save settings to localStorage:', e);
+    }
+  }, [settings]);
 
   const [validationIssuesMap, setValidationIssuesMap] = useState<Record<string, ValidationIssue[]>>({});
   const [storageUsage, setStorageUsage] = useState<{usage: number, quota: number} | null>(null);
@@ -210,9 +233,32 @@ const MainApp: React.FC = () => {
         const viewport = contentStateService.parseFromUrl();
         if (viewport) {
           console.log('[App] Content State detected:', viewport);
-          setSelectedId(viewport.canvasId);
-          setCurrentMode('viewer');
-          setShowInspector(true);
+
+          // Try to find the canvas in the loaded project
+          const findInProject = (node: IIIFItem | null, id: string): IIIFItem | null => {
+            if (!node) return null;
+            if (node.id === id) return node;
+            const children = (node as any).items || [];
+            for (const child of children) {
+              const found = findInProject(child, id);
+              if (found) return found;
+            }
+            return null;
+          };
+
+          const item = proj ? findInProject(proj, viewport.canvasId) : null;
+
+          if (item) {
+            setSelectedId(viewport.canvasId);
+            setCurrentMode('viewer');
+            setShowInspector(true);
+          } else {
+            // Item not found - show feedback and stay on archive view
+            console.warn('[App] Content State canvas not found:', viewport.canvasId);
+            showToast('The shared item could not be found in this archive', 'info');
+            // Clear the content state from URL to avoid confusion
+            window.history.replaceState({}, '', window.location.pathname);
+          }
         }
       });
       if (!localStorage.getItem('iiif-field-setup-complete')) { setShowOnboarding(true); }
@@ -381,7 +427,15 @@ const MainApp: React.FC = () => {
                   <ViewErrorFallback viewName="Structure" error={error} onRetry={retry} onSwitchView={() => setCurrentMode('archive')} />
                 )}
               >
-                <CollectionsView root={root} onUpdate={handleUpdateRoot} abstractionLevel={settings.abstractionLevel} onReveal={(id, mode) => handleReveal(id, mode as AppMode)} onSynthesize={handleManifestSynthesis} />
+                <CollectionsView
+                  root={root}
+                  onUpdate={handleUpdateRoot}
+                  abstractionLevel={settings.abstractionLevel}
+                  onReveal={(id, mode) => handleReveal(id, mode as AppMode)}
+                  onSynthesize={handleManifestSynthesis}
+                  selectedId={selectedId}
+                  onSelect={(id) => { setSelectedId(id); setShowInspector(true); }}
+                />
               </ErrorBoundary>
             )}
             {currentMode === 'metadata' && (

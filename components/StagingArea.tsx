@@ -19,11 +19,22 @@ export const StagingArea: React.FC<StagingAreaProps> = ({ initialTree, existingR
   const [step, setStep] = useState<WizardStep>('analyze');
   const [merge, setMerge] = useState(!!existingRoot);
   const [progress, setProgress] = useState({ message: '', percent: 0 });
-  
+
   const [globalCreator, setGlobalCreator] = useState('');
   const [globalRights, setGlobalRights] = useState('https://creativecommons.org/licenses/by/4.0/');
   const [institution, setInstitution] = useState('');
   const [baseUrl, setBaseUrl] = useState(window.location.origin + '/iiif');
+
+  // Escape key to close (unless processing)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && step !== 'processing') {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel, step]);
 
   useEffect(() => {
     setTimeout(() => setStep('structure'), 800);

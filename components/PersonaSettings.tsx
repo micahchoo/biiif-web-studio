@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AbstractionLevel, AppSettings } from '../types';
 import { Icon } from './Icon';
 import { METADATA_TEMPLATES, MetadataComplexity, getVisibleFields, getFieldsByCategory } from '../constants';
@@ -11,6 +11,16 @@ interface PersonaSettingsProps {
 }
 
 export const PersonaSettings: React.FC<PersonaSettingsProps> = ({ settings, onUpdate, onClose }) => {
+  // Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
   const handlePersonaSelect = (lvl: AbstractionLevel) => {
       let template = METADATA_TEMPLATES.ARCHIVIST;
       let showTechnical = true;

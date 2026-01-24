@@ -312,7 +312,6 @@ export const Viewer: React.FC<ViewerProps> = ({ item, manifestItems, manifest, o
         </div>
         
         <div className="flex items-center gap-2">
-            <button onClick={() => setShowComposer(true)} className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-bold mr-2 border border-indigo-500 shadow-lg"><Icon name="layers" className="text-xs"/> Compose</button>
             {mediaType === 'image' && (
               <>
                 <div className="flex items-center border-r border-slate-700 pr-2 mr-1">
