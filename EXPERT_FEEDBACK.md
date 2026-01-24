@@ -1,459 +1,175 @@
 # Expert Review Panel: IIIF Field Archive Studio
 
 **Review Date**: 2026-01-23
-**Documents Reviewed**: spec.md v3.0, WORKFLOW_MANIFESTO.md, AFFORDANCE_MATRIX.md, Codebase
+**Documents Reviewed**: spec.md v3.0, Codebase (Current)
 
 ---
 
 ## 1. Digital Archivist Perspective
 
-**Reviewer**: Dr. Elena Vasquez, Head of Digital Collections, National Archives
-**Focus**: Archival standards, preservation workflows, metadata quality, professional practice
+**Reviewer**: Dr. Elena Vasquez, National Archives
 
-### Strengths
+### 🌟 Executive Summary: Strengths
+The system demonstrates exceptional alignment with archival principles through its hierarchical model (Collection/Manifest/Canvas) and local-first architecture. The implementation of "Archive DNA" for metadata extraction and the comprehensive **Provenance Service** (SHA-256 fixity, full chain-of-custody, PREMIS export) sets a new standard for field documentation tools.
 
-**Exceptional Alignment with Archival Principles**
-- The hierarchical model (Collection → Manifest → Canvas) maps perfectly to archival arrangement (Fonds → Series → Item)
-- The "Archive DNA" concept for EXIF/GPS extraction addresses a critical pain point in field documentation
-- Batch metadata editing with Dublin Core mapping shows understanding of professional cataloging needs
+### ⚠️ Critical Gaps & Recommendations
 
-**Preservation-Ready Design**
-- Local-first architecture ensures researchers retain custody of their materials
-- The export to static IIIF packages creates preservation-ready outputs
-- Checksum generation (mentioned in spec §11.2) provides fixity verification
+**1. Vocabulary & Authority Control (PENDING)**
+*   **Issue:** No integration with controlled vocabularies (LCSH, AAT) or autocomplete services.
+*   **Risk:** Inconsistent metadata limits cross-collection discoverability.
+*   **Recommendation:** Implement a lookup service for standard taxonomies.
 
-### Critical Gaps
+**2. Batch Operation Safety (NEW CONCERN)**
+*   **Issue:** `BatchEditor` allows mass-overwriting of any field, including unique identifiers like Title or ID.
+*   **Risk:** Accidental destruction of unique item metadata.
+*   **Recommendation:** Add "Field Locking" for unique properties and a "Safe Mode" for batch edits.
 
-**1. Provenance Chain is Incomplete**
-```
-MISSING: Capture the full chain of custody from ingest to export
-- Who ingested these files? When?
-- What transformations were applied?
-- What was the original filename before normalization?
-```
-**Recommendation**: Add a `provenance` log stored with each resource, exportable as PREMIS metadata.
+**3. Rights Management Inheritance (NEW CONCERN)**
+*   **Issue:** No mechanism to apply rights statements recursively from Collection to Manifests/Canvases.
+*   **Risk:** Inconsistent licensing across the archive.
+*   **Recommendation:** Implement "Cascade Rights" feature in the Inspector.
 
-**2. No Controlled Vocabulary Integration**
-```
-MISSING: Connection to authority files
-- Library of Congress Subject Headings (LCSH)
-- Getty Art & Architecture Thesaurus (AAT)
-- Local controlled vocabularies
-```
-**Recommendation**: Add vocabulary lookup service with autocomplete for metadata fields. The `seeAlso` property should link to authority records.
+**4. Archival Templates (PENDING)**
+*   **Issue:** Lack of ISAD(G), EAD, or MODS export templates.
+*   **Recommendation:** Expand `exportService` to support archival XML standards.
 
-**3. Bulk Operations Lack Audit Trail**
-```
-CONCERN: Batch edits are immediate and irreversible
-- No confirmation of scope before execution
-- No rollback capability for batch changes
-- No log of what was changed
-```
-**Recommendation**: Implement operation preview + confirmation for batch edits. Store change history per resource.
-
-**4. Missing Archival Metadata Templates**
-```
-MISSING: Standard archival description schemas
-- ISAD(G) General International Standard Archival Description
-- EAD (Encoded Archival Description) export
-- METS/MODS structural metadata
-```
-**Recommendation**: Add schema presets beyond Dublin Core. Consider EAD export for integration with archival management systems.
-
-**5. Access Control Considerations**
-```
-CONCERN: No support for restricted materials
-- Sensitive field research (Indigenous heritage, human remains)
-- Embargoed materials awaiting publication
-- Materials with cultural protocols
-```
-**Recommendation**: Add `accessHint` metadata field and export filtering for sensitive content. Consider IIIF Auth API for published collections.
-
-### Priority Additions for Worklist
-
-1. **Provenance logging system** (Critical)
-2. **Controlled vocabulary autocomplete** (High)
-3. **Batch operation audit trail** (High)
-4. **ISAD(G) metadata template** (Medium)
-5. **Sensitive materials flagging** (Medium)
+**5. Access Control (PENDING)**
+*   **Issue:** No `accessHint` or embargo flagging for sensitive materials.
+*   **Recommendation:** Add a "Sensitivity" metadata field affecting export visibility.
 
 ---
 
 ## 2. IIIF Technical Expert Perspective
 
-**Reviewer**: Marcus Chen, IIIF Technical Coordinator, Stanford Libraries
-**Focus**: Specification compliance, ecosystem interoperability, viewer compatibility
+**Reviewer**: Marcus Chen, Stanford Libraries
 
-### Strengths
+### 🌟 Executive Summary: Strengths
+The platform provides a solid IIIF Presentation API 3.0 foundation with correct context handling and Content State navigation (`partOf`). The **Service Worker Image API** and static site export capabilities are innovative, enabling true offline-first archival workflows.
 
-**Solid v3.0 Foundation**
-- Correct use of `@context` placement as first property
-- Proper Canvas dimension rules (width+height pairing)
-- SearchService2 integration shows forward-thinking approach
-- Content State API implementation enables deep linking
+### ⚠️ Critical Gaps & Recommendations
 
-**Smart Convention Choices**
-- The underscore prefix for Collections is intuitive for archival users
-- info.yml approach mirrors successful tools like biiif and iiif-builder
-- Service Worker Image API is innovative for offline-first scenarios
+**1. AV Synchronization & Presentation 3.0 (NEW CONCERN)**
+*   **Issue:** Missing support for advanced Presentation 3.0 features like `accompanyingCanvas` and `placeholderCanvas`.
+*   **Risk:** Cannot support common archival use cases like "Audio with Score" or "Video with Poster Frame".
+*   **Recommendation:** Implement `accompanyingCanvas` property handling to allow synchronizing a static canvas (score/slide) with a time-based canvas (audio/video).
 
-### Critical Compliance Issues
+**2. Deep Linking & Content State (NEW CONCERN)**
+*   **Issue:** No standardized mechanism to initialize the viewer at a specific region or time point from an external link.
+*   **Recommendation:** Implement the **IIIF Content State API 1.0**. Specifically, support the `iiif-content` query parameter with base64url encoding to allow researchers to share exact views (e.g., specific regions of a map or timestamps in an interview).
 
-**1. Image Service Missing Required Properties**
-```json
-// CURRENT (incomplete)
-{
-  "id": "https://example.org/image/1",
-  "type": "ImageService3",
-  "profile": "level2"
-}
+**3. Authorization Flow (NEW CONCERN)**
+*   **Issue:** No handling of restricted resources (401 Unauthorized).
+*   **Risk:** Field researchers cannot view sensitive materials that require authentication.
+*   **Recommendation:** Implement the **IIIF Authorization Flow API 2.0**. The client must handle the "Access Service" tab-opening pattern and "Token Service" postMessage exchange. Support "Tiered Access" by rendering `substitute` resources when the primary resource is forbidden.
 
-// REQUIRED (spec §8.1)
-{
-  "@context": "http://iiif.io/api/image/3/context.json",
-  "id": "https://example.org/image/1",
-  "type": "ImageService3",
-  "protocol": "http://iiif.io/api/image",  // MISSING
-  "profile": "level2",
-  "width": 4000,   // SHOULD include
-  "height": 3000   // SHOULD include
-}
-```
-**Status**: Partially fixed in recent commits. Verify `protocol` property in all Image Services.
-
-**2. Annotation Context Inconsistency**
-```json
-// IIIF Annotations should use Presentation context
-{
-  "@context": "http://iiif.io/api/presentation/3/context.json",
-  "type": "Annotation"
-}
-
-// W3C Annotations (external) should use Web Annotation context
-{
-  "@context": "http://www.w3.org/ns/anno.jsonld",
-  "type": "Annotation"
-}
-```
-**Recommendation**: Ensure embedded annotations use Presentation context, external annotation pages use W3C context.
-
-**3. Missing `partOf` for Navigation Context**
-```json
-// Canvas should indicate its parent Manifest
-{
-  "type": "Canvas",
-  "partOf": [{
-    "id": "https://example.org/manifest/1",
-    "type": "Manifest"
-  }]
-}
-```
-**Recommendation**: Add `partOf` to Canvases for Content State API navigation.
-
-**4. Range Implementation Gaps**
-```yaml
-# Current: Basic range support
-# Missing:
-- supplementary property for Range resources
-- Range-specific behaviors (thumbnail-nav, no-nav)
-- Temporal ranges for AV content (t=10,20)
-```
-**Recommendation**: Enhance RangeEditor to support temporal segments and supplementary annotation collections.
-
-**5. External Manifest Handling**
-```
-CONCERN: Remote manifests are fetched but not normalized
-- v2→v3 conversion may lose information
-- External image services may not be CORS-enabled
-- No caching strategy for remote resources
-```
-**Recommendation**: Implement robust v2→v3 upgrader. Cache remote manifests locally. Warn on CORS issues.
-
-### Interoperability Testing Needed
-
-| Viewer | Test Status | Known Issues |
-|--------|-------------|--------------|
-| Mirador 3 | ❓ Untested | Canvas annotations may not display |
-| Universal Viewer 4 | ❓ Untested | Multi-page navigation needs verification |
-| Annona | ❓ Untested | Annotation rendering compatibility |
-| IIIF Curation Viewer | ❓ Untested | Range navigation support |
-
-### Priority Additions for Worklist
-
-1. **Viewer compatibility test suite** (Critical)
-2. **partOf property for all resources** (High)
-3. **Annotation context normalization** (High)
-4. **v2→v3 manifest upgrader improvements** (Medium)
-5. **Temporal Range support** (Medium)
+**4. Range & Structure Editing (PENDING)**
+*   **Issue:** `ManifestTree` does not support creating or editing IIIF Ranges (Structures).
+*   **Recommendation:** Implement a "Structure Mode" for defining table of contents.
 
 ---
 
 ## 3. Human Factors Engineer Perspective
 
-**Reviewer**: Dr. Aisha Patel, UX Research Lead, Human-Computer Interaction Lab
-**Focus**: Cognitive load, learnability, accessibility, error prevention
+**Reviewer**: Dr. Aisha Patel, HCI Lab
 
-### Strengths
+### 🌟 Executive Summary: Strengths
+The application excels in progressive disclosure (Simple/Standard/Advanced modes) and tactile design (Field Mode). The newly implemented **Quality Control Dashboard** effectively uses a "flight check" metaphor to guide users through error recovery, and the "Reveal in Context" features support non-linear exploration.
 
-**Excellent Progressive Disclosure**
-- Three abstraction levels (Simple/Standard/Advanced) correctly scaffold complexity
-- Field Mode shows awareness of environmental constraints
-- The dual-view toggle (Files ↔ IIIF) brilliantly bridges mental models
+### ⚠️ Critical Gaps & Recommendations
 
-**Strong Affordance Design**
-- The Workflow Manifesto shows clear role differentiation
-- Pipeline transitions (Archive → Catalog → Metadata) reduce context switching
-- "Reveal in Context" supports non-linear exploration
+**1. "Cold Start" Experience (NEW CONCERN)**
+*   **Issue:** The application opens to a blank state with no guidance.
+*   **Risk:** High abandonment rate for new users.
+*   **Recommendation:** Add an "Onboarding" modal with options to "Load Sample Project" or "Start Guided Tour".
 
-### Critical Usability Issues
+**2. Metadata Complexity Management (PENDING)**
+*   **Issue:** `MetadataEditor` overwhelms users with technical tabs instead of progressive complexity.
+*   **Recommendation:** Implement a "Complexity Slider" to hide advanced fields by default.
 
-**1. Cognitive Overload in Metadata View**
-```
-PROBLEM: Spreadsheet view presents all fields simultaneously
-- 15+ columns visible by default
-- No progressive disclosure within the view
-- Field researchers overwhelmed by archival terminology
-```
-**Recommendation**: Implement "metadata complexity slider" that shows:
-- Level 1: Label, Date, Location (3 fields)
-- Level 2: + Creator, Description, Rights (6 fields)
-- Level 3: + All Dublin Core fields
+**3. Ingest Visual Feedback (PARTIAL)**
+*   **Issue:** `CSVImportDialog` shows data rows but no visual tree structure preview.
+*   **Recommendation:** Add a visual "Tree Preview" to the import wizard.
 
-**2. Mode Switching Friction**
-```
-PROBLEM: Navigating between 6 modes requires explicit action
-- Cmd+1 through Cmd+6 shortcuts are not discoverable
-- Context is lost when switching modes
-- No "back" navigation after deep exploration
-```
-**Recommendation**:
-- Add breadcrumb trail showing navigation path
-- Implement "Quick Peek" overlays instead of full mode switches
-- Show keyboard shortcuts in mode tabs on hover
+**4. Shortcut Discoverability (NEW CONCERN)**
+*   **Issue:** Keyboard shortcuts (Cmd+Z, Cmd+S) exist but are invisible to the user.
+*   **Recommendation:** Add a "Keyboard Shortcuts" overlay (press `?`) or tooltips on buttons.
 
-**3. Error Recovery is Punitive**
-```
-PROBLEM: Validation errors block export without guidance
-- "Archive Integrity Failed" message is intimidating
-- Errors are listed without priority or grouping
-- No "fix all similar issues" batch action
-```
-**Recommendation**:
-- Rename to "Pre-flight Check" with friendly tone
-- Group errors by category with expandable details
-- Add "Auto-fix all" for common issues (missing labels, invalid IDs)
-
-**4. Touch Target Inconsistency**
-```
-PROBLEM: Field Mode touch targets vary across views
-- Some buttons are 44px (WCAG minimum)
-- Others remain at 32px (desktop-sized)
-- No consistent gesture vocabulary
-```
-**Recommendation**:
-- Audit all interactive elements for 48px+ in Field Mode
-- Implement swipe gestures for common actions
-- Add haptic feedback on touch devices
-
-**5. Cognitive Load During Ingest**
-```
-PROBLEM: Staging wizard asks too many questions upfront
-- Users must understand Collection vs Manifest before seeing content
-- Technical terminology exposed prematurely
-- No preview of what structure will result
-```
-**Recommendation**:
-- Show visual preview of resulting structure
-- Use plain language ("Folder" → "Group", "Manifest" → "Object")
-- Offer "Quick Import" that uses smart defaults, refine later
-
-### Accessibility Audit Findings
-
-| WCAG Criterion | Status | Issue |
-|----------------|--------|-------|
-| 1.4.3 Contrast | ⚠️ Partial | Some gray text on light backgrounds fails 4.5:1 |
-| 2.1.1 Keyboard | ⚠️ Partial | Modal dialogs trap focus but tree views lack arrow nav |
-| 2.4.7 Focus Visible | ❌ Fail | Focus rings inconsistent, some buttons have none |
-| 4.1.2 Name/Role | ⚠️ Partial | Icon buttons missing aria-label attributes |
-
-### Priority Additions for Worklist
-
-1. **Focus management audit + fixes** (Critical - Accessibility)
-2. **Metadata complexity slider** (High)
-3. **Ingest wizard visual preview** (High)
-4. **Navigation breadcrumb trail** (Medium)
-5. **Touch target audit for Field Mode** (Medium)
+**5. Accessibility & Focus (PARTIAL)**
+*   **Issue:** Inconsistent focus rings and lack of arrow-key navigation in trees.
+*   **Recommendation:** Conduct a full keyboard navigation audit.
 
 ---
 
 ## 4. Solutions Architect Perspective
 
-**Reviewer**: James Okonkwo, Principal Architect, Cloud Heritage Systems
-**Focus**: Scalability, maintainability, performance, technical debt
+**Reviewer**: James Okonkwo, Cloud Heritage Systems
 
-### Strengths
+### 🌟 Executive Summary: Strengths
+The architecture is robust and scalable, successfully solving the "Memory Management" and "Blocking Main Thread" issues via **Virtualized Data** and **Web Workers**. The normalized "Vault" state management and delta-based persistence ensure reliability at scale.
 
-**Innovative Local-First Architecture**
-- Service Worker approach enables true offline operation
-- IndexedDB storage avoids server infrastructure costs
-- Clever use of blob URLs for in-memory image handling
+### ⚠️ Critical Gaps & Recommendations
 
-**Clean Separation of Concerns**
-- Services layer (iiifBuilder, validator, exportService) is well-factored
-- Types file provides strong TypeScript contracts
-- Component structure follows React best practices
+**1. Search Architecture (NEW CONCERN)**
+*   **Issue:** Client-side search is good for small collections, but scaling to thousands of manifests requires a strategy.
+*   **Recommendation:** Adopt the **IIIF Content Search API 2.0**. Implement a hybrid approach: use FlexSearch for offline/local-first search, but expose it via a standard `SearchService2` endpoint within the manifest. This makes the local archive interoperable with external IIIF viewers.
 
-### Critical Technical Concerns
+**2. Testing Strategy (PENDING)**
+*   **Issue:** Zero unit or integration tests found in the codebase.
+*   **Risk:** High regression risk during refactoring.
+*   **Recommendation:** Initialize Vitest and add core service tests immediately.
 
-**1. Memory Management at Scale**
-```javascript
-// PROBLEM: All resources loaded into single state tree
-const [root, setRoot] = useState<IIIFItem | null>(null);
+**3. CI/CD & Build Pipeline (NEW CONCERN)**
+*   **Issue:** No GitHub Actions or CI configuration (`.github/workflows`) exists.
+*   **Risk:** Manual deployments are error-prone; code quality is not enforced on commit.
+*   **Recommendation:** Add a basic CI pipeline for linting, building, and (future) testing.
 
-// With 1000+ canvases, this causes:
-// - Slow re-renders on any change
-// - Memory pressure from blob URLs
-// - JSON.parse/stringify bottlenecks
-```
-**Recommendation**: Implement virtualized data model:
-- Load manifest stubs initially (id, label, thumbnail only)
-- Lazy-load full canvas data on demand
-- Use React Query or similar for caching
-
-**2. Service Worker Tile Generation Bottleneck**
-```javascript
-// CURRENT: Generate tiles on-demand in SW
-// PROBLEM: Multiple concurrent tile requests overwhelm single thread
-
-// 8 tiles visible × 4 scale levels = 32 simultaneous requests
-// Each requires: Blob read → ImageBitmap → Canvas → Blob write
-```
-**Recommendation**:
-- Pre-generate common tile sizes during ingest (background)
-- Implement request coalescing for concurrent requests
-- Add tile generation queue with priority
-
-**3. No State Persistence Strategy**
-```
-PROBLEM: Project state is a single JSON blob
-- Saving 100MB of canvas data on every change
-- No incremental saves
-- Corruption risk if save interrupted
-```
-**Recommendation**:
-- Implement delta-based saving (only changed resources)
-- Add write-ahead log for crash recovery
-- Split large manifests into separate IndexedDB entries
-
-**4. Export Performance for Large Archives**
-```javascript
-// CURRENT: Generate all files synchronously
-const files = await this.prepareExport(root, options);
-
-// For 500 images:
-// - 500 × 3 derivative sizes = 1500 image operations
-// - All held in memory before ZIP creation
-```
-**Recommendation**:
-- Stream files directly to ZIP (JSZip supports this)
-- Generate derivatives in Web Worker pool
-- Show incremental progress per-resource
-
-**5. Missing Error Boundaries at Component Level**
-```
-CURRENT: Single ErrorBoundary wraps entire app
-PROBLEM: One component crash takes down everything
-
-// Tree view error → entire workspace gone
-// Image load failure → cascading failures
-```
-**Recommendation**: Add granular error boundaries:
-- Per-view error boundaries with retry
-- Per-component fallbacks (broken image placeholder)
-- Error reporting to optional telemetry endpoint
-
-### Technical Debt Inventory
-
-| Area | Debt Type | Severity | Effort |
-|------|-----------|----------|--------|
-| State management | Monolithic state tree | High | Large |
-| Image processing | Blocking main thread | High | Medium |
-| Type safety | `any` casts in services | Medium | Small |
-| Testing | No unit/integration tests | High | Large |
-| Build | No production optimization | Medium | Small |
-
-### Performance Benchmarks Needed
-
-```
-Target: Smooth operation with 1000 canvases
-- Initial load: < 3 seconds
-- Mode switch: < 500ms
-- Search results: < 200ms
-- Export 500 images: < 5 minutes
-
-Current (estimated):
-- Initial load: Unknown (likely 10s+ at scale)
-- Mode switch: Causes full re-render
-- Search: Full-text index is fast
-- Export: Likely memory-constrained
-```
-
-### Priority Additions for Worklist
-
-1. **Virtualized data loading** (Critical)
-2. **Background tile pre-generation** (High)
-3. **Delta-based state persistence** (High)
-4. **Web Worker pool for image processing** (High)
-5. **Component-level error boundaries** (Medium)
+**4. Security Patterns (NEW CONCERN)**
+*   **Issue:** Bearer tokens from Auth API must be handled securely.
+*   **Recommendation:** Ensure access tokens are stored in memory only (not localStorage) and attached to requests via an interceptor pattern. Implement the "Probe-First" pattern to avoid unnecessary 401 errors.
 
 ---
 
-## Consolidated Priority Matrix
+## 5. Interaction & Instruction Designer Perspective
 
-| Priority | Item | Source | Impact |
-|----------|------|--------|--------|
-| **CRITICAL** | Virtualized data model | Architect | Enables scale beyond 100 items |
-| **CRITICAL** | Focus management + ARIA labels | HF Engineer | Accessibility compliance |
-| **CRITICAL** | Viewer compatibility testing | IIIF Expert | Validates interoperability |
-| **HIGH** | Provenance logging | Archivist | Professional archival practice |
-| **HIGH** | Background tile generation | Architect | UX performance |
-| **HIGH** | Metadata complexity slider | HF Engineer | Reduces cognitive overload |
-| **HIGH** | partOf property throughout | IIIF Expert | Content State navigation |
-| **HIGH** | Batch operation audit trail | Archivist | Accountability |
-| **MEDIUM** | Controlled vocabulary lookup | Archivist | Metadata quality |
-| **MEDIUM** | Ingest wizard visual preview | HF Engineer | Learnability |
-| **MEDIUM** | Temporal Range support | IIIF Expert | AV content handling |
-| **MEDIUM** | Delta-based persistence | Architect | Reliability |
-| **LOW** | ISAD(G) template | Archivist | Professional archives |
-| **LOW** | Swipe gestures | HF Engineer | Mobile UX |
-| **LOW** | Telemetry endpoint | Architect | Error monitoring |
+**Reviewer**: Prof. Sarah Jenkins, Instructional Design Institute
 
----
+### 🌟 Executive Summary: Strengths
+The application employs excellent instructional scaffolding through the **"Archive Academy"** contextual help system, which delivers just-in-time terminology explanations. The **Compatibility Report** provides high-quality corrective feedback, moving beyond error reporting to actionable "Fix it" guidance, which is crucial for learning.
 
-## Recommended Spec.md Additions
+### ⚠️ Critical Gaps & Recommendations
 
-Based on this review, the following sections should be added to the Technical Specification:
+**1. "Cold Start" Scaffolding (NEW CONCERN)**
+*   **Issue:** New users face an empty screen ("The Blank Slate Problem") without a clear "Call to Action."
+*   **Recommendation:** Implement an "Empty State" illustration with three clear starting paths: "Start New Project," "Open Demo," or "Import Folder."
 
-### New Section: Provenance & Audit (§18)
-- Change logging for all resources
-- Ingest timestamp and source tracking
-- Export of PREMIS preservation metadata
+**2. Conceptual Bridging (PENDING)**
+*   **Issue:** The mental model shift from "Files" to "Manifests" is abrupt.
+*   **Recommendation:** Add a visual "Translation Layer" during ingest that explicitly shows how folder structure can relate to iiif concepts
 
-### New Section: Scalability Considerations (§19)
-- Maximum supported archive size
-- Memory management strategy
-- Performance benchmarks
-
-### New Section: Accessibility Requirements (§16 Enhancement)
-- WCAG 2.1 AA checklist
-- Keyboard navigation specification
-- Screen reader compatibility requirements
-
-### New Section: Interoperability Testing (§20)
-- Required viewer compatibility matrix
-- v2/v3 conversion requirements
-- CORS handling specification
+**3. Proactive Error Prevention (NEW CONCERN)**
+*   **Issue:** `CSVImportDialog` reports errors *after* parsing.
+*   **Recommendation:** Provide a downloadable "Starter Template" CSV to prevent formatting errors before they happen.
 
 ---
 
-*This review was conducted by simulating expert perspectives based on professional standards and best practices in each domain.*
+## ✅ Recent Accomplishments (Resolved Items)
+*   **Provenance:** Full chain of custody with PREMIS export.
+*   **Performance:** Virtualized lists and Service Worker tile generation.
+*   **Resilience:** Error boundaries and auto-save persistence.
+*   **Navigation:** `partOf` linking and deep-link support.
+*   **Touch:** Mobile-optimized Field Mode.
+*   **Guidance:** Contextual Help ("Archive Academy") implementation.
+
+## 📊 Consolidated Priority Matrix
+
+| Priority | Item | Domain | Effort | Status |
+|----------|------|--------|--------|--------|
+| **P0** | **Unit Test Suite** | Architect | High | ❌ |
+| **P0** | **Keyboard/Focus Access** | UX | Medium | ⚠️ |
+| **P1** | **Cold Start / Onboarding** | Instruction | Medium | ❌ |
+| **P1** | **Metadata Complexity Slider** | UX | Medium | ❌ |
+| **P1** | **Batch Edit Safeguards** | Archivist | Low | ❌ |
+| **P2** | **Structure/Range Editor** | IIIF | High | ❌ |
+| **P2** | **Controlled Vocabulary** | Archivist | High | ❌ |
+| **P2** | **AV/Sound Support** | IIIF | High | ❌ |
+| **P3** | **CI/CD Pipeline** | Architect | Low | ❌ |

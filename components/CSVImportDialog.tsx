@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { IIIFItem, getIIIFValue } from '../types';
-import { csvImporter, CSVColumnMapping, CSVImportResult, CSVExportOptions, SUPPORTED_IIIF_PROPERTIES } from '../services/csvImporter';
+import { csvImporter, CSVColumnMapping, CSVImportResult, SUPPORTED_IIIF_PROPERTIES } from '../services/csvImporter';
 import { Icon } from './Icon';
 
 type DialogMode = 'import' | 'export';
@@ -51,6 +51,7 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
     return grouped;
   }, [exportColumns]);
 
+  // Import handlers
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -145,18 +146,24 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
     setExportStep('complete');
   };
 
-  const handleExportSmartColumns = () => {
-    // Auto-select only columns that have data
+  const handleSelectAllProperties = () => {
+    setExportProperties([...SUPPORTED_IIIF_PROPERTIES]);
+  };
+
+  const handleSelectNoneProperties = () => {
+    setExportProperties([]);
+  };
+
+  const handleSmartSelectProperties = () => {
     const result = csvImporter.exportCSVSmart(root, {
       language: exportLanguage,
       includeId: exportIncludeId,
       itemTypes: exportItemTypes
     });
-    // Parse the result to find which columns were included
     const headerLine = result.csv.split('\n')[0];
     const headers = headerLine.split(',').map(h => h.replace(/^"|"$/g, ''));
     const detected = headers.filter(h => SUPPORTED_IIIF_PROPERTIES.includes(h));
-    setExportProperties(detected);
+    setExportProperties(detected.length > 0 ? detected : ['label']);
   };
 
   return (
@@ -194,7 +201,7 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* IMPORT MODE */}
+          {/* ============ IMPORT MODE ============ */}
           {mode === 'import' && importStep === 'upload' && (
             <div className="text-center py-12">
               <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -218,7 +225,7 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
             </div>
           )}
 
-          {step === 'map' && (
+          {mode === 'import' && importStep === 'map' && (
             <div className="space-y-6">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-green-800 font-bold mb-1">
@@ -333,14 +340,14 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
             </div>
           )}
 
-          {step === 'result' && result && (
+          {mode === 'import' && importStep === 'result' && importResult && (
             <div className="text-center py-8">
               <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-                result.matched > 0 ? 'bg-green-100' : 'bg-amber-100'
+                importResult.matched > 0 ? 'bg-green-100' : 'bg-amber-100'
               }`}>
                 <Icon
-                  name={result.matched > 0 ? 'check_circle' : 'warning'}
-                  className={`text-4xl ${result.matched > 0 ? 'text-green-600' : 'text-amber-600'}`}
+                  name={importResult.matched > 0 ? 'check_circle' : 'warning'}
+                  className={`text-4xl ${importResult.matched > 0 ? 'text-green-600' : 'text-amber-600'}`}
                 />
               </div>
 
@@ -348,20 +355,20 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
 
               <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-6">
                 <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600">{result.matched}</div>
+                  <div className="text-3xl font-bold text-green-600">{importResult.matched}</div>
                   <div className="text-sm text-green-700">Items Updated</div>
                 </div>
                 <div className="bg-slate-100 p-4 rounded-lg">
-                  <div className="text-3xl font-bold text-slate-600">{result.unmatched}</div>
+                  <div className="text-3xl font-bold text-slate-600">{importResult.unmatched}</div>
                   <div className="text-sm text-slate-500">Not Matched</div>
                 </div>
               </div>
 
-              {result.errors.length > 0 && (
+              {importResult.errors.length > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left max-w-md mx-auto">
-                  <div className="font-bold text-red-800 mb-2">Errors ({result.errors.length})</div>
+                  <div className="font-bold text-red-800 mb-2">Errors ({importResult.errors.length})</div>
                   <ul className="text-sm text-red-700 list-disc list-inside">
-                    {result.errors.slice(0, 5).map((e, i) => (
+                    {importResult.errors.slice(0, 5).map((e, i) => (
                       <li key={i}>{e}</li>
                     ))}
                   </ul>
@@ -369,12 +376,171 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
               )}
             </div>
           )}
+
+          {/* ============ EXPORT MODE ============ */}
+          {mode === 'export' && exportStep === 'configure' && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-blue-800 font-bold mb-1">
+                  <Icon name="info" /> Export Metadata as CSV
+                </div>
+                <p className="text-blue-700 text-sm">
+                  Export item metadata to a CSV file for bulk editing in a spreadsheet. Re-import the modified CSV to update your archive.
+                </p>
+              </div>
+
+              {/* Item Types */}
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Item Types to Export
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {(['Canvas', 'Manifest', 'Collection'] as const).map(type => (
+                    <button
+                      key={type}
+                      onClick={() => toggleExportItemType(type)}
+                      className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
+                        exportItemTypes.includes(type)
+                          ? 'bg-iiif-blue text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {type}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Language */}
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Preferred Language
+                </label>
+                <select
+                  value={exportLanguage}
+                  onChange={(e) => setExportLanguage(e.target.value)}
+                  className="border rounded-lg p-2 text-sm"
+                >
+                  <option value="en">English (en)</option>
+                  <option value="none">Language-neutral (none)</option>
+                  <option value="fr">French (fr)</option>
+                  <option value="de">German (de)</option>
+                  <option value="es">Spanish (es)</option>
+                </select>
+              </div>
+
+              {/* Include ID */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="includeId"
+                  checked={exportIncludeId}
+                  onChange={(e) => setExportIncludeId(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="includeId" className="text-sm text-slate-700">
+                  Include IIIF ID column (useful for re-importing)
+                </label>
+              </div>
+
+              {/* Properties */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-bold text-slate-700">
+                    Properties to Export
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSmartSelectProperties}
+                      className="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded font-bold"
+                    >
+                      Smart Select
+                    </button>
+                    <button
+                      onClick={handleSelectAllProperties}
+                      className="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-bold text-slate-600"
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={handleSelectNoneProperties}
+                      className="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-bold text-slate-600"
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {Object.entries(exportColumnsByCategory).map(([category, cols]) => (
+                    <div key={category}>
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">{category}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {cols.map(col => (
+                          <button
+                            key={col.key}
+                            onClick={() => toggleExportProperty(col.key)}
+                            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                              exportProperties.includes(col.key)
+                                ? 'bg-iiif-blue text-white'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                            title={col.key}
+                          >
+                            {col.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {mode === 'export' && exportStep === 'preview' && (
+            <div className="space-y-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-green-800 font-bold mb-1">
+                  <Icon name="check_circle" /> CSV Generated
+                </div>
+                <p className="text-green-700 text-sm">
+                  {exportItemCount} items ready for export with {exportProperties.length + (exportIncludeId ? 2 : 1)} columns
+                </p>
+              </div>
+
+              <div className="bg-slate-100 rounded-lg p-4">
+                <h4 className="font-bold text-sm text-slate-700 mb-2">Preview</h4>
+                <div className="overflow-x-auto">
+                  <pre className="text-xs text-slate-600 whitespace-pre overflow-x-auto max-h-64">
+                    {exportPreview.split('\n').slice(0, 10).join('\n')}
+                    {exportPreview.split('\n').length > 10 && '\n...'}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {mode === 'export' && exportStep === 'complete' && (
+            <div className="text-center py-8">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Icon name="check_circle" className="text-4xl text-green-600" />
+              </div>
+
+              <h3 className="text-xl font-bold text-slate-800 mb-4">Export Complete</h3>
+
+              <p className="text-slate-500 max-w-md mx-auto">
+                Your CSV file has been downloaded. Open it in a spreadsheet application to edit metadata, then use the Import tab to apply changes back to your archive.
+              </p>
+            </div>
+          )}
         </div>
 
+        {/* Footer */}
         <div className="p-4 border-t flex justify-between">
-          {step === 'map' && (
+          {mode === 'import' && importStep === 'map' && (
             <>
-              <button onClick={() => setStep('upload')} className="text-slate-500 font-bold hover:text-slate-700">
+              <button onClick={() => setImportStep('upload')} className="text-slate-500 font-bold hover:text-slate-700">
                 Back
               </button>
               <button
@@ -386,7 +552,44 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
               </button>
             </>
           )}
-          {step === 'result' && (
+
+          {mode === 'import' && importStep === 'result' && (
+            <button
+              onClick={onClose}
+              className="mx-auto bg-slate-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-700"
+            >
+              Done
+            </button>
+          )}
+
+          {mode === 'export' && exportStep === 'configure' && (
+            <>
+              <div />
+              <button
+                onClick={handleGeneratePreview}
+                disabled={exportProperties.length === 0 || exportItemTypes.length === 0}
+                className="bg-iiif-blue text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Icon name="visibility" /> Preview Export
+              </button>
+            </>
+          )}
+
+          {mode === 'export' && exportStep === 'preview' && (
+            <>
+              <button onClick={() => setExportStep('configure')} className="text-slate-500 font-bold hover:text-slate-700">
+                Back
+              </button>
+              <button
+                onClick={handleExportDownload}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 flex items-center gap-2"
+              >
+                <Icon name="download" /> Download CSV
+              </button>
+            </>
+          )}
+
+          {mode === 'export' && exportStep === 'complete' && (
             <button
               onClick={onClose}
               className="mx-auto bg-slate-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-700"

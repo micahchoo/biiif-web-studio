@@ -2,185 +2,242 @@
 
 **Last Updated**: 2026-01-23
 **Spec Version**: Technical Specification v3.0
+**Current Phase**: Phase 4 - Discovery, Access, and Advanced Integration
 
 ---
 
-## 🚀 Active Sprint (Next Batch)
+## 🚀 Active Sprint: Discovery & Access
 
-These tasks prioritize offline reliability, spec compliance, and foundational accessibility.
+These tasks focus on implementing the advanced IIIF APIs (Authorization, Content Search, Content State) to enable deep linking, secure access, and rich discovery.
 
-- [x] **Static Export: Offline Viewer Bundling** (Critical)
-  - Replace CDN links in `exportService.ts` with bundled Universal Viewer assets.
-  - Ensure exported ZIP is fully self-contained and works without internet.
-- [x] **Ingest: Smart Sidecar Detection** (High)
-  - Automatically link `.txt` (transcriptions) and `.srt` (captions) to media files during ingest in `iiifBuilder.ts`.
-  - Create `supplementing` annotations for detected sidecars.
-- [x] **Accessibility: ARIA & Keyboard Audit** (Critical)
-  - Add missing ARIA labels to Sidebar, Toolbar, and Inspector components.
-  - Verify focus traps for modals and resizable panels.
-- [x] **Compliance: Image API Protocol Property** (Medium)
-  - Add `"protocol": "http://iiif.io/api/image"` to `info.json` generation in `exportService.ts` and `sw.js`.
-- [x] **IIIF Compliance: Full Behavior Support** (High)
-  - Added all 12+ IIIF spec behavior values with descriptions and category labels.
-  - Implemented behavior conflict detection and auto-resolution in MetadataEditor.
-  - Created `BEHAVIOR_DEFINITIONS` with full spec-compliant descriptions.
-- [x] **Board System: IIIF Manifest Export** (High)
-  - Export boards as valid IIIF Manifests with large Canvases.
-  - Items positioned as painting annotations with fragment selectors.
-  - Connections exported as linking annotations with relationship metadata.
-- [x] **Performance: Background Tile Pre-generation** (High)
-  - Created `tileWorker.ts` with Web Worker pool for parallel tile generation.
-  - Thumbnails generated immediately for UI; larger sizes (600, 1200) queued for background processing.
-  - Non-blocking ingest with progress reporting.
-- [x] **Archival: Provenance PREMIS Export** (Medium)
-  - Full PREMIS 3.0 compliant XML export with intellectual entities, events, agents, and relationships.
-  - Added `exportMultiplePREMIS()` for batch export.
-  - Enhanced event detail structure with property change tracking.
+- [ ] **Content State API Support** - Deep linking and view initialization.
+  - **Rationale**: Allow researchers to share exact views (zoom, time) via URL (Expert: Technical Expert).
+  - **Mechanics**: Implement `iiif-content` query param parsing using base64url decoding. Support Drag-and-Drop of content state. Implement "Copy View" generating a JSON-LD Annotation with `contentState` motivation.
+  - **Source**: `IIIF Content State API 1.0`, `ARCHITECTURE_INSPIRATION.md` (Deep Linking Pattern).
+
+- [ ] **Authorization Flow 2.0** - Support for restricted content.
+  - **Rationale**: Enable access to sensitive field materials while respecting archival access controls (Expert: Technical Expert).
+  - **Mechanics**: Implement "Probe-First" pattern (`AuthProbeService2`). Build UI for `AuthAccessService2` (login tabs). Handle `AuthAccessTokenService2` via postMessage for token retrieval. Support "Tiered Access" by rendering `substitute` resources on 401.
+  - **Source**: `IIIF Authorization Flow API 2.0`, `ARCHITECTURE_INSPIRATION.md` (Probe-First Authorization).
+
+- [ ] **Content Search API 2.0** - In-object search.
+  - **Rationale**: Scalable search for large collections beyond client-side limits (Expert: Solutions Architect).
+  - **Mechanics**: Integrate `SearchService2` client. Render results as Annotations using `TextQuoteSelector` for highlighting. Support `autocomplete` service.
+  - **Source**: `IIIF Content Search API 2.0`, `ARCHITECTURE_INSPIRATION.md` (Annotation-Based Search).
+
+- [ ] **Advanced AV Support** - Richer audio/video presentation.
+  - **Rationale**: Support complex archival objects like oral histories with transcripts or music with scores (Expert: Technical Expert).
+  - **Mechanics**: Implement `accompanyingCanvas` property to render auxiliary content alongside main canvas. Support `placeholderCanvas` for video poster frames. Implement `timeMode` (trim/scale/loop) behaviors.
+  - **Source**: `Presentation API 3.0` (Audio Recipe), `ARCHITECTURE_INSPIRATION.md` (Canvas-Bound Accompaniment).
+
+---
+# Most requested featureset
+It maps new capabilities to the core architectural phases: **Ingest**, **Curation**, **State Management**, and **Export**.
 
 ---
 
-## 📋 Backlog (Prioritized)
+## 1. Ingest Phase (The Staging Area)
 
-### High Priority - Next Batch
-- [x] **Spec Bridge: V2/V3 Import** - Auto-upgrade IIIF v2 manifests on import.
-  - Detect version from @context, normalize to v3 internally
-  - Implemented `services/specBridge.ts` with `upgradeToV3()`, `detectVersion()`
-- [x] **Selector Abstraction** - Parse URI fragments into editable objects.
-  - Implemented `services/selectors.ts` with full W3C Media Fragments support
-  - Parse `#xywh=` for spatial, `#t=` for temporal, SVG and Point selectors
-- [x] **Migrate App.tsx to Vault** - Replace deep-clone pattern with vault actions.
-  - VaultProvider wired at app root level ✅
-  - Undo/redo keyboard shortcuts enabled (Cmd+Z, Cmd+Shift+Z) ✅
-  - `handleItemUpdate` now uses `dispatch(actions.batchUpdate(...))` ✅
-  - `BatchEditor.onApply` now uses `useBulkOperations().batchUpdate()` ✅
-  - Storage sync via `exportRoot()` after vault mutations ✅
+**Feature:** **Dynamic Canvas Wrapper for Single Image Ingest**
 
-### Medium Priority
-- [x] **UX: Metadata Complexity Slider** - Toggle visible metadata fields based on user persona.
-  - Added `METADATA_FIELD_DEFINITIONS` with complexity levels (simple/standard/advanced)
-  - Created visual slider in PersonaSettings with field preview
-  - Updated Inspector to conditionally show fields based on complexity
-- [x] **Search: Autocomplete Service** - Enhanced searchService.ts with autocomplete.
-  - Prefix matching with frequency-based ranking
-  - Fuzzy matching using Levenshtein distance
-  - Recent searches persistence and type filter suggestions
-- [x] **Annotation: Polygon Tool (SvgSelector)** - Non-rectangular selection regions.
-  - Created `PolygonAnnotationTool.tsx` with polygon, rectangle, and freehand modes
-  - SVG selector generation and parsing with Douglas-Peucker simplification
-  - Integrated with selectors.ts service
+*   **Integration Point:** `ExternalImportDialog.tsx` & `services/remoteLoader.ts`.
+*   **Workflow:**
+    1.  User opens "Import External IIIF" dialog.
+    2.  User pastes a direct image URL (e.g., `https://site.com/image.jpg`) instead of a Manifest URL.
+    3.  **Pipeline Hook:** The `remoteLoader` service detects the non-JSON content type.
+    4.  **Transformation:** Instead of failing, it invokes a new `VirtualManifestFactory`.
+    5.  **Result:** A fully-formed IIIF Manifest (Version 3.0) is generated in memory, wrapping the image as a Painting Annotation on a Canvas sized to the image dimensions.
+    6.  **Handoff:** This virtual manifest is passed to `ingestTree` just like a real file import, allowing the user to edit metadata immediately in the Staging Area.
 
-### High Priority - Phase 3 Refinement (from Architecture Patterns)
-- [x] **Extension Preservation (Round-Tripping)** - Store unknown JSON-LD properties during import.
-  - Added `extensions` map to NormalizedState in vault.ts
-  - `extractExtensions()` preserves vendor properties (mirador, tify configs)
-  - `applyExtensions()` restores them on denormalize/export
-- [x] **Content-Addressable Storage (Hashing)** - SHA-256 file integrity (Tropy pattern).
-  - Created `services/fileIntegrity.ts` with SHA-256 hashing
-  - Deduplication via content fingerprinting
-  - Consolidator flow for moved/broken file links
-- [x] **Activity Stream (Change Discovery API)** - Track changes for sync.
-  - Created `services/activityStream.ts` with IIIF Change Discovery 1.0
-  - Activity types: Create, Update, Delete, Move, Add, Remove
-  - Export as OrderedCollection/OrderedCollectionPage for sync
+---
 
-### Medium Priority
-- [x] **Ingest: Visual Preview Wizard** - Show the proposed IIIF structure before committing files.
-  - `StagingArea.tsx` implements 6-step wizard (analyze→structure→details→identity→review→processing)
-  - Schematic preview shows proposed IIIF hierarchy before commit
-- [ ] **CSV/Spreadsheet Sync** - Bulk metadata import/export (Wax pattern).
-  - Import: ✅ `csvImporter.ts` + `CSVImportDialog.tsx` exist
-  - Export: 🔲 Missing - need `csvExporter.ts` for round-trip
-- [ ] **Lazy Selector Hydration** - Performance for large manifests.
-  - Parse SVG/complex selectors only on interaction
-  - Reduce initial compute for OCR-heavy manifests
+## 2. Curation Phase (The Studio & Inspector)
 
-### Low Priority / Future
-- [ ] **AI: OCR Integration** - Tesseract.js integration for auto-transcription of image sidecars.
-- [ ] **Learning: Progress Analytics** - Dashboard showing IIIF concepts mastered by the user.
-- [ ] **Convention: biiif Migration Tools** - Bidirectional conversion for standard `biiif` folder structures.
-- [ ] **Workbench Architecture** - Refactor views into self-contained workbench modules.
-- [ ] **Static Site Export (Wax pattern)** - Generate static IIIF site from boards.
+**Feature:** **Spatial Annotation Workbench**
+**Feature:** **Interaction Action Mapper**
+**Feature:** **Customizable CSS/Theme Injection**
+
+*   **Integration Point:** `Viewer.tsx`, `Inspector.tsx`, and `PolygonAnnotationTool.tsx`.
+*   **Workflow:**
+    1.  **Creation:** In the `Viewer`, the user activates the annotation tool. The tool now offers "Ellipse" alongside Polygon/Rect.
+    2.  **Definition:** Upon completing the shape, the **Inspector** panel opens automatically (replacing the simple text prompt).
+    3.  **Action Logic:** A new "Interaction" tab in the Inspector allows the user to define behavior:
+        *   *Link:* Enter a URL (`purpose: linking`).
+        *   *Popup:* Enter HTML content (`motivation: describing`).
+    4.  **Styling:** A new "Appearance" tab allows picking stroke color and opacity.
+    5.  **Pipeline Hook:** These settings are saved as specific properties (`service`, `style`, `purpose`) within the Web Annotation JSON in the Vault.
+
+---
+
+## 3. State Management (Vault & Service Worker)
+
+**Feature:** **Content State Serializer**
+
+*   **Integration Point:** `services/contentState.ts`, `hooks/useIIIFEntity`, `App.tsx`.
+*   **Workflow:**
+    1.  **Capture:** As the user pans/zooms in the `Viewer`, the viewport coordinates (`xywh`) are tracked in React state.
+    2.  **Serialization:** When "Share" is clicked, `contentStateService` encodes the current Canvas ID + Viewport Coordinates into a base64url token.
+    3.  **Persistence:** This token is appended to the URL (`?iiif-content=...`).
+    4.  **Restoration:** On load, `App.tsx` parses this token and directs the Viewer to zoom specifically to that region, overriding the default "fit to screen" behavior.
+
+---
+
+## 4. Export & Publishing Phase
+
+**Feature:** **One-Click Embed Code Generator**
+
+*   **Integration Point:** `ExportDialog.tsx` & `ShareButton.tsx`.
+*   **Workflow:**
+    1.  **Trigger:** User selects "Embed" in the Share/Export menu.
+    2.  **Pipeline Hook:** The system constructs a specific URL pattern using the **Content State** generated in step 3.
+    3.  **Generation:** It outputs an HTML snippet:
+        ```html
+        <iframe src="https://viewer.field-studio.org/?iiif-content={base64_token}" ...></iframe>
+        ```
+    4.  **Runtime:** The hosted viewer (or the static export viewer) reads the token, fetches the Manifest (or uses the embedded one), and renders the *exact* interactive experience defined in the Curation phase, including the custom CSS styles and click actions.
+
+---
+
+## Summary of Data Flow
+
+```mermaid
+graph LR
+    A[Raw Image URL] -->|Dynamic Wrapper| B(Virtual Manifest)
+    B --> C[Staging Area]
+    C --> D[Vault / IndexedDB]
+    D --> E[Viewer / Inspector]
+    E -->|Spatial Workbench| D
+    E -->|Action Mapper| D
+    E -->|CSS Injection| D
+    D --> F[Content State Serializer]
+    F --> G[Embed Code Generator]
+    G --> H[Final Published Experience]
 
 ---
 
 ## ✅ Completed Items
 
-### Architecture Foundation (Vault Pattern)
-- [x] **Vault: Normalized State** - `services/vault.ts` with O(1) entity lookup.
-  - Flat storage by type (Collection, Manifest, Canvas, Range, Annotation)
-  - `normalize()` / `denormalize()` for tree conversion
-  - Reference tracking: parent→children, child→parent
-- [x] **Vault: Action-Driven Mutations** - `services/actions.ts` with undo/redo.
-  - 15+ typed actions with pre-mutation validation
-  - `ActionHistory` with configurable max size
-  - `ActionDispatcher` with subscribe/onError listeners
-- [x] **LanguageString Class** - Immutable language map wrapper in `types.ts`.
-  - Fallback chain: locale → none → @none → en → first
-  - Operations: get, set, append, remove, merge, equals
-- [x] **Entity Hooks** - `hooks/useIIIFEntity.ts` with VaultProvider.
-  - Specialized: useManifest, useCanvas, useAnnotation, useCollection, useRange
-  - Utilities: useHistory, useRoot, useBulkOperations, useEntitySearch
-- [x] **Spec Bridge** - `services/specBridge.ts` for V2→V3 manifest upgrading.
-  - Auto-detect version from @context, normalize to v3 internally
-  - Handles sequences→items, label strings→language maps, viewingHint→behavior
-- [x] **Selector Abstraction** - `services/selectors.ts` for URI fragment parsing.
-  - Full W3C Media Fragments support (xywh, t, percent)
-  - SVG and Point selector support, serialization for round-trip
-- [x] **App.tsx Vault Integration** - Full migration to Vault dispatch pattern.
-  - VaultProvider at app root with normalized state
-  - Undo/redo keyboard shortcuts (Cmd+Z, Cmd+Shift+Z)
-  - `handleItemUpdate` and `BatchEditor.onApply` use dispatch actions
-  - Storage sync via `exportRoot()` after all mutations
-- [x] **Ingest Visual Preview Wizard** - `StagingArea.tsx` wizard.
-  - 6-step flow: analyze→structure→details→identity→review→processing
-  - Shows proposed IIIF hierarchy before committing to IndexedDB
-- [x] **Metadata Complexity Slider** - Field visibility based on user expertise.
-  - `METADATA_FIELD_DEFINITIONS` with 16 fields across 4 categories
-  - Visual slider with field preview in PersonaSettings
-  - Inspector conditionally shows rights, navDate, behavior, viewingDirection
-- [x] **Search Autocomplete** - Enhanced searchService with intelligent suggestions.
-  - Word index for prefix matching with frequency ranking
-  - Fuzzy matching using Levenshtein distance algorithm
-  - Recent searches persistence with type filter syntax
-- [x] **Polygon Annotation Tool** - SvgSelector support for non-rectangular regions.
-  - PolygonAnnotationTool.tsx with polygon, rectangle, freehand modes
-  - Douglas-Peucker path simplification for freehand
-  - SVG selector serialization compatible with IIIF spec
+### Recent Accomplishments (Phase 3)
+- [x] **Static Export: Offline Viewer Bundling** - Self-contained exports with local viewer assets.
+- [x] **Ingest: Smart Sidecar Detection** - Auto-linking of transcriptions/captions during ingest.
+- [x] **Accessibility: ARIA & Keyboard Audit** - Full accessibility pass on Sidebar and Inspector.
+- [x] **Compliance: Image API Protocol Property** - Added protocol support to info.json.
+- [x] **IIIF Compliance: Full Behavior Support** - Implemented all 12+ IIIF behaviors.
+- [x] **Board System: IIIF Manifest Export** - Export boards as valid IIIF Manifests.
+- [x] **Performance: Background Tile Pre-generation** - Web Worker pool for tile generation.
+- [x] **Archival: Provenance PREMIS Export** - Full PREMIS 3.0 compliant XML export.
+- [x] **Spec Bridge: V2/V3 Import** - Auto-upgrade IIIF v2 manifests.
+- [x] **Selector Abstraction** - Full W3C Media Fragments and SVG selector support.
+- [x] **Migrate App.tsx to Vault** - Full migration to Vault state management.
+- [x] **UX: Metadata Complexity Slider** - Progressive disclosure of metadata fields.
+- [x] **Search: Autocomplete Service** - Fuzzy matching and history.
+- [x] **Annotation: Polygon Tool** - SVG selector support.
 - [x] **Extension Preservation** - Round-trip unknown JSON-LD properties.
-  - `extensions` map in vault.ts NormalizedState
-  - `KNOWN_IIIF_PROPERTIES` defines spec properties by type
-  - Vendor extensions survive import→edit→export cycle
-- [x] **File Integrity (SHA-256)** - Content-addressable storage in `services/fileIntegrity.ts`.
-  - SHA-256 hashing via Web Crypto API
-  - Duplicate detection before import
-  - Consolidator flow for broken/moved file links
-- [x] **Activity Stream** - IIIF Change Discovery 1.0 in `services/activityStream.ts`.
-  - Activity types: Create, Update, Delete, Move, Add, Remove
-  - Export as OrderedCollection with pagination
-  - Sync support via `getActivitiesSince()` and `importActivities()`
+- [x] **Content-Addressable Storage (Hashing)** - SHA-256 file integrity.
+- [x] **Activity Stream** - IIIF Change Discovery 1.0 support.
+- [x] **Ingest: Visual Preview Wizard** - 6-step ingest flow with preview.
+- [x] **CSV/Spreadsheet Sync** - Bulk metadata import/export.
 
-### Core Infrastructure
-- [x] **Static Export Offline Bundling** - Self-contained exports with local viewer assets.
-- [x] **Smart Sidecar Detection** - Auto-linking of transcriptions and captions during ingest.
+### Core Infrastructure (Phase 1 & 2)
+- [x] **Vault: Normalized State** - O(1) entity lookup and normalization.
+- [x] **Vault: Action-Driven Mutations** - Undo/redo capable state changes.
+- [x] **Entity Hooks** - React hooks for Vault interaction.
 - [x] **Service Worker Image API** - IIIF Image API 3.0 Level 2 implementation.
-- [x] **IndexedDB Storage** - Local-first persistence for files and project state.
+- [x] **IndexedDB Storage** - Local-first persistence.
 - [x] **Search Service** - Full-text search using FlexSearch.
-- [x] **Content State API** - `iiif-content` parameter handling and link generation.
-- [x] **Virtualized Data Model** - LRU cache and lazy loading in `services/virtualizedData.ts`.
-- [x] **Provenance System** - Full PREMIS 3.0 export with history panel.
-- [x] **Background Tile Generation** - Web Worker pool in `services/tileWorker.ts`.
-- [x] **Full Behavior Support** - All 12+ IIIF behaviors with conflict detection.
-- [x] **Board Export** - Export boards as IIIF Manifests with spatial annotations.
+- [x] **Virtualized Data Model** - LRU cache and lazy loading.
 
-### User Interface
-- [x] **3-Panel Layout** - Responsive workspace with resizable panels.
-- [x] **Field Mode** - High-contrast, touch-optimized UI for outdoor research.
+### User Interface (Phase 1 & 2)
+- [x] **3-Panel Layout** - Resizable workspace.
+- [x] **Field Mode** - High-contrast, touch-optimized UI.
 - [x] **Archive Views** - Grid, List, Map, and Timeline visualizations.
-- [x] **Onboarding** - Persona selection and abstraction level scaffolding.
-- [x] **Command Palette** - Quick navigation and actions (Cmd+K).
+- [x] **Command Palette** - Quick navigation (Cmd+K).
 
----
 
-## Notes
-- **Architecture**: Moving toward `@iiif/vault` pattern for state normalization (See `ARCHITECTURE_INSPIRATION.md`).
-- **Expert Feedback**: Incorporated recommendations from simulated Archivist, HF Engineer, and IIIF Expert reviews.
+
+## 📋 Feature Backlog
+
+### Performance & Scale
+- [ ] **Lazy Selector Hydration** - Performance for large manifests.
+  - **Rationale**: Reduce initial compute load for manifests with thousands of OCR/transcription regions.
+  - **Mechanics**: Parse SVG/complex selectors only on interaction or viewport visibility.
+
+### Collaboration (Future)
+- [ ] **Real-time Multiplayer** - Collaborative Editing.
+  - **Rationale**: Enable simultaneous research and transcription by multiple users.
+  - **Mechanics**: Replace Vault with Automerge-Repo. Implement ProseMirror for rich text fields. Deploy relay server for P2P sync.
+  - **Source**: `MULTIPLAYER_ARCHITECTURE.md`.
+
+### Intelligence & Automation (Future)
+- [ ] **AI: OCR Integration** - Auto-transcription.
+  - Integration of Tesseract.js for automatic transcription of image sidecars.
+
+### Ecosystem Integration (Future)
+[
+  {
+    "feature": "Convention: biiif Bidirectional Sync",
+    "rationale": "Enable a seamless 'Local-First' workflow where folder structures are automatically converted to IIIF Manifests and vice-versa, catering to field researchers with limited connectivity.",
+    "mechanics": "Implement a 'Folder-to-Manifest' interpreter based on the biiif naming convention. Map local directory hierarchies to IIIF Ranges and filename patterns to Canvas labels. Use a 'Watch' pattern to trigger re-generation of the JSON-LD when local assets are modified.",
+    "source": "biiif (IIIF Static Site Generator), ARCHITECTURE_INSPIRATION.md (Local-First Pattern)"
+  },
+  {
+    "feature": "Static Site Export (Wax/Jekyll Integration)",
+    "rationale": "Provide a low-cost, high-durability publication path for archival collections without requiring a complex backend.",
+    "mechanics": "Develop an export worker that transforms the internal Vault state into a 'Wax-compatible' YAML metadata file and a processed image derivative set. Implement a 'Manifest Partitioning' pattern to split large manifests into smaller, Jekyll-consumable collection files.",
+    "source": "Wax (Exhibitions Framework), IIIF Presentation API 3.0 (Collections)"
+  },
+  {
+    "feature": "Multi-Viewer Workbench (Mirador/Clover/UV)",
+    "rationale": "Allow curators to validate how their manifests will perform across the most common industry viewers.",
+    "mechanics": "Utilize a 'Portal' pattern to mount isolated instances of Mirador (for deep-grid comparison) and Clover (for accessible slider views). Implement a 'Cross-Frame State Sync' that passes the current 'Content State' from the Editor to the child viewer via postMessage.",
+    "source": "Clover IIIF, Mirador 3, IIIF Content State API"
+  },
+  {
+    "feature": "Archival Package Export (OCFL/BagIt)",
+    "rationale": "Ensure manifests created in the studio meet long-term digital preservation standards for repository ingest.",
+    "mechanics": "Implement an 'Object Encapsulation' pattern. Wrap the IIIF Manifest and its associated media/metadata into an OCFL (Oxford Common File Layout) structure. Generate BagIt checksum manifests for the entire entity to ensure fixity during transfer to institutional repositories.",
+    "source": "OCFL Specification, BagIt Library (RFC 8493)"
+  },
+  {
+    "feature": "NavPlace & Geospatial Workbench",
+    "rationale": "Support field archives that rely heavily on geographic context and mapping.",
+    "mechanics": "Integrate a 'Leaflet-based Geo-Selector' that interprets the 'navPlace' extension. Use a 'GeoJSON-to-IIIF Mapping' pattern where users can draw bounding boxes on a map to automatically populate the 'features' array of the IIIF Manifest.",
+    "source": "IIIF navPlace Extension, GeoJSON Specification"
+  }, 
+  {
+    "feature": "Omeka S Resource Template Synchronizer",
+    "rationale": "Enable seamless synchronization between institutional archival catalogs and the flexible IIIF Manifest structure.",
+    "mechanics": "Implement a 'Schema Mapping Adapter' that translates Omeka S Resource Templates into IIIF 'metadata' pairs. Use the Omeka S API to push updates back to the repository, utilizing a 'Delta-Update' pattern to avoid overwriting existing archival descriptions while adding new IIIF-specific properties.",
+    "source": "Omeka S IIIF Server, ARCHITECTURE_INSPIRATION.md (Metadata Mapping Pattern)"
+  },
+  {
+    "feature": "ArchivesSpace PUID/URI Resolver",
+    "rationale": "Maintain the chain of provenance by linking IIIF Canvases directly to physical archival components or digital objects in ArchivesSpace.",
+    "mechanics": "Implement a 'SeeAlso Linker' that automatically populates the 'seeAlso' property of a Manifest or Canvas by querying ArchivesSpace RefIDs. Use a 'Reverse-Proxy' pattern to ensure that the Studio can fetch descriptive EAD (Encoded Archival Description) fragments and render them as tooltips within the editor.",
+    "source": "ArchivesSpace API, IIIF seeAlso Specification"
+  },
+  {
+    "feature": "FromThePage Transcription Import/Export",
+    "rationale": "Integrate with community-driven transcription workflows to bring OCR and corrected text back into the archival manifest.",
+    "mechanics": "Develop an 'Annotation Page Polling' pattern. The studio monitors FromThePage 'export' URLs for a manifest and merges returned AnnotationLists into the local Vault state as 'supplemental' content. Implement a 'Conflict Resolution UI' for cases where local manifest structures and remote transcription IDs have drifted.",
+    "source": "FromThePage IIIF Integration, Web Annotation Data Model"
+  },
+  {
+    "feature": "Madoc Task-Based Workflow Integration",
+    "rationale": "Allow the Studio to act as a specialized 'Workbench' within a larger crowdsourcing or archival management ecosystem like Madoc.",
+    "mechanics": "Implement a 'Manifest Delegation' pattern where the Studio accepts a 'Task' payload from Madoc. The Studio locks specific ranges of the manifest based on the task scope and uses a 'Post-Back' hook to notify the Madoc parent container when the editing session is complete and ready for review.",
+    "source": "Madoc (Digirati), IIIF Task API (Draft)"
+  },
+  {
+    "feature": "Cantaloupe/IIIF-Image-Server Profile Negotiator",
+    "rationale": "Optimize media delivery by detecting the specific capabilities and processing power of the underlying image server.",
+    "mechanics": "Implement a 'Capability Detection' pattern that parses the `info.json` from image services (e.g., Cantaloupe, Loris). This logic automatically adjusts the editor's export settings for 'thumbnail' and 'square' regions to match the server's supported scaling factors and qualities, reducing server-side compute overhead.",
+    "source": "IIIF Image API 3.0, ARCHITECTURE_INSPIRATION.md (Service-Linked Architecture)"
+  },
+  {
+    "feature": "Zotero / Citation Manager Integration",
+    "rationale": "Bridge the gap between archival editing and scholarly citation for researchers using the field materials.",
+    "mechanics": "Implement a 'COinS Metadata Embedding' pattern within the Manifest's 'homepage' and 'metadata' fields. Develop a 'Zotero Translator Adapter' that allows the Zotero browser extension to recognize the Studio's active Manifest and extract high-level archival metadata and IIIF Content States as a 'Research Item'.",
+    "source": "Zotero Translators, COinS Metadata Standard"
+  }
+]
