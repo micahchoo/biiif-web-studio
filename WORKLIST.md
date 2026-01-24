@@ -21,25 +21,33 @@ All tasks in this sprint have been completed.
 
 ---
 
-## 🚀 Active Sprint: Performance & Data Quality
+## ✅ Completed: Performance & Data Quality Sprint
 
-### High Priority (Next Batch)
+All tasks in this sprint have been completed.
 
-- [ ] **ManifestTree Virtualization** - Windowed rendering for 1000+ items
-  - **Rationale**: UI freezes when displaying large archives
-  - **Effort**: High | **Impact**: High (performance)
+### Completed Tasks
 
-- [ ] **Duplicate Detection in Ingest** - Hash files during import
-  - **Rationale**: Wasted storage, confusion from duplicate files
-  - **Effort**: Medium | **Impact**: Medium (data quality)
+- [x] **ManifestTree Virtualization** - Custom windowed rendering for 1000+ items ✅
+  - Only renders visible items plus overscan buffer
+  - Maintains keyboard navigation and focus management
+  - Shows item count for large trees (100+ items)
+  - Uses ResizeObserver for dynamic container sizing
 
-- [ ] **Rubber-band Selection** - Drag-to-select in ArchiveView
-  - **Rationale**: Tedious multi-select for large sets
-  - **Effort**: Medium | **Impact**: Medium (UX)
+- [x] **Duplicate Detection in Ingest** - SHA-256 hashing during import ✅
+  - fileIntegrity service wired into iiifBuilder.ts
+  - Reports duplicates in IngestReport with hash prefix
+  - Files still imported but tracked for deduplication
 
-- [ ] **BatchEditor Undo Snapshot** - Create restore point before apply
-  - **Rationale**: No way to recover from batch operation mistakes
-  - **Effort**: Low | **Impact**: Medium (data safety)
+- [x] **Rubber-band Selection** - Drag-to-select in ArchiveView ✅
+  - Click and drag to select multiple items
+  - Shift+click extends selection
+  - Visual rubber-band overlay during selection
+  - Works in both grid and list views
+
+- [x] **BatchEditor Undo Snapshot** - localStorage restore point before apply ✅
+  - Saves complete tree snapshot before batch operations
+  - Rollback button with confirmation dialog
+  - Shows timestamp and item count of snapshot
 
 ---
 
@@ -228,7 +236,7 @@ graph LR
 - [x] **Keyboard Tree Navigation** - Add arrow key navigation to Sidebar/ManifestTree (WCAG). ✅
 - [x] **Unsaved Changes Warning** - Add beforeunload handler to MetadataSpreadsheet.tsx. ✅
 - [x] **Fetch Timeout** - Add 30s timeout to ExternalImportDialog.tsx network requests. ✅
-- [ ] **ManifestTree Virtualization** - Windowed rendering for large trees.
+- [x] **ManifestTree Virtualization** - Windowed rendering for large trees. ✅
 
 ## 📋 Feature Backlog
 

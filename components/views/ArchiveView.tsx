@@ -129,6 +129,16 @@ const getFileDNA = (item: IIIFItem) => {
     return has;
 };
 
+// Rubber-band selection state
+interface RubberBandState {
+  isSelecting: boolean;
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+  containerRect: DOMRect | null;
+}
+
 export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen, onBatchEdit, onUpdate, validationIssues = {}, fieldMode, onReveal, onCatalogSelection }) => {
   const { showToast } = useToast();
   const [view, setView] = useState<'grid' | 'list' | 'map' | 'timeline'>('grid');
@@ -137,6 +147,17 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string } | null>(null);
   const [activeItem, setActiveItem] = useState<IIIFCanvas | null>(null);
+
+  // Rubber-band selection state
+  const [rubberBand, setRubberBand] = useState<RubberBandState>({
+    isSelecting: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    containerRect: null
+  });
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = window.innerWidth < 768;
@@ -287,6 +308,120 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
       return () => window.removeEventListener('click', close);
   }, []);
 
+  // Rubber-band selection handlers
+  const handleRubberBandStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Only start rubber-band on direct container clicks (not on items)
+    if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('rubber-band-area')) return;
+    // Don't start if modifier keys are pressed (they're for item selection)
+    if (e.metaKey || e.ctrlKey) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left + container.scrollLeft;
+    const y = e.clientY - rect.top + container.scrollTop;
+
+    setRubberBand({
+      isSelecting: true,
+      startX: x,
+      startY: y,
+      currentX: x,
+      currentY: y,
+      containerRect: rect
+    });
+  }, []);
+
+  const handleRubberBandMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!rubberBand.isSelecting) return;
+
+    const container = scrollContainerRef.current;
+    if (!container || !rubberBand.containerRect) return;
+
+    const x = e.clientX - rubberBand.containerRect.left + container.scrollLeft;
+    const y = e.clientY - rubberBand.containerRect.top + container.scrollTop;
+
+    setRubberBand(prev => ({
+      ...prev,
+      currentX: x,
+      currentY: y
+    }));
+  }, [rubberBand.isSelecting, rubberBand.containerRect]);
+
+  const handleRubberBandEnd = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!rubberBand.isSelecting) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) {
+      setRubberBand(prev => ({ ...prev, isSelecting: false }));
+      return;
+    }
+
+    // Calculate selection rectangle bounds
+    const selectionRect = {
+      left: Math.min(rubberBand.startX, rubberBand.currentX),
+      right: Math.max(rubberBand.startX, rubberBand.currentX),
+      top: Math.min(rubberBand.startY, rubberBand.currentY),
+      bottom: Math.max(rubberBand.startY, rubberBand.currentY)
+    };
+
+    // Minimum drag distance to count as rubber-band (avoid accidental selections)
+    const width = selectionRect.right - selectionRect.left;
+    const height = selectionRect.bottom - selectionRect.top;
+    if (width < 10 && height < 10) {
+      setRubberBand(prev => ({ ...prev, isSelecting: false }));
+      return;
+    }
+
+    // Find items within the selection rectangle
+    const newSelectedIds = new Set<string>(e.shiftKey ? selectedIds : []);
+    const containerRect = container.getBoundingClientRect();
+
+    itemRefs.current.forEach((element, id) => {
+      const itemRect = element.getBoundingClientRect();
+      // Convert to container-relative coordinates
+      const itemLeft = itemRect.left - containerRect.left + container.scrollLeft;
+      const itemRight = itemRect.right - containerRect.left + container.scrollLeft;
+      const itemTop = itemRect.top - containerRect.top + container.scrollTop;
+      const itemBottom = itemRect.bottom - containerRect.top + container.scrollTop;
+
+      // Check if item intersects with selection rectangle
+      const intersects = !(
+        itemRight < selectionRect.left ||
+        itemLeft > selectionRect.right ||
+        itemBottom < selectionRect.top ||
+        itemTop > selectionRect.bottom
+      );
+
+      if (intersects) {
+        if (e.ctrlKey || e.metaKey) {
+          // Toggle selection with Ctrl/Cmd
+          if (newSelectedIds.has(id)) {
+            newSelectedIds.delete(id);
+          } else {
+            newSelectedIds.add(id);
+          }
+        } else {
+          newSelectedIds.add(id);
+        }
+      }
+    });
+
+    setSelectedIds(newSelectedIds);
+    setRubberBand(prev => ({ ...prev, isSelecting: false }));
+  }, [rubberBand, selectedIds]);
+
+  // Calculate rubber-band rectangle for rendering
+  const rubberBandRect = useMemo(() => {
+    if (!rubberBand.isSelecting) return null;
+    return {
+      left: Math.min(rubberBand.startX, rubberBand.currentX),
+      top: Math.min(rubberBand.startY, rubberBand.currentY),
+      width: Math.abs(rubberBand.currentX - rubberBand.startX),
+      height: Math.abs(rubberBand.currentY - rubberBand.startY)
+    };
+  }, [rubberBand]);
+
   return (
     <div className={`flex-1 flex flex-col h-full relative overflow-hidden ${fieldMode ? 'bg-black text-white' : 'bg-slate-50 text-slate-900'}`}>
       
@@ -404,8 +539,28 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto custom-scrollbar pb-24 ${view === 'map' || view === 'timeline' ? 'p-0' : 'p-6'} transition-all duration-300 ${!isMobile && activeItem ? 'w-1/3 max-w-sm border-r border-slate-200' : ''}`}>
+        <div
+          ref={scrollContainerRef}
+          className={`flex-1 overflow-y-auto custom-scrollbar pb-24 ${view === 'map' || view === 'timeline' ? 'p-0' : 'p-6'} transition-all duration-300 ${!isMobile && activeItem ? 'w-1/3 max-w-sm border-r border-slate-200' : ''} ${rubberBand.isSelecting ? 'select-none cursor-crosshair' : ''} relative`}
+          onMouseDown={view === 'grid' ? handleRubberBandStart : undefined}
+          onMouseMove={view === 'grid' ? handleRubberBandMove : undefined}
+          onMouseUp={view === 'grid' ? handleRubberBandEnd : undefined}
+          onMouseLeave={view === 'grid' ? handleRubberBandEnd : undefined}
+        >
+          {/* Rubber-band selection rectangle */}
+          {rubberBandRect && (
+            <div
+              className="absolute pointer-events-none border-2 border-iiif-blue bg-iiif-blue/10 z-50"
+              style={{
+                left: rubberBandRect.left,
+                top: rubberBandRect.top,
+                width: rubberBandRect.width,
+                height: rubberBandRect.height
+              }}
+            />
+          )}
             {view === 'grid' && (
+            <div className="rubber-band-area">
             <VirtualizedGrid
               items={filteredAssets}
               visibleRange={gridVisibleRange}
@@ -421,6 +576,10 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
                 return (
                     <div
                     key={asset.id}
+                    ref={(el) => {
+                      if (el) itemRefs.current.set(asset.id, el);
+                      else itemRefs.current.delete(asset.id);
+                    }}
                     onContextMenu={(e) => handleContextMenu(e, asset.id)}
                     className={`group relative rounded-lg shadow-sm cursor-pointer transition-all ${
                         fieldMode
@@ -450,6 +609,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
               activeItem={activeItem}
               isMobile={isMobile}
             />
+            </div>
             )}
             {view === 'list' && <VirtualizedList assets={filteredAssets} visibleRange={listVisibleRange} onSelect={handleItemClick} selectedIds={selectedIds} fieldMode={fieldMode} />}
             {view === 'map' && <MapView root={root} onSelect={(item: IIIFItem) => onSelect(item)} />}

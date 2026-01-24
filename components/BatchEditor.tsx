@@ -1,13 +1,60 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { IIIFItem, getIIIFValue } from '../types';
 import { Icon } from './Icon';
+import { useToast } from './Toast';
+
+const BATCH_SNAPSHOT_KEY = 'batch-editor-snapshot';
+
+interface BatchSnapshot {
+  timestamp: number;
+  itemCount: number;
+  root: IIIFItem;
+}
+
+// Save snapshot to localStorage before batch operation
+const saveBatchSnapshot = (root: IIIFItem, itemCount: number): boolean => {
+  try {
+    const snapshot: BatchSnapshot = {
+      timestamp: Date.now(),
+      itemCount,
+      root: JSON.parse(JSON.stringify(root)) // Deep clone
+    };
+    localStorage.setItem(BATCH_SNAPSHOT_KEY, JSON.stringify(snapshot));
+    return true;
+  } catch (e) {
+    console.error('Failed to save batch snapshot:', e);
+    return false;
+  }
+};
+
+// Load snapshot from localStorage
+const loadBatchSnapshot = (): BatchSnapshot | null => {
+  try {
+    const data = localStorage.getItem(BATCH_SNAPSHOT_KEY);
+    if (!data) return null;
+    return JSON.parse(data) as BatchSnapshot;
+  } catch (e) {
+    console.error('Failed to load batch snapshot:', e);
+    return null;
+  }
+};
+
+// Clear snapshot from localStorage
+const clearBatchSnapshot = (): void => {
+  try {
+    localStorage.removeItem(BATCH_SNAPSHOT_KEY);
+  } catch (e) {
+    // Ignore
+  }
+};
 
 interface BatchEditorProps {
   ids: string[];
   root: IIIFItem;
   onApply: (ids: string[], updates: Record<string, Partial<IIIFItem>>, renamePattern?: string) => void;
   onClose: () => void;
+  onRollback?: (root: IIIFItem) => void;
 }
 
 const IIIF_PROPERTY_SUGGESTIONS = [
@@ -16,9 +63,18 @@ const IIIF_PROPERTY_SUGGESTIONS = [
   "Language", "Coverage", "Publisher", "Contributor", "Relation"
 ];
 
-export const BatchEditor: React.FC<BatchEditorProps> = ({ ids, root, onApply, onClose }) => {
+export const BatchEditor: React.FC<BatchEditorProps> = ({ ids, root, onApply, onClose, onRollback }) => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'rename' | 'metadata' | 'patterns'>('rename');
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [existingSnapshot, setExistingSnapshot] = useState<BatchSnapshot | null>(null);
+  const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
+
+  // Check for existing snapshot on mount
+  useEffect(() => {
+    const snapshot = loadBatchSnapshot();
+    setExistingSnapshot(snapshot);
+  }, []);
   
   // Rename State
   const [renamePattern, setRenamePattern] = useState('{orig}');
@@ -65,11 +121,17 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({ ids, root, onApply, on
   }, [selectedItems, regexPattern, fieldMappings, activeTab]);
 
   const handleApply = () => {
+      // Save snapshot before applying batch changes
+      const snapshotSaved = saveBatchSnapshot(root, ids.length);
+      if (snapshotSaved) {
+        showToast(`Snapshot saved. Use "Rollback Last Batch" to undo if needed.`, 'info');
+      }
+
       const perItemUpdates: Record<string, Partial<IIIFItem>> = {};
-      
+
       ids.forEach((id, index) => {
           const updates: Partial<IIIFItem> = {};
-          
+
           if (activeTab === 'metadata') {
               if (sharedSummary) updates.summary = { en: [sharedSummary] };
               if (sharedRights) updates.rights = sharedRights;
@@ -98,6 +160,21 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({ ids, root, onApply, on
 
       onApply(ids, perItemUpdates, activeTab === 'rename' ? renamePattern : undefined);
       onClose();
+  };
+
+  const handleRollback = () => {
+    if (!existingSnapshot || !onRollback) return;
+    onRollback(existingSnapshot.root);
+    clearBatchSnapshot();
+    setExistingSnapshot(null);
+    setShowRollbackConfirm(false);
+    showToast('Rolled back to state before last batch operation', 'success');
+    onClose();
+  };
+
+  const formatTimestamp = (ts: number): string => {
+    const date = new Date(ts);
+    return date.toLocaleString();
   };
 
   return (
@@ -189,10 +266,67 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({ ids, root, onApply, on
             </div>
         </div>
 
-        <div className="p-6 bg-slate-50 border-t flex justify-end gap-3">
-            <button onClick={onClose} className="px-6 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl">Cancel</button>
-            <button onClick={handleApply} className="px-10 py-2 bg-iiif-blue text-white font-bold rounded-xl shadow-lg hover:bg-blue-600 flex items-center gap-2">Apply Changes <Icon name="play_arrow"/></button>
+        <div className="p-6 bg-slate-50 border-t flex justify-between items-center">
+            <div>
+              {existingSnapshot && onRollback && (
+                <button
+                  onClick={() => setShowRollbackConfirm(true)}
+                  className="px-4 py-2 text-amber-700 bg-amber-50 border border-amber-200 font-bold hover:bg-amber-100 rounded-xl flex items-center gap-2 text-sm"
+                >
+                  <Icon name="history" className="text-sm" />
+                  Rollback Last Batch
+                  <span className="text-[10px] text-amber-500 ml-1">
+                    ({existingSnapshot.itemCount} items, {formatTimestamp(existingSnapshot.timestamp)})
+                  </span>
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={onClose} className="px-6 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl">Cancel</button>
+              <button onClick={handleApply} className="px-10 py-2 bg-iiif-blue text-white font-bold rounded-xl shadow-lg hover:bg-blue-600 flex items-center gap-2">Apply Changes <Icon name="play_arrow"/></button>
+            </div>
         </div>
+
+        {/* Rollback Confirmation Modal */}
+        {showRollbackConfirm && existingSnapshot && (
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                  <Icon name="warning" className="text-2xl" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Confirm Rollback</h3>
+                  <p className="text-sm text-slate-500">This will restore the previous state</p>
+                </div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4 mb-6 text-sm">
+                <p className="text-slate-600">
+                  <strong>{existingSnapshot.itemCount} items</strong> were modified on{' '}
+                  <strong>{formatTimestamp(existingSnapshot.timestamp)}</strong>.
+                </p>
+                <p className="text-slate-500 mt-2">
+                  Rolling back will restore the archive to its state before that batch operation.
+                  This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowRollbackConfirm(false)}
+                  className="px-6 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRollback}
+                  className="px-6 py-2 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 flex items-center gap-2"
+                >
+                  <Icon name="history" /> Rollback
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

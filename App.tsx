@@ -483,6 +483,13 @@ const MainApp: React.FC = () => {
                     .catch(() => { setSaveStatus('error'); showToast("Failed to save project!", 'error'); });
               }
           }
+      }} onRollback={(restoredRoot) => {
+          // Restore the root from batch snapshot
+          loadRoot(restoredRoot);
+          setSaveStatus('saving');
+          storage.saveProject(restoredRoot)
+            .then(() => { setSaveStatus('saved'); checkStorage(); })
+            .catch(() => { setSaveStatus('error'); showToast("Failed to save rollback!", 'error'); });
       }} onClose={() => setShowBatchEditor(false)} />}
       
       {showPersonaSettings && <PersonaSettings settings={settings} onUpdate={upd => setSettings(s => ({ ...s, ...upd }))} onClose={() => setShowPersonaSettings(false)} />}

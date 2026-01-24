@@ -28,6 +28,8 @@ export interface IngestReport {
   canvasesCreated: number;
   filesProcessed: number;
   warnings: string[];
+  /** Number of duplicate files detected during ingest */
+  duplicatesSkipped?: number;
 }
 
 export interface IngestResult {

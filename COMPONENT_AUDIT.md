@@ -597,20 +597,22 @@ The following export formats exist in services but lack UI:
 ### ManifestTree.tsx
 
 **Current Wiring:**
-- Recursive tree rendering
+- Virtualized flat rendering (only visible items + overscan buffer) ✅
 - Expand/collapse with arrow keys ✅
 - Full keyboard navigation ✅
 - Type icons per node
 - Roving tabindex pattern
+- Item count display for large trees (100+ items) ✅
+- ResizeObserver for dynamic container sizing ✅
+- Programmatic scroll-into-view on focus ✅
 
 **Remaining Issues:**
 | Issue | Impact | Mitigation |
 |-------|--------|------------|
-| All nodes rendered at once | Slow for 1000+ item trees | Add virtualization |
 | No child count badges | Can't see nested item count | Add count badges |
 | No inline rename | Must use Inspector | Add F2 or double-click rename |
 
-**Bug Likelihood: MEDIUM** (improved from HIGH)
+**Bug Likelihood: LOW** (improved from MEDIUM)
 
 ---
 
@@ -867,25 +869,29 @@ This service is fully implemented but has no UI integration in ExportDialog.
 
 ## 14. Priority Matrix
 
-### High Priority (Next Sprint)
+### ✅ Completed (Previous Sprints)
 
-| Component | Issue | Impact | Effort |
-|-----------|-------|--------|--------|
-| ExportDialog.tsx | Missing OCFL/BagIt/Activity export options | Archival workflows blocked | Medium |
-| ManifestTree.tsx | No virtualization for large trees | UI freezes with 1000+ items | High |
-| StagingArea.tsx | No duplicate detection | Wasted storage, confusion | Medium |
-| AVPlayer.tsx | No keyboard shortcuts | Accessibility gap (WCAG) | Low |
-| types.ts | No type guards | Runtime errors | Low |
+| Component | Issue | Resolution |
+|-----------|-------|------------|
+| ExportDialog.tsx | Missing OCFL/BagIt/Activity export options | ✅ Already wired |
+| ManifestTree.tsx | No virtualization for large trees | ✅ Custom virtualization implemented |
+| StagingArea.tsx | No duplicate detection | ✅ fileIntegrity wired into iiifBuilder |
+| AVPlayer.tsx | No keyboard shortcuts | ✅ Full WCAG keyboard controls |
+| types.ts | No type guards | ✅ Type guards added |
+| ArchiveView.tsx | No rubber-band selection | ✅ Drag-to-select implemented |
+| Viewer.tsx | No rotation controls | ✅ 90° rotation buttons added |
+| BatchEditor.tsx | No undo after apply | ✅ Snapshot + rollback added |
+| Inspector.tsx | Tab state not persisted | ✅ localStorage persistence |
+| Sidebar.tsx | No inline tree filter | ✅ Already implemented |
 
 ### Medium Priority (Backlog)
 
 | Component | Issue | Impact | Effort |
 |-----------|-------|--------|--------|
-| ArchiveView.tsx | No rubber-band selection | UX gap for multi-select | Medium |
-| Viewer.tsx | No rotation controls | Can't correct orientation | Low |
-| BatchEditor.tsx | No undo after apply | Data recovery gap | Medium |
-| Inspector.tsx | Tab state not persisted | Minor annoyance | Low |
-| Sidebar.tsx | No inline tree filter | Hard to find items | Low |
+| App.tsx | No React.Suspense boundaries | No loading states | Medium |
+| App.tsx | No multi-tab coordination | Edit conflicts | High |
+| ManifestTree.tsx | No child count badges | Can't see nested count | Low |
+| CommandPalette.tsx | No recent commands | Minor UX | Low |
 
 ### Low Priority (Nice to Have)
 
@@ -900,44 +906,51 @@ This service is fully implemented but has no UI integration in ExportDialog.
 
 ## 15. Next Actions
 
-### Recommended Next Sprint: Integration & Polish
+### ✅ Completed Sprints
+
+#### Integration & Polish Sprint (COMPLETE)
+1. ✅ Wire archival export formats - Already wired
+2. ✅ Add type guards to types.ts - isCanvas(), isManifest(), etc.
+3. ✅ Add AVPlayer keyboard shortcuts - Full WCAG controls
+4. ✅ Add inline tree filter - Already implemented
+
+#### Performance & Data Quality Sprint (COMPLETE)
+5. ✅ Add tree virtualization to ManifestTree - Custom virtualization
+6. ✅ Add duplicate detection in ingest - fileIntegrity wired
+7. ✅ Add rubber-band selection to ArchiveView - Drag-to-select
+8. ✅ Add undo snapshot to BatchEditor - Snapshot + rollback
+9. ✅ Add rotation controls to Viewer.tsx - 90° CW/CCW buttons
+10. ✅ Add Inspector tab persistence - localStorage per type
+
+### Recommended Next Sprint: Resilience & UX
 
 #### High Priority Tasks
 
-1. **Wire archival export formats to ExportDialog**
-   - Add OCFL, BagIt, Activity Log options
-   - Use existing archivalPackageService.ts and activityStream.ts
-   - Effort: Medium, Impact: High (enables archival workflows)
+1. **Add React.Suspense boundaries to App.tsx**
+   - Wrap lazy-loaded views with loading fallbacks
+   - Effort: Medium, Impact: Medium (UX polish)
 
-2. **Add type guards to types.ts**
-   - Add isCanvas(), isManifest(), isCollection(), isRange()
-   - Prevent runtime casting errors
-   - Effort: Low, Impact: Medium (bug prevention)
+2. **Add multi-tab coordination**
+   - BroadcastChannel for cross-tab state sync
+   - Prevent edit conflicts across tabs
+   - Effort: High, Impact: Medium (data integrity)
 
-3. **Add AVPlayer keyboard shortcuts**
-   - Space = play/pause, Left/Right = seek, Up/Down = volume
-   - Effort: Low, Impact: Medium (WCAG compliance)
+3. **Add session recovery/auto-backup**
+   - localStorage snapshot every 10 seconds
+   - Recovery dialog on crash detection
+   - Effort: Medium, Impact: High (data safety)
 
-4. **Add tree virtualization to ManifestTree**
-   - Use react-window or react-virtualized
-   - Handle 1000+ items without freezing
-   - Effort: High, Impact: High (performance)
-
-5. **Add duplicate detection to StagingArea**
-   - Hash files during ingest
-   - Check against existing assets
-   - Effort: Medium, Impact: Medium (data quality)
-
-6. **Add inline tree filter to Sidebar**
-   - Filter tree nodes by name
-   - Effort: Low, Impact: Medium (UX improvement)
+4. **Add offline indicator**
+   - Connection status in StatusBar
+   - Queue operations when offline
+   - Effort: Low, Impact: Medium (awareness)
 
 #### Medium Priority Tasks
 
-7. Add rotation controls to Viewer.tsx
-8. Add Inspector tab persistence
-9. Add rubber-band selection to ArchiveView
-10. Add undo snapshot to BatchEditor before apply
+5. Add child count badges to ManifestTree
+6. Add recent commands to CommandPalette
+7. Wire autocomplete service to SearchPanel
+8. Add batch QC fix actions to QCDashboard
 
 ---
 
@@ -946,14 +959,15 @@ This service is fully implemented but has no UI integration in ExportDialog.
 | Metric | Value | Change |
 |--------|-------|--------|
 | Components Audited | 44 | - |
-| Services Audited | 30 | +2 |
+| Services Audited | 30 | - |
 | Hooks Audited | 13 | - |
-| Critical Issues | 0 | ↓ -4 |
-| High Priority Issues | 6 | - |
-| Medium Priority Issues | 12 | - |
-| Low Priority Issues | 8 | - |
+| Critical Issues | 0 | ✅ Resolved |
+| High Priority Issues | 0 | ↓ -6 (all resolved) |
+| Medium Priority Issues | 4 | ↓ -8 |
+| Low Priority Issues | 4 | ↓ -4 |
 | Disconnected Features | 4 | Identified |
 | Dead Code Items | 3 | Identified |
+| **Sprints Completed** | **3** | +2 |
 
 ---
 

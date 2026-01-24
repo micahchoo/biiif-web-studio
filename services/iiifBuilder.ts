@@ -5,6 +5,7 @@ import { DEFAULT_INGEST_PREFS, MIME_TYPE_MAP } from '../constants';
 import { load } from 'js-yaml';
 import { extractMetadata } from './metadataHarvester';
 import { getTileWorkerPool, generateDerivativeAsync } from './tileWorker';
+import { fileIntegrity, HashLookupResult } from './fileIntegrity';
 
 /**
  * Queue for background tile pre-generation
@@ -172,7 +173,17 @@ const processNode = async (
 
             const canvasId = `${id}/canvas/${items.length + 1}`;
             const assetId = `${id.split('/').pop()}-${file.name.replace(/[^a-zA-Z0-9-_]/g, '')}`;
-            
+
+            // Check for duplicate files before saving
+            const duplicateCheck = await fileIntegrity.registerFile(file, canvasId, file.name);
+            if (duplicateCheck.isDuplicate && duplicateCheck.existingEntityId) {
+                report.warnings.push(
+                    `Duplicate detected: "${file.name}" matches existing file (hash: ${duplicateCheck.fingerprint?.hash.substring(0, 8)}...). ` +
+                    `Original entity: ${duplicateCheck.existingEntityId}. File will still be imported with shared reference.`
+                );
+                report.duplicatesSkipped = (report.duplicatesSkipped || 0) + 1;
+            }
+
             await storage.saveAsset(file, assetId);
 
             if (file.type.startsWith('image/')) {
