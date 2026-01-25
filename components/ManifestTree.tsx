@@ -19,12 +19,16 @@ const flattenTree = (
   expandedIds: Set<string>,
   result: { id: string; item: IIIFItem; level: number; parentId: string | null }[] = [],
   level = 0,
-  parentId: string | null = null
+  parentId: string | null = null,
+  visited = new Set<string>()
 ): { id: string; item: IIIFItem; level: number; parentId: string | null }[] => {
+  if (visited.has(item.id)) return result;
+  visited.add(item.id);
+
   result.push({ id: item.id, item, level, parentId });
   const children = (item as any).items || [];
   if (children.length > 0 && expandedIds.has(item.id)) {
-    children.forEach((child: IIIFItem) => flattenTree(child, expandedIds, result, level + 1, item.id));
+    children.forEach((child: IIIFItem) => flattenTree(child, expandedIds, result, level + 1, item.id, visited));
   }
   return result;
 };

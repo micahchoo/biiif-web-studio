@@ -6,13 +6,14 @@ import { useToast } from './Toast';
 
 interface CanvasComposerProps {
   canvas: IIIFCanvas;
+  root?: IIIFItem | null;
   onUpdate: (updatedCanvas: IIIFCanvas) => void;
   onClose: () => void;
 }
 
 interface PlacedResource {
   id: string;
-  resource: IIIFItem;
+  resource: IIIFItem & { _text?: string };
   x: number; y: number; w: number; h: number;
   opacity: number;
   locked: boolean;
@@ -27,13 +28,16 @@ interface HistoryState {
 
 const MAX_HISTORY = 50;
 
-export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, onUpdate, onClose }) => {
+export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, root, onUpdate, onClose }) => {
   const { showToast } = useToast();
   const [history, setHistory] = useState<HistoryState>({ past: [], present: [], future: [] });
   const [canvasDimensions, setCanvasDimensions] = useState({ w: canvas.width || 2000, h: canvas.height || 2000 });
   const [scale, setScale] = useState(0.25);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [bgMode, setBgMode] = useState<'grid' | 'dark' | 'light'>('grid');
+  const [sidebarTab, setSidebarTab] = useState<'layers' | 'library'>('layers');
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -134,16 +138,67 @@ export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, onUpdate
     newCanvas.items = [{
       id: `${canvas.id}/page/painting`,
       type: "AnnotationPage",
-      items: layers.map(l => ({
-        id: l.id, type: "Annotation", motivation: "painting",
-        body: { id: l.resource._blobUrl || l.resource.id, type: l.resource.type, format: 'image/jpeg' } as any,
-        target: `${canvas.id}#xywh=${Math.round(l.x)},${Math.round(l.y)},${Math.round(l.w)},${Math.round(l.h)}`
-      }))
+      items: layers.map(l => {
+        let body: any;
+        if (l.resource.type === 'Text' || l.resource._text) {
+            body = {
+                type: 'TextualBody',
+                value: l.resource._text || 'New Text Layer',
+                format: 'text/plain'
+            };
+        } else {
+            const format = l.resource.type === 'Video' ? 'video/mp4' : l.resource.type === 'Sound' ? 'audio/mpeg' : 'image/jpeg';
+            body = { 
+                id: l.resource._blobUrl || l.resource.id, 
+                type: l.resource.type, 
+                format 
+            };
+        }
+        
+        return {
+            id: l.id, 
+            type: "Annotation", 
+            motivation: "painting",
+            body,
+            target: `${canvas.id}#xywh=${Math.round(l.x)},${Math.round(l.y)},${Math.round(l.w)},${Math.round(l.h)}`
+        };
+      })
     }];
     newCanvas.width = canvasDimensions.w;
     newCanvas.height = canvasDimensions.h;
     onUpdate(newCanvas);
     onClose();
+  };
+
+  const addResourceLayer = (item: IIIFItem) => {
+      const id = crypto.randomUUID();
+      const newLayer: PlacedResource = {
+          id,
+          resource: item,
+          x: 100, y: 100, w: 400, h: 300,
+          opacity: 1, locked: false
+      };
+      updateLayers(prev => [...prev, newLayer]);
+      setActiveId(id);
+      showToast("Layer added", "success");
+  };
+
+  const addTextLayer = () => {
+      const id = crypto.randomUUID();
+      const newLayer: PlacedResource = {
+          id,
+          resource: {
+              id: `urn:text:${id}`,
+              type: 'Text',
+              label: { none: ['Text Layer'] },
+              _text: 'Double click to edit text...'
+          },
+          x: 100, y: 100, w: 400, h: 100,
+          opacity: 1, 
+          locked: false
+      };
+      updateLayers(prev => [...prev, newLayer]);
+      setActiveId(id);
   };
 
   const moveLayer = (idx: number, dir: 'up' | 'down') => {
@@ -189,6 +244,7 @@ export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, onUpdate
                   <button key={m} onClick={() => setBgMode(m)} aria-pressed={bgMode === m} className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${bgMode === m ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>{m}</button>
               ))}
           </div>
+          <button onClick={addTextLayer} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-[10px] font-black uppercase flex items-center gap-1"><Icon name="title" className="text-xs"/> Add Text</button>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex bg-white/5 border border-white/10 rounded p-1" role="group" aria-label="Undo/Redo">
@@ -207,10 +263,12 @@ export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, onUpdate
 
       <div className="flex-1 flex overflow-hidden">
         <div className="w-80 bg-slate-900 border-r border-white/10 flex flex-col">
-            <div className="p-4 border-b border-white/5 text-[10px] font-black text-white/40 uppercase tracking-widest flex justify-between items-center">
-                <span>Resource Layers</span>
-                <Icon name="layers" className="text-xs"/>
+            <div className="flex border-b border-white/10">
+                <button onClick={() => setSidebarTab('layers')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${sidebarTab === 'layers' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/40'}`}>Layers</button>
+                <button onClick={() => setSidebarTab('library')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${sidebarTab === 'library' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/40'}`}>Library</button>
             </div>
+            
+            {sidebarTab === 'layers' ? (
             <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar" role="list" aria-label="Resource Layers">
                 {layers.length === 0 ? (
                     <div className="text-center py-20 text-slate-600 italic text-sm">No items on canvas.</div>
@@ -256,15 +314,96 @@ export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, onUpdate
                     </div>
                 ))}
             </div>
+            ) : (
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                    {/* Simple flat list of root items for now */}
+                    {/* In a real app, we'd traverse properly. Mocking simple traversal for demo */}
+                    {root?.items?.map((item: any) => (
+                        <div 
+                            key={item.id} 
+                            draggable 
+                            onDragStart={(e) => e.dataTransfer.setData('application/iiif-item-id', item.id)}
+                            onClick={() => addResourceLayer(item)}
+                            className="p-3 bg-white/5 hover:bg-white/10 rounded-lg cursor-pointer group flex items-center gap-3 border border-transparent hover:border-indigo-500/50"
+                        >
+                            <div className="w-10 h-10 bg-black rounded overflow-hidden shrink-0">
+                                {item.thumbnail?.[0]?.id || item._blobUrl ? (
+                                    <img src={item.thumbnail?.[0]?.id || item._blobUrl} className="w-full h-full object-cover" />
+                                ) : (
+                                    <Icon name="image" className="text-white/20 m-2"/>
+                                )}
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-xs font-bold text-white truncate">{item.label?.['none']?.[0] || 'Untitled'}</div>
+                                <div className="text-[10px] text-white/40 truncate">{item.type}</div>
+                            </div>
+                            <Icon name="add_circle" className="text-white/20 group-hover:text-indigo-400 ml-auto"/>
+                        </div>
+                    ))}
+                    {!root && <div className="p-4 text-center text-white/30 text-xs">No library source available.</div>}
+                </div>
+            )}
         </div>
 
-        <div className={`flex-1 relative overflow-auto flex items-center justify-center p-20 custom-scrollbar shadow-inner ${bgMode === 'light' ? 'bg-slate-200' : bgMode === 'dark' ? 'bg-slate-900' : 'bg-black'}`} onDragOver={e => e.preventDefault()}>
+        <div 
+            className={`flex-1 relative overflow-auto flex items-center justify-center p-20 custom-scrollbar shadow-inner ${bgMode === 'light' ? 'bg-slate-200' : bgMode === 'dark' ? 'bg-slate-900' : 'bg-black'}`} 
+            onDragOver={e => e.preventDefault()}
+            onMouseMove={(e) => {
+                if (isResizing && activeId && resizeHandle) {
+                    const layer = layers.find(l => l.id === activeId);
+                    if (layer) {
+                        const dx = e.movementX / scale;
+                        const dy = e.movementY / scale;
+                        updateLayers(prev => prev.map(l => {
+                            if (l.id !== activeId) return l;
+                            let { x, y, w, h } = l;
+                            if (resizeHandle.includes('e')) w += dx;
+                            if (resizeHandle.includes('w')) { x += dx; w -= dx; }
+                            if (resizeHandle.includes('s')) h += dy;
+                            if (resizeHandle.includes('n')) { y += dy; h -= dy; }
+                            return { ...l, x, y, w: Math.max(10, w), h: Math.max(10, h) };
+                        }));
+                    }
+                }
+            }}
+            onMouseUp={() => { setIsResizing(false); setResizeHandle(null); }}
+            onDrop={(e) => {
+                e.preventDefault();
+                const itemId = e.dataTransfer.getData('application/iiif-item-id');
+                if (itemId) {
+                    // In a real app, we'd fetch metadata. For now, create a placeholder layer
+                    const id = crypto.randomUUID();
+                    const newLayer: PlacedResource = {
+                        id,
+                        resource: {
+                            id: itemId,
+                            type: 'Image',
+                            label: { none: ['Dropped Item'] },
+                            // Try to get blob from transfer if possible, or use ID
+                            _blobUrl: itemId.startsWith('blob:') ? itemId : undefined
+                        },
+                        x: 100, y: 100, w: 400, h: 300,
+                        opacity: 1, locked: false
+                    };
+                    updateLayers(prev => [...prev, newLayer]);
+                    setActiveId(id);
+                    showToast("Layer added from drop", "success");
+                }
+            }}
+        >
             <div className="relative shadow-[0_0_100px_rgba(79,70,229,0.2)] bg-slate-900 border border-white/5" style={{ 
                 width: canvasDimensions.w * scale, 
                 height: canvasDimensions.h * scale, 
                 backgroundImage: bgMode === 'grid' ? 'radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)' : 'none', 
                 backgroundSize: '20px 20px' 
             }} aria-label="Canvas Area">
+                {layers.length === 0 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 pointer-events-none border-2 border-dashed border-white/10 m-4 rounded-3xl">
+                        <Icon name="layers" className="text-6xl mb-4"/>
+                        <h3 className="text-xl font-bold uppercase tracking-widest">Composition Canvas</h3>
+                        <p className="text-sm mt-2">Drag and drop items here to create layers</p>
+                    </div>
+                )}
                 {layers.map((l, idx) => (
                     <div 
                         key={l.id} 
@@ -272,13 +411,54 @@ export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, onUpdate
                         className={`absolute group select-none transition-all ${activeId === l.id ? 'ring-2 ring-indigo-500 z-50 shadow-2xl' : 'z-10'}`} 
                         style={{ left: l.x * scale, top: l.y * scale, width: l.w * scale, height: l.h * scale, opacity: l.opacity, zIndex: layers.length - idx }}
                     >
-                        {l.resource._blobUrl ? <img src={l.resource._blobUrl} className="w-full h-full object-fill pointer-events-none" alt={l.resource.label?.['none']?.[0] || 'Layer Image'} /> : <div className="w-full h-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20"><Icon name="image" className="text-4xl"/></div>}
+                        {(l.resource.type === 'Text' || l.resource._text) ? (
+                            <textarea 
+                                value={l.resource._text} 
+                                onChange={(e) => updateLayers(layers.map(x => x.id === l.id ? {...x, resource: {...x.resource, _text: e.target.value}} : x))}
+                                className="w-full h-full bg-transparent text-white p-2 resize-none outline-none border-2 border-dashed border-white/20"
+                                style={{ fontSize: `${24 * scale}px` }}
+                            />
+                        ) : l.resource.type === 'Video' ? (
+                            <video src={l.resource._blobUrl || l.resource.id} className="w-full h-full object-cover pointer-events-none" />
+                        ) : l.resource.type === 'Sound' ? (
+                            <div className="w-full h-full bg-slate-800 flex flex-col items-center justify-center border border-slate-600">
+                                <Icon name="audiotrack" className="text-4xl text-white/50"/>
+                                <span className="text-[10px] text-white/50 mt-2">Audio Layer</span>
+                            </div>
+                        ) : l.resource._blobUrl ? (
+                            <img src={l.resource._blobUrl} className="w-full h-full object-fill pointer-events-none" alt={l.resource.label?.['none']?.[0] || 'Layer Image'} />
+                        ) : (
+                            <div className="w-full h-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20"><Icon name="image" className="text-4xl"/></div>
+                        )}
+                        
                         {activeId === l.id && (
                             <>
                                 <div className="absolute -top-6 left-0 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded font-bold shadow-lg flex items-center gap-1">
                                     <Icon name={l.locked ? 'lock' : 'auto_fix_high'} className="text-[10px]"/> Synthesis Layer
                                 </div>
                                 <div className="absolute inset-0 border-2 border-indigo-500/50 pointer-events-none"></div>
+                                {/* Resize Handles */}
+                                {!l.locked && (
+                                    <>
+                                        {['nw', 'ne', 'sw', 'se'].map(h => (
+                                            <div
+                                                key={h}
+                                                className={`absolute w-3 h-3 bg-white border border-indigo-500 rounded-full z-50 cursor-${h}-resize`}
+                                                style={{
+                                                    top: h.includes('n') ? -6 : 'auto',
+                                                    bottom: h.includes('s') ? -6 : 'auto',
+                                                    left: h.includes('w') ? -6 : 'auto',
+                                                    right: h.includes('e') ? -6 : 'auto',
+                                                }}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsResizing(true);
+                                                    setResizeHandle(h);
+                                                }}
+                                            />
+                                        ))}
+                                    </>
+                                )}
                             </>
                         )}
                         {l.locked && (

@@ -120,7 +120,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ root, onSelect, onReveal
                 )}
 
                 {/* Autocomplete Dropdown */}
-                {showAutocomplete && autocompleteResults.length > 0 && query.length < 2 && (
+                {showAutocomplete && autocompleteResults.length > 0 && (
                   <div
                     ref={autocompleteRef}
                     className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden"

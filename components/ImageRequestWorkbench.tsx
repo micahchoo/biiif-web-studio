@@ -7,6 +7,7 @@ import { useToast } from './Toast';
 interface ImageRequestWorkbenchProps {
   canvas: IIIFCanvas;
   onClose: () => void;
+  onApply?: (url: string) => void;
 }
 
 interface ImageApiParams {
@@ -17,7 +18,7 @@ interface ImageApiParams {
   format: string;
 }
 
-export const ImageRequestWorkbench: React.FC<ImageRequestWorkbenchProps> = ({ canvas, onClose }) => {
+export const ImageRequestWorkbench: React.FC<ImageRequestWorkbenchProps> = ({ canvas, onClose, onApply }) => {
   const { showToast } = useToast();
 
   const paintingBody = canvas.items?.[0]?.items?.[0]?.body as any;
@@ -214,7 +215,15 @@ export const ImageRequestWorkbench: React.FC<ImageRequestWorkbenchProps> = ({ ca
                 </div>
                 
                 <div className="p-4 bg-slate-50 border-t">
-                    <button onClick={onClose} className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-black shadow-lg transition-all">Apply to Manifest</button>
+                    <button 
+                        onClick={() => {
+                            if (onApply) onApply(url);
+                            onClose();
+                        }} 
+                        className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-black shadow-lg transition-all"
+                    >
+                        Apply to Item
+                    </button>
                 </div>
             </div>
         </div>

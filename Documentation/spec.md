@@ -428,5 +428,3 @@ The system works like a photo editing app but for scholarly annotations. You upl
 
 **5. For Senior Developers:**
 This implements a clean layered architecture with clear separation between UI, application logic, domain models, and infrastructure. The use of Zustand for state management and IndexedDB for persistence creates a scalable offline-first application that can handle large media files while maintaining IIIF compliance.
-
-Would you like me to create any additional diagrams focusing on specific aspects like the data model, build process, or deployment architecture?

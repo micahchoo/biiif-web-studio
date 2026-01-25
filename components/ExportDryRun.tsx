@@ -19,7 +19,7 @@ export const ExportDryRun: React.FC<ExportDryRunProps> = ({ files }) => {
             <span className="text-[10px] font-bold text-iiif-blue bg-blue-50 px-1.5 rounded">{files.length} Files</span>
         </div>
         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-            {files.map(f => (
+            {files.slice(0, 500).map(f => (
                 <div 
                     key={f.path}
                     onClick={() => setSelectedFile(f)}
@@ -34,6 +34,11 @@ export const ExportDryRun: React.FC<ExportDryRunProps> = ({ files }) => {
                     <span className="truncate font-mono">{f.path}</span>
                 </div>
             ))}
+            {files.length > 500 && (
+                <div className="p-4 text-center text-xs text-slate-400 italic">
+                    ... and {files.length - 500} more files
+                </div>
+            )}
         </div>
       </div>
 
@@ -59,8 +64,10 @@ export const ExportDryRun: React.FC<ExportDryRunProps> = ({ files }) => {
                         </div>
                     </div>
                 ) : (
-                    <pre className="text-[11px] font-mono text-blue-200 leading-relaxed">
-                        {selectedFile.content}
+                    <pre className="text-[11px] font-mono text-blue-200 leading-relaxed whitespace-pre-wrap break-all">
+                        {typeof selectedFile.content === 'string' && selectedFile.content.length > 50000 
+                            ? selectedFile.content.slice(0, 50000) + '\n... [Preview Truncated]' 
+                            : selectedFile.content}
                     </pre>
                 )
             ) : (

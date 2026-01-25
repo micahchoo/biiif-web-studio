@@ -168,13 +168,16 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
   const label = getIIIFValue(resource.label, settings.language) || '';
   const summary = getIIIFValue(resource.summary, settings.language) || '';
 
-  const getPreviewUrl = (node: any): string | undefined => {
+  const getPreviewUrl = (node: any, visited = new Set<string>()): string | undefined => {
+      if (!node || visited.has(node.id)) return undefined;
+      visited.add(node.id);
+
       if (node.thumbnail?.[0]?.id) return node.thumbnail[0].id;
       if (node.type === 'Canvas') {
           return node.items?.[0]?.items?.[0]?.body?.id || node._blobUrl;
       }
       if (node.type === 'Manifest' && node.items?.[0]) {
-          return getPreviewUrl(node.items[0]);
+          return getPreviewUrl(node.items[0], visited);
       }
       return node._blobUrl;
   };

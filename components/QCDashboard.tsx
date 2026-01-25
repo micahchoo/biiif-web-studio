@@ -61,7 +61,12 @@ export const QCDashboard: React.FC<QCDashboardProps> = ({ issuesMap, totalItems,
     if (!root) return { item: null, path: [] };
     const path: { id: string, label: string, type: string }[] = [];
     let found: IIIFItem | null = null;
+    const visited = new Set<string>();
+
     const traverse = (node: IIIFItem, currentPath: { id: string, label: string, type: string }[]): boolean => {
+        if (visited.has(node.id)) return false;
+        visited.add(node.id);
+
         const nodeInfo = { id: node.id, label: getIIIFValue(node.label) || 'Untitled', type: node.type };
         if (node.id === id) { 
             found = node; 
@@ -85,7 +90,12 @@ export const QCDashboard: React.FC<QCDashboardProps> = ({ issuesMap, totalItems,
   const handleUpdateItem = (itemId: string, updates: Partial<IIIFItem>) => {
       if (!root) return;
       const newRoot = JSON.parse(JSON.stringify(root));
+      const visited = new Set<string>();
+
       const traverse = (node: IIIFItem): boolean => {
+          if (visited.has(node.id)) return false;
+          visited.add(node.id);
+
           if (node.id === itemId) {
               Object.assign(node, updates);
               return true;
@@ -101,8 +111,12 @@ export const QCDashboard: React.FC<QCDashboardProps> = ({ issuesMap, totalItems,
       if (!root) return;
       const newRoot = JSON.parse(JSON.stringify(root));
       let solved = false;
+      const visited = new Set<string>();
 
       const traverseAndFix = (node: IIIFItem): boolean => {
+          if (visited.has(node.id)) return false;
+          visited.add(node.id);
+
           if (node.id === issue.itemId) {
               if (issue.message.includes('label')) {
                   // Use centralized language map creation

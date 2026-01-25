@@ -392,6 +392,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
   }, []);
 
   // Rubber-band selection handlers
+  // Rubber-band selection handlers
   const handleRubberBandStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     // Only start rubber-band on direct container clicks (not on items)
     if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('rubber-band-area')) return;
@@ -415,84 +416,100 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
     });
   }, []);
 
-  const handleRubberBandMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  // Global mouse handlers for rubber band to handle dragging outside container
+  useEffect(() => {
     if (!rubberBand.isSelecting) return;
 
-    const container = scrollContainerRef.current;
-    if (!container || !rubberBand.containerRect) return;
+    const handleGlobalMove = (e: MouseEvent) => {
+      const container = scrollContainerRef.current;
+      if (!container || !rubberBand.containerRect) return;
 
-    const x = e.clientX - rubberBand.containerRect.left + container.scrollLeft;
-    const y = e.clientY - rubberBand.containerRect.top + container.scrollTop;
+      // Calculate position relative to container, accounting for scroll
+      const x = e.clientX - rubberBand.containerRect.left + container.scrollLeft;
+      const y = e.clientY - rubberBand.containerRect.top + container.scrollTop;
 
-    setRubberBand(prev => ({
-      ...prev,
-      currentX: x,
-      currentY: y
-    }));
-  }, [rubberBand.isSelecting, rubberBand.containerRect]);
-
-  const handleRubberBandEnd = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!rubberBand.isSelecting) return;
-
-    const container = scrollContainerRef.current;
-    if (!container) {
-      setRubberBand(prev => ({ ...prev, isSelecting: false }));
-      return;
-    }
-
-    // Calculate selection rectangle bounds
-    const selectionRect = {
-      left: Math.min(rubberBand.startX, rubberBand.currentX),
-      right: Math.max(rubberBand.startX, rubberBand.currentX),
-      top: Math.min(rubberBand.startY, rubberBand.currentY),
-      bottom: Math.max(rubberBand.startY, rubberBand.currentY)
+      setRubberBand(prev => ({
+        ...prev,
+        currentX: x,
+        currentY: y
+      }));
     };
 
-    // Minimum drag distance to count as rubber-band (avoid accidental selections)
-    const width = selectionRect.right - selectionRect.left;
-    const height = selectionRect.bottom - selectionRect.top;
-    if (width < 10 && height < 10) {
-      setRubberBand(prev => ({ ...prev, isSelecting: false }));
-      return;
-    }
-
-    // Find items within the selection rectangle
-    const newSelectedIds = new Set<string>(e.shiftKey ? selectedIds : []);
-    const containerRect = container.getBoundingClientRect();
-
-    itemRefs.current.forEach((element, id) => {
-      const itemRect = element.getBoundingClientRect();
-      // Convert to container-relative coordinates
-      const itemLeft = itemRect.left - containerRect.left + container.scrollLeft;
-      const itemRight = itemRect.right - containerRect.left + container.scrollLeft;
-      const itemTop = itemRect.top - containerRect.top + container.scrollTop;
-      const itemBottom = itemRect.bottom - containerRect.top + container.scrollTop;
-
-      // Check if item intersects with selection rectangle
-      const intersects = !(
-        itemRight < selectionRect.left ||
-        itemLeft > selectionRect.right ||
-        itemBottom < selectionRect.top ||
-        itemTop > selectionRect.bottom
-      );
-
-      if (intersects) {
-        if (e.ctrlKey || e.metaKey) {
-          // Toggle selection with Ctrl/Cmd
-          if (newSelectedIds.has(id)) {
-            newSelectedIds.delete(id);
-          } else {
-            newSelectedIds.add(id);
-          }
-        } else {
-          newSelectedIds.add(id);
-        }
+    const handleGlobalUp = (e: MouseEvent) => {
+      const container = scrollContainerRef.current;
+      
+      if (!container) {
+        setRubberBand(prev => ({ ...prev, isSelecting: false }));
+        return;
       }
-    });
 
-    setSelectedIds(newSelectedIds);
-    setRubberBand(prev => ({ ...prev, isSelecting: false }));
-  }, [rubberBand, selectedIds]);
+      // Calculate selection rectangle bounds
+      const startX = rubberBand.startX;
+      const startY = rubberBand.startY;
+      // Use current mouse position or last known position
+      const endX = rubberBand.currentX; 
+      const endY = rubberBand.currentY;
+
+      const selectionRect = {
+        left: Math.min(startX, endX),
+        right: Math.max(startX, endX),
+        top: Math.min(startY, endY),
+        bottom: Math.max(startY, endY)
+      };
+
+      // Minimum drag distance to count as rubber-band (avoid accidental selections)
+      const width = selectionRect.right - selectionRect.left;
+      const height = selectionRect.bottom - selectionRect.top;
+      
+      if (width >= 10 || height >= 10) {
+        // Find items within the selection rectangle
+        const newSelectedIds = new Set<string>(e.shiftKey ? selectedIds : []);
+        const containerRect = container.getBoundingClientRect();
+
+        itemRefs.current.forEach((element, id) => {
+          const itemRect = element.getBoundingClientRect();
+          // Convert to container-relative coordinates
+          const itemLeft = itemRect.left - containerRect.left + container.scrollLeft;
+          const itemRight = itemRect.right - containerRect.left + container.scrollLeft;
+          const itemTop = itemRect.top - containerRect.top + container.scrollTop;
+          const itemBottom = itemRect.bottom - containerRect.top + container.scrollTop;
+
+          // Check if item intersects with selection rectangle
+          const intersects = !(
+            itemRight < selectionRect.left ||
+            itemLeft > selectionRect.right ||
+            itemBottom < selectionRect.top ||
+            itemTop > selectionRect.bottom
+          );
+
+          if (intersects) {
+            if (e.ctrlKey || e.metaKey) {
+              // Toggle selection with Ctrl/Cmd
+              if (newSelectedIds.has(id)) {
+                newSelectedIds.delete(id);
+              } else {
+                newSelectedIds.add(id);
+              }
+            } else {
+              newSelectedIds.add(id);
+            }
+          }
+        });
+
+        setSelectedIds(newSelectedIds);
+      }
+      
+      setRubberBand(prev => ({ ...prev, isSelecting: false }));
+    };
+
+    window.addEventListener('mousemove', handleGlobalMove);
+    window.addEventListener('mouseup', handleGlobalUp);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMove);
+      window.removeEventListener('mouseup', handleGlobalUp);
+    };
+  }, [rubberBand.isSelecting, rubberBand.containerRect, rubberBand.startX, rubberBand.startY, rubberBand.currentX, rubberBand.currentY, selectedIds]);
 
   // Calculate rubber-band rectangle for rendering
   const rubberBandRect = useMemo(() => {
@@ -617,9 +634,6 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
           ref={scrollContainerRef}
           className={`flex-1 overflow-y-auto custom-scrollbar pb-24 ${view === 'map' || view === 'timeline' ? 'p-0' : 'p-6'} transition-all duration-300 ${!isMobile && activeItem ? 'w-1/3 max-w-sm border-r border-slate-200' : ''} ${rubberBand.isSelecting ? 'select-none cursor-crosshair' : ''} relative`}
           onMouseDown={view === 'grid' ? handleRubberBandStart : undefined}
-          onMouseMove={view === 'grid' ? handleRubberBandMove : undefined}
-          onMouseUp={view === 'grid' ? handleRubberBandEnd : undefined}
-          onMouseLeave={view === 'grid' ? handleRubberBandEnd : undefined}
         >
           {/* Rubber-band selection rectangle */}
           {rubberBandRect && (
@@ -880,77 +894,3 @@ const VirtualizedList: React.FC<VirtualizedListProps> = ({
   );
 };
 
-const AssetList: React.FC<{ assets: IIIFCanvas[], onSelect: any, selectedIds: Set<string>, fieldMode: boolean }> = ({ assets, onSelect, selectedIds, fieldMode }) => {
-    return (
-    <div className={`border rounded-lg shadow-sm overflow-hidden flex flex-col ${fieldMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-        <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-            <thead className={`${fieldMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-500'} border-b ${fieldMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                <tr>
-                <th className="px-4 py-3 font-medium w-10">
-                    <Icon name="check_box_outline_blank" className="opacity-50" />
-                </th>
-                <th className="px-4 py-3 font-medium">Label</th>
-                <th className="px-4 py-3 font-medium w-32">Type</th>
-                <th className="px-4 py-3 font-medium w-40">Date</th>
-                <th className="px-4 py-3 font-medium w-32 text-right">Dimensions</th>
-                </tr>
-            </thead>
-            <tbody className={`divide-y ${fieldMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                {assets.map((asset) => {
-                    const isSelected = selectedIds.has(asset.id);
-                    const label = getIIIFValue(asset.label) || 'Untitled';
-                    const config = RESOURCE_TYPE_CONFIG[asset.type] || RESOURCE_TYPE_CONFIG['Canvas'];
-                    const date = asset.navDate ? new Date(asset.navDate).toLocaleDateString() : '-';
-                    const dims = asset.width && asset.height ? `${asset.width} x ${asset.height}` : (asset.duration ? `${asset.duration}s` : '-');
-
-                    return (
-                        <tr 
-                            key={asset.id} 
-                            className={`cursor-pointer transition-colors group ${
-                                fieldMode 
-                                    ? (isSelected ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800') 
-                                    : (isSelected ? 'bg-blue-50 text-slate-900' : 'text-slate-600 hover:bg-slate-50')
-                            }`} 
-                            onClick={(e) => onSelect(e, asset)}
-                        >
-                            <td className="px-4 py-3">
-                                <Icon 
-                                    name={isSelected ? "check_box" : "check_box_outline_blank"} 
-                                    className={`${isSelected ? 'text-iiif-blue' : (fieldMode ? 'text-slate-600' : 'text-slate-300')} group-hover:text-iiif-blue transition-colors`} 
-                                />
-                            </td>
-                            <td className="px-4 py-3 font-medium">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 overflow-hidden ${fieldMode ? 'bg-black' : 'bg-slate-100'}`}>
-                                        {(asset as any).thumbnail?.[0]?.id || asset._blobUrl ? (
-                                            <img src={(asset as any).thumbnail?.[0]?.id || asset._blobUrl} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <Icon name={config.icon} className={`${config.colorClass} opacity-70`} />
-                                        )}
-                                    </div>
-                                    <span className="truncate max-w-[200px] md:max-w-md" title={label}>{label}</span>
-                                </div>
-                            </td>
-                            <td className="px-4 py-3">
-                                <span className={`text-[10px] uppercase font-black px-2 py-1 rounded border ${
-                                    fieldMode 
-                                        ? 'bg-slate-950 border-slate-800 text-slate-400' 
-                                        : 'bg-slate-100 border-slate-200 text-slate-500'
-                                }`}>
-                                    {asset.type}
-                                </span>
-                            </td>
-                            <td className="px-4 py-3 font-mono text-xs opacity-70">{date}</td>
-                            <td className="px-4 py-3 font-mono text-xs opacity-70 text-right">{dims}</td>
-                        </tr>
-                    );
-                })}
-            </tbody>
-            </table>
-        </div>
-        {assets.length === 0 && (
-            <div className="p-8 text-center text-slate-400 italic">No items found</div>
-        )}
-    </div>
-)};

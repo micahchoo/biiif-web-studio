@@ -164,9 +164,11 @@ export const MetadataSpreadsheet: React.FC<MetadataSpreadsheetProps> = ({ root, 
       }
       const flatList: FlatItem[] = [];
       const metaKeys = new Set<string>();
+      const visited = new Set<string>();
 
       const traverse = (node: IIIFItem) => {
-          if (!node) return;
+          if (!node || visited.has(node.id)) return;
+          visited.add(node.id);
           
           const isStructural = ['AnnotationPage', 'Annotation', 'Range'].includes(node.type);
           if (showSystemItems || !isStructural) {
@@ -250,8 +252,15 @@ export const MetadataSpreadsheet: React.FC<MetadataSpreadsheetProps> = ({ root, 
       if (!root) return;
       const newRoot = JSON.parse(JSON.stringify(root));
       
+      // Create a map for O(1) lookup
+      const itemMap = new Map(items.map(i => [i.id, i]));
+      const visited = new Set<string>();
+
       const updateNode = (node: IIIFItem) => {
-          const flat = items.find(i => i.id === node.id);
+          if (visited.has(node.id)) return;
+          visited.add(node.id);
+
+          const flat = itemMap.get(node.id);
           if (flat) {
               node.label = { none: [flat.label] };
               node.summary = { none: [flat.summary] };
