@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { IIIFItem, IIIFCanvas, AppMode } from '../types';
+import { IIIFItem, IIIFCanvas, AppMode, AppSettings } from '../types';
 import { ValidationIssue } from '../services/validator';
 import { ArchiveView } from './views/ArchiveView';
 import { BoardView } from './views/BoardView';
@@ -42,6 +42,7 @@ interface ViewRouterProps {
   onComposerOpened: () => void;
   onModeChange: (mode: AppMode) => void;
   onShowInspector: () => void;
+  settings: AppSettings;
 }
 
 export const ViewRouter: React.FC<ViewRouterProps> = ({
@@ -68,6 +69,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
   onComposerOpened,
   onModeChange,
   onShowInspector,
+  settings,
 }) => {
   const handleSwitchToArchive = () => onModeChange('archive');
   const handleSwitchToCollections = () => onModeChange('collections');
@@ -163,7 +165,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
             />
           )}
         >
-          <BoardView root={root} />
+          <BoardView root={root} settings={settings} />
         </ErrorBoundary>
       )}
 

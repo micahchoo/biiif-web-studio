@@ -23,7 +23,11 @@ export type IIIFResourceType =
   | 'AnnotationPage'
   | 'AnnotationCollection'
   | 'Annotation'
-  | 'ContentResource';
+  | 'ContentResource'
+  | 'Agent'
+  | 'SpecificResource'
+  | 'Choice'
+  | 'TextualBody';
 
 export type ContentResourceType = 'Image' | 'Video' | 'Sound' | 'Text' | 'Dataset' | 'Model';
 
@@ -31,13 +35,51 @@ export type ViewingDirection = 'left-to-right' | 'right-to-left' | 'top-to-botto
 
 export type TimeMode = 'trim' | 'scale' | 'loop';
 
+export type Behavior =
+  | 'auto-advance'
+  | 'no-auto-advance'
+  | 'repeat'
+  | 'no-repeat'
+  | 'unordered'
+  | 'individuals'
+  | 'continuous'
+  | 'paged'
+  | 'facing-pages'
+  | 'non-paged'
+  | 'multi-part'
+  | 'together'
+  | 'sequence'
+  | 'thumbnail-nav'
+  | 'no-nav'
+  | 'hidden';
+
+export type Motivation = 'painting' | 'supplementing';
+
+export type LanguageMap = Record<string, string[]>;
+
+export interface MetadataEntry {
+  label: LanguageMap;
+  value: LanguageMap;
+}
+
 // ============================================================================
-// Complete Property Matrix
+// Complete Property Matrix (Corrected from specification)
 // ============================================================================
 
 /**
  * Complete property requirements matrix from IIIF Presentation API 3.0
  * Each property maps to its requirement level for each resource type
+ * 
+ * IMPORTANT CORRECTIONS:
+ * 1. label is REQUIRED for Collection and Manifest, RECOMMENDED for Canvas, Range, AnnotationCollection
+ * 2. metadata is RECOMMENDED for Collection and Manifest
+ * 3. summary is RECOMMENDED for Collection and Manifest
+ * 4. requiredStatement is OPTIONAL for all (but clients MUST render it)
+ * 5. rights is OPTIONAL for all (uses Creative Commons or RightsStatements.org URIs)
+ * 6. provider is RECOMMENDED for Collection and Manifest
+ * 7. navDate is OPTIONAL for Collection, Manifest, Canvas, Range
+ * 8. placeholderCanvas/accompanyingCanvas are OPTIONAL for Collection, Manifest, Canvas, Range
+ * 9. language is for external resources only
  */
 export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRequirement>> = {
   // Descriptive Properties
@@ -49,7 +91,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'RECOMMENDED',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'REQUIRED',
+    SpecificResource: 'OPTIONAL',
+    Choice: 'OPTIONAL',
+    TextualBody: 'OPTIONAL'
   },
   metadata: {
     Collection: 'RECOMMENDED',
@@ -59,7 +105,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'OPTIONAL',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   summary: {
     Collection: 'RECOMMENDED',
@@ -69,7 +119,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'OPTIONAL',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   requiredStatement: {
     Collection: 'OPTIONAL',
@@ -79,7 +133,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'OPTIONAL',
+    Agent: 'OPTIONAL',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   rights: {
     Collection: 'OPTIONAL',
@@ -88,8 +146,12 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     Range: 'OPTIONAL',
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
-    Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    Annotation: 'OPTIONAL',
+    ContentResource: 'OPTIONAL',
+    Agent: 'OPTIONAL',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   provider: {
     Collection: 'RECOMMENDED',
@@ -99,7 +161,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'NOT_ALLOWED', // Agent IS the provider
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   thumbnail: {
     Collection: 'RECOMMENDED',
@@ -109,7 +175,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   navDate: {
     Collection: 'OPTIONAL',
@@ -119,7 +189,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   placeholderCanvas: {
     Collection: 'OPTIONAL',
@@ -129,7 +203,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   accompanyingCanvas: {
     Collection: 'OPTIONAL',
@@ -139,7 +217,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
 
   // Technical Properties
@@ -151,7 +233,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'REQUIRED',
     AnnotationCollection: 'REQUIRED',
     Annotation: 'REQUIRED',
-    ContentResource: 'REQUIRED'
+    ContentResource: 'REQUIRED',
+    Agent: 'REQUIRED',
+    SpecificResource: 'REQUIRED',
+    Choice: 'REQUIRED',
+    TextualBody: 'OPTIONAL'
   },
   type: {
     Collection: 'REQUIRED',
@@ -161,7 +247,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'REQUIRED',
     AnnotationCollection: 'REQUIRED',
     Annotation: 'REQUIRED',
-    ContentResource: 'REQUIRED'
+    ContentResource: 'REQUIRED',
+    Agent: 'REQUIRED',
+    SpecificResource: 'REQUIRED',
+    Choice: 'REQUIRED',
+    TextualBody: 'OPTIONAL'
   },
   format: {
     Collection: 'NOT_ALLOWED',
@@ -171,7 +261,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'RECOMMENDED'
+    ContentResource: 'RECOMMENDED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'OPTIONAL'
   },
   profile: {
     Collection: 'NOT_ALLOWED',
@@ -181,27 +275,39 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   height: {
     Collection: 'NOT_ALLOWED',
     Manifest: 'NOT_ALLOWED',
-    Canvas: 'CONDITIONAL',
+    Canvas: 'CONDITIONAL', // Must have width if height is present
     Range: 'NOT_ALLOWED',
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'RECOMMENDED'
+    ContentResource: 'RECOMMENDED', // For images/videos
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   width: {
     Collection: 'NOT_ALLOWED',
     Manifest: 'NOT_ALLOWED',
-    Canvas: 'CONDITIONAL',
+    Canvas: 'CONDITIONAL', // Must have height if width is present
     Range: 'NOT_ALLOWED',
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'RECOMMENDED'
+    ContentResource: 'RECOMMENDED', // For images/videos
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   duration: {
     Collection: 'NOT_ALLOWED',
@@ -211,7 +317,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'RECOMMENDED'
+    ContentResource: 'RECOMMENDED', // For audio/video
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   language: {
     Collection: 'NOT_ALLOWED',
@@ -221,7 +331,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'RECOMMENDED'
+    ContentResource: 'RECOMMENDED', // For external resources
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'OPTIONAL' // For TextualBody in annotations
   },
   viewingDirection: {
     Collection: 'OPTIONAL',
@@ -231,7 +345,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   behavior: {
     Collection: 'OPTIONAL',
@@ -241,7 +359,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'OPTIONAL',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'OPTIONAL',
+    Choice: 'OPTIONAL',
+    TextualBody: 'NOT_ALLOWED'
   },
   timeMode: {
     Collection: 'NOT_ALLOWED',
@@ -251,7 +373,39 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'OPTIONAL',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  motivation: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'REQUIRED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  purpose: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'OPTIONAL',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'OPTIONAL'
   },
 
   // Linking Properties (External)
@@ -263,7 +417,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'RECOMMENDED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   rendering: {
     Collection: 'OPTIONAL',
@@ -273,7 +431,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   service: {
     Collection: 'OPTIONAL',
@@ -283,17 +445,25 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL', // Especially for images
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   services: {
-    Collection: 'OPTIONAL',
+    Collection: 'OPTIONAL', // Only if top-level
     Manifest: 'OPTIONAL',
     Canvas: 'NOT_ALLOWED',
     Range: 'NOT_ALLOWED',
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   seeAlso: {
     Collection: 'OPTIONAL',
@@ -303,7 +473,25 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'OPTIONAL',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  logo: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'RECOMMENDED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
 
   // Linking Properties (Internal)
@@ -315,7 +503,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'OPTIONAL',
     AnnotationCollection: 'OPTIONAL',
     Annotation: 'OPTIONAL',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   start: {
     Collection: 'NOT_ALLOWED',
@@ -325,7 +517,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   supplementary: {
     Collection: 'NOT_ALLOWED',
@@ -335,7 +531,67 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  body: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'REQUIRED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  target: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'REQUIRED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  source: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'REQUIRED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  selector: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'OPTIONAL',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
 
   // Structural Properties
@@ -347,7 +603,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'RECOMMENDED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'OPTIONAL', // For Choice resources
+    TextualBody: 'NOT_ALLOWED'
   },
   structures: {
     Collection: 'NOT_ALLOWED',
@@ -357,7 +617,11 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'NOT_ALLOWED'
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
   },
   annotations: {
     Collection: 'OPTIONAL',
@@ -367,23 +631,117 @@ export const PROPERTY_MATRIX: Record<string, Record<IIIFResourceType, PropertyRe
     AnnotationPage: 'NOT_ALLOWED',
     AnnotationCollection: 'NOT_ALLOWED',
     Annotation: 'NOT_ALLOWED',
-    ContentResource: 'OPTIONAL'
+    ContentResource: 'OPTIONAL',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  first: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'OPTIONAL',
+    AnnotationCollection: 'RECOMMENDED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  last: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'OPTIONAL',
+    AnnotationCollection: 'RECOMMENDED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  next: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'OPTIONAL',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+  prev: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'OPTIONAL',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+
+  // JSON-LD Context
+  '@context': {
+    Collection: 'REQUIRED', // For top-level resources
+    Manifest: 'REQUIRED', // For top-level resources
+    Canvas: 'NOT_ALLOWED', // Embedded resources don't have @context
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'NOT_ALLOWED'
+  },
+
+  // Value properties for TextualBody
+  value: {
+    Collection: 'NOT_ALLOWED',
+    Manifest: 'NOT_ALLOWED',
+    Canvas: 'NOT_ALLOWED',
+    Range: 'NOT_ALLOWED',
+    AnnotationPage: 'NOT_ALLOWED',
+    AnnotationCollection: 'NOT_ALLOWED',
+    Annotation: 'NOT_ALLOWED',
+    ContentResource: 'NOT_ALLOWED',
+    Agent: 'NOT_ALLOWED',
+    SpecificResource: 'NOT_ALLOWED',
+    Choice: 'NOT_ALLOWED',
+    TextualBody: 'REQUIRED'
   }
 };
 
 // ============================================================================
-// Items Containment Rules
+// Items Containment Rules (Corrected)
 // ============================================================================
 
 /**
  * Defines what resource types can be contained in the 'items' property
+ * From specification Section 3.4
  */
 export const ITEMS_CONTAINMENT: Record<string, string[]> = {
   Collection: ['Collection', 'Manifest'],
   Manifest: ['Canvas'],
   Canvas: ['AnnotationPage'],
-  Range: ['Range', 'Canvas', 'SpecificResource'],
-  AnnotationPage: ['Annotation']
+  Range: ['Range', 'Canvas', 'SpecificResource'], // Can also reference parts of Canvases
+  AnnotationPage: ['Annotation'],
+  Choice: ['ContentResource', 'SpecificResource'] // For Choice resources
 };
 
 // ============================================================================
@@ -407,6 +765,289 @@ export const TIME_MODES: TimeMode[] = ['trim', 'scale', 'loop'];
 export const DEFAULT_TIME_MODE: TimeMode = 'trim';
 
 // ============================================================================
+// Motivation Values
+// ============================================================================
+
+export const MOTIVATIONS: Motivation[] = ['painting', 'supplementing'];
+export const DEFAULT_MOTIVATION: Motivation = 'painting';
+
+// ============================================================================
+// Behavior Validity Rules (Corrected from specification Section 3.2)
+// ============================================================================
+
+interface BehaviorValidity {
+  allowed: Behavior[];
+  notAllowed: Behavior[];
+}
+
+export const BEHAVIOR_VALIDITY: Record<string, BehaviorValidity> = {
+  Collection: {
+    allowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'multi-part',
+      'together'
+    ],
+    notAllowed: [
+      'facing-pages',
+      'non-paged',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav',
+      'hidden' // hidden is only for annotation-related resources
+    ]
+  },
+  Manifest: {
+    allowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged'
+    ],
+    notAllowed: [
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav',
+      'hidden'
+    ]
+  },
+  Canvas: {
+    allowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'facing-pages',
+      'non-paged'
+    ],
+    notAllowed: [
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav',
+      'hidden'
+    ]
+  },
+  Range: {
+    allowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'sequence',
+      'thumbnail-nav',
+      'no-nav'
+    ],
+    notAllowed: [
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'repeat', // repeat is only for Collections and Manifests
+      'no-repeat', // no-repeat is only for Collections and Manifests
+      'hidden'
+    ]
+  },
+  AnnotationPage: {
+    allowed: ['hidden'],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav'
+    ]
+  },
+  AnnotationCollection: {
+    allowed: ['hidden'],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav'
+    ]
+  },
+  Annotation: {
+    allowed: ['hidden'],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav'
+    ]
+  },
+  SpecificResource: {
+    allowed: ['hidden'],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav'
+    ]
+  },
+  Choice: {
+    allowed: ['hidden'],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav'
+    ]
+  },
+  ContentResource: {
+    allowed: [],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav',
+      'hidden'
+    ]
+  },
+  Agent: {
+    allowed: [],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav',
+      'hidden'
+    ]
+  },
+  TextualBody: {
+    allowed: [],
+    notAllowed: [
+      'auto-advance',
+      'no-auto-advance',
+      'repeat',
+      'no-repeat',
+      'unordered',
+      'individuals',
+      'continuous',
+      'paged',
+      'facing-pages',
+      'non-paged',
+      'multi-part',
+      'together',
+      'no-nav',
+      'sequence',
+      'thumbnail-nav',
+      'hidden'
+    ]
+  }
+};
+
+// ============================================================================
+// Content Resource Types
+// ============================================================================
+
+export const CONTENT_RESOURCE_TYPES: ContentResourceType[] = [
+  'Dataset',
+  'Image',
+  'Model',
+  'Sound',
+  'Text',
+  'Video'
+];
+
+// ============================================================================
 // Legacy Schema Interface (for backwards compatibility)
 // ============================================================================
 
@@ -415,8 +1056,8 @@ export interface ResourceSchema {
   recommended: string[];
   optional: string[];
   notAllowed: string[];
-  behaviorAllowed?: string[];
-  behaviorNotAllowed?: string[];
+  behaviorAllowed: string[];
+  behaviorNotAllowed: string[];
 }
 
 /**
@@ -451,8 +1092,7 @@ function buildResourceSchema(resourceType: IIIFResourceType): ResourceSchema {
     }
   }
 
-  // Import behavior rules from iiifBehaviors module if available
-  // For now, inline the behavior rules
+  // Add behavior rules
   const behaviorRules = BEHAVIOR_VALIDITY[resourceType];
   if (behaviorRules) {
     schema.behaviorAllowed = behaviorRules.allowed;
@@ -461,50 +1101,6 @@ function buildResourceSchema(resourceType: IIIFResourceType): ResourceSchema {
 
   return schema;
 }
-
-// ============================================================================
-// Behavior Validity Rules (inline for this module)
-// ============================================================================
-
-interface BehaviorValidity {
-  allowed: string[];
-  notAllowed: string[];
-}
-
-const BEHAVIOR_VALIDITY: Record<string, BehaviorValidity> = {
-  Collection: {
-    allowed: ['auto-advance', 'no-auto-advance', 'repeat', 'no-repeat', 'unordered', 'individuals', 'continuous', 'paged', 'multi-part', 'together', 'hidden'],
-    notAllowed: ['facing-pages', 'non-paged', 'no-nav', 'sequence', 'thumbnail-nav']
-  },
-  Manifest: {
-    allowed: ['auto-advance', 'no-auto-advance', 'repeat', 'no-repeat', 'unordered', 'individuals', 'continuous', 'paged', 'hidden'],
-    notAllowed: ['facing-pages', 'non-paged', 'multi-part', 'together', 'no-nav', 'sequence', 'thumbnail-nav']
-  },
-  Canvas: {
-    allowed: ['auto-advance', 'no-auto-advance', 'repeat', 'no-repeat', 'facing-pages', 'non-paged', 'hidden'],
-    notAllowed: ['unordered', 'individuals', 'continuous', 'paged', 'multi-part', 'together', 'no-nav', 'sequence', 'thumbnail-nav']
-  },
-  Range: {
-    allowed: ['auto-advance', 'no-auto-advance', 'repeat', 'no-repeat', 'unordered', 'individuals', 'continuous', 'paged', 'sequence', 'thumbnail-nav', 'no-nav', 'hidden'],
-    notAllowed: ['facing-pages', 'non-paged', 'multi-part', 'together']
-  },
-  AnnotationPage: {
-    allowed: ['hidden'],
-    notAllowed: []
-  },
-  AnnotationCollection: {
-    allowed: ['hidden'],
-    notAllowed: []
-  },
-  Annotation: {
-    allowed: ['hidden'],
-    notAllowed: []
-  },
-  ContentResource: {
-    allowed: [],
-    notAllowed: ['auto-advance', 'no-auto-advance', 'repeat', 'no-repeat', 'unordered', 'individuals', 'continuous', 'paged', 'facing-pages', 'non-paged', 'multi-part', 'together', 'no-nav', 'sequence', 'thumbnail-nav', 'hidden']
-  }
-};
 
 // ============================================================================
 // Build IIIF_SCHEMA for backwards compatibility
@@ -518,7 +1114,11 @@ export const IIIF_SCHEMA: Record<string, ResourceSchema> = {
   AnnotationPage: buildResourceSchema('AnnotationPage'),
   AnnotationCollection: buildResourceSchema('AnnotationCollection'),
   Annotation: buildResourceSchema('Annotation'),
-  ContentResource: buildResourceSchema('ContentResource')
+  ContentResource: buildResourceSchema('ContentResource'),
+  Agent: buildResourceSchema('Agent'),
+  SpecificResource: buildResourceSchema('SpecificResource'),
+  Choice: buildResourceSchema('Choice'),
+  TextualBody: buildResourceSchema('TextualBody')
 };
 
 // ============================================================================
@@ -526,12 +1126,20 @@ export const IIIF_SCHEMA: Record<string, ResourceSchema> = {
 // ============================================================================
 
 /**
- * Normalize resource type to handle content types
+ * Normalize resource type to handle content types and Web Annotation types
  */
-function normalizeResourceType(resourceType: string): IIIFResourceType {
-  if (['Image', 'Video', 'Sound', 'Text', 'Dataset', 'Model'].includes(resourceType)) {
+export function normalizeResourceType(resourceType: string): IIIFResourceType {
+  // Content resource types
+  if (CONTENT_RESOURCE_TYPES.includes(resourceType as ContentResourceType)) {
     return 'ContentResource';
   }
+  
+  // Web Annotation types
+  if (resourceType === 'SpecificResource' || resourceType === 'Choice' || resourceType === 'TextualBody') {
+    return resourceType as IIIFResourceType;
+  }
+  
+  // IIIF resource types
   return resourceType as IIIFResourceType;
 }
 
@@ -619,10 +1227,10 @@ export function isBehaviorAllowed(resourceType: string, behavior: string): boole
   if (!rules) return false;
 
   // Explicitly not allowed
-  if (rules.notAllowed.includes(behavior)) return false;
+  if (rules.notAllowed.includes(behavior as Behavior)) return false;
 
   // Check if in allowed list
-  return rules.allowed.includes(behavior);
+  return rules.allowed.includes(behavior as Behavior);
 }
 
 /**
@@ -671,6 +1279,17 @@ export function isValidTimeMode(mode: string): mode is TimeMode {
 }
 
 // ============================================================================
+// Motivation Validation
+// ============================================================================
+
+/**
+ * Check if motivation value is valid
+ */
+export function isValidMotivation(motivation: string): motivation is Motivation {
+  return MOTIVATIONS.includes(motivation as Motivation);
+}
+
+// ============================================================================
 // Items Containment Validation
 // ============================================================================
 
@@ -697,22 +1316,50 @@ export interface ConditionalRequirement {
   property: string;
   condition: (resource: any) => boolean;
   message: string;
+  type: 'error' | 'warning';
 }
 
 /**
- * Conditional requirements for Canvas
+ * Conditional requirements from specification
  */
 export const CONDITIONAL_REQUIREMENTS: Record<string, ConditionalRequirement[]> = {
   Canvas: [
     {
       property: 'height',
-      condition: (canvas) => 'width' in canvas && !('height' in canvas),
-      message: 'Canvas must have height if width is present'
+      condition: (canvas) => ('width' in canvas && canvas.width !== undefined && canvas.width !== null) && 
+                           !('height' in canvas && canvas.height !== undefined && canvas.height !== null),
+      message: 'Canvas must have height if width is present',
+      type: 'error'
     },
     {
       property: 'width',
-      condition: (canvas) => 'height' in canvas && !('width' in canvas),
-      message: 'Canvas must have width if height is present'
+      condition: (canvas) => ('height' in canvas && canvas.height !== undefined && canvas.height !== null) && 
+                           !('width' in canvas && canvas.width !== undefined && canvas.width !== null),
+      message: 'Canvas must have width if height is present',
+      type: 'error'
+    }
+  ],
+  Agent: [
+    {
+      property: 'homepage',
+      condition: (agent) => agent.type === 'Agent' && !('homepage' in agent && agent.homepage !== undefined),
+      message: 'Agent should have homepage property',
+      type: 'warning'
+    },
+    {
+      property: 'logo',
+      condition: (agent) => agent.type === 'Agent' && !('logo' in agent && agent.logo !== undefined),
+      message: 'Agent should have logo property',
+      type: 'warning'
+    }
+  ],
+  ContentResource: [
+    {
+      property: 'format',
+      condition: (resource) => ['Image', 'Video', 'Sound', 'Text', 'Dataset'].includes(resource.type) && 
+                              !('format' in resource && resource.format !== undefined),
+      message: 'Content resource should have format property',
+      type: 'warning'
     }
   ]
 };
@@ -720,19 +1367,67 @@ export const CONDITIONAL_REQUIREMENTS: Record<string, ConditionalRequirement[]> 
 /**
  * Check conditional requirements for a resource
  */
-export function checkConditionalRequirements(resource: IIIFItem): string[] {
+export function checkConditionalRequirements(resource: IIIFItem): {errors: string[], warnings: string[]} {
   const errors: string[] = [];
-  const requirements = CONDITIONAL_REQUIREMENTS[resource.type];
+  const warnings: string[] = [];
+  const type = normalizeResourceType(resource.type);
+  const requirements = CONDITIONAL_REQUIREMENTS[type] || [];
 
-  if (requirements) {
-    for (const req of requirements) {
-      if (req.condition(resource)) {
+  for (const req of requirements) {
+    if (req.condition(resource)) {
+      if (req.type === 'error') {
         errors.push(req.message);
+      } else {
+        warnings.push(req.message);
       }
     }
   }
 
-  return errors;
+  // Additional conditional checks based on property combinations
+  if (type === 'Canvas') {
+    const canvas = resource as any;
+    if (canvas.duration && (!canvas.height || !canvas.width)) {
+      warnings.push('Canvas with duration should also have height and width for proper rendering');
+    }
+  }
+
+  return { errors, warnings };
+}
+
+// ============================================================================
+// Content Resource Type Validation
+// ============================================================================
+
+/**
+ * Check if a type is a valid content resource type
+ */
+export function isValidContentResourceType(type: string): boolean {
+  return CONTENT_RESOURCE_TYPES.includes(type as ContentResourceType);
+}
+
+/**
+ * Get content resource type recommendations
+ */
+export function getContentResourceRecommendations(type: string): string[] {
+  const recommendations: string[] = [];
+  
+  if (type === 'Image' || type === 'Video') {
+    recommendations.push('height', 'width');
+  }
+  
+  if (type === 'Video' || type === 'Sound') {
+    recommendations.push('duration');
+  }
+  
+  if (type === 'Text') {
+    recommendations.push('language');
+  }
+  
+  if (type === 'Image') {
+    recommendations.push('service'); // IIIF Image API service
+  }
+  
+  return recommendations;
 }
 
 // ============================================================================
@@ -756,7 +1451,7 @@ export function validateResource(resource: IIIFItem): string[] {
   // Check required fields
   const required = getRequiredProperties(type);
   for (const field of required) {
-    if (!(field in resource) || (resource as any)[field] === undefined) {
+    if (!(field in resource) || (resource as any)[field] === undefined || (resource as any)[field] === null) {
       errors.push(`Missing required field: ${field}`);
     }
   }
@@ -772,7 +1467,8 @@ export function validateResource(resource: IIIFItem): string[] {
 
   // Check behavior values
   if (resource.behavior) {
-    for (const b of resource.behavior) {
+    const behaviors = Array.isArray(resource.behavior) ? resource.behavior : [resource.behavior];
+    for (const b of behaviors) {
       if (!isBehaviorAllowed(type, b)) {
         errors.push(`Behavior not allowed on ${type}: ${b}`);
       }
@@ -797,17 +1493,71 @@ export function validateResource(resource: IIIFItem): string[] {
     }
   }
 
-  // Check conditional requirements
-  errors.push(...checkConditionalRequirements(resource));
+  // Check motivation (Annotation only)
+  if ((resource as any).motivation) {
+    if (type !== 'Annotation') {
+      errors.push(`motivation not allowed on ${type}`);
+    } else if (!isValidMotivation((resource as any).motivation)) {
+      errors.push(`Invalid motivation: ${(resource as any).motivation}. Must be 'painting' or 'supplementing'`);
+    }
+  }
 
-  // Validate ID format (must be HTTP(S) URI)
+  // Check conditional requirements
+  const conditional = checkConditionalRequirements(resource);
+  errors.push(...conditional.errors);
+
+  // Validate ID format (must be HTTP(S) URI for IIIF resources)
   if (resource.id && !resource.id.startsWith('http://') && !resource.id.startsWith('https://')) {
-    errors.push('ID must be a valid HTTP(S) URI');
+    if (['Collection', 'Manifest', 'Canvas', 'Range', 'AnnotationPage', 'AnnotationCollection', 'Annotation'].includes(type)) {
+      errors.push('ID must be a valid HTTP(S) URI for IIIF resources');
+    }
   }
 
   // Canvas-specific: Canvas ID must not contain fragment identifier
   if (type === 'Canvas' && resource.id?.includes('#')) {
     errors.push('Canvas ID must not contain a fragment identifier');
+  }
+
+  // Check items array if present
+  if ('items' in resource && resource.items !== undefined) {
+    const items = resource.items;
+    if (!Array.isArray(items)) {
+      errors.push('items must be an array');
+    } else if (items.length === 0) {
+      if (getPropertyRequirement(type, 'items') === 'REQUIRED') {
+        errors.push(`${type} must have at least one item in 'items' array`);
+      }
+    } else {
+      // Validate each item's type if possible
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item && item.type && !isValidItemType(type, item.type)) {
+          errors.push(`Item at index ${i} has invalid type '${item.type}' for parent type '${type}'`);
+        }
+      }
+    }
+  }
+
+  // Check metadata format if present
+  if ((resource as any).metadata && Array.isArray((resource as any).metadata)) {
+    const metadata = (resource as any).metadata as MetadataEntry[];
+    for (let i = 0; i < metadata.length; i++) {
+      const entry = metadata[i];
+      if (!entry.label || !entry.value) {
+        errors.push(`Metadata entry at index ${i} must have both label and value`);
+      }
+    }
+  }
+
+  // Check language map format for label, summary, metadata, requiredStatement
+  const languageMapFields = ['label', 'summary', 'requiredStatement'];
+  for (const field of languageMapFields) {
+    if ((resource as any)[field]) {
+      const value = (resource as any)[field];
+      if (typeof value !== 'object' || Array.isArray(value)) {
+        errors.push(`${field} must be a language map object`);
+      }
+    }
   }
 
   return errors;
@@ -824,21 +1574,39 @@ export function validateResourceFull(resource: IIIFItem): ValidationResult {
   // Check recommended fields for warnings
   const recommended = getRecommendedProperties(type);
   for (const field of recommended) {
-    if (!(field in resource) || (resource as any)[field] === undefined) {
+    if (!(field in resource) || (resource as any)[field] === undefined || (resource as any)[field] === null) {
       warnings.push(`Missing recommended field: ${field}`);
     }
   }
 
-  // Check for empty items
-  if ('items' in resource) {
-    const items = (resource as any).items;
-    if (!items || items.length === 0) {
-      if (getPropertyRequirement(type, 'items') === 'REQUIRED') {
-        errors.push(`${type} must have at least one item in 'items' array`);
-      } else {
-        warnings.push(`${type} has empty 'items' array`);
+  // Check conditional warnings
+  const conditional = checkConditionalRequirements(resource);
+  warnings.push(...conditional.warnings);
+
+  // Check for content resource specific recommendations
+  if (type === 'ContentResource') {
+    const contentRecs = getContentResourceRecommendations(resource.type);
+    for (const field of contentRecs) {
+      if (!(field in resource) || (resource as any)[field] === undefined) {
+        warnings.push(`Content resource of type ${resource.type} should have ${field} property`);
       }
     }
+  }
+
+  // Check for empty but required arrays
+  if ('items' in resource && resource.items && Array.isArray(resource.items) && resource.items.length === 0) {
+    if (getPropertyRequirement(type, 'items') === 'REQUIRED') {
+      // Already covered by errors
+    } else if (getPropertyRequirement(type, 'items') === 'RECOMMENDED') {
+      warnings.push(`${type} has empty 'items' array (recommended to have items)`);
+    }
+  }
+
+  // Validate context for top-level resources
+  if (['Collection', 'Manifest'].includes(type) && !(resource as any)['@context']) {
+    errors.push('Top-level resource must have @context property');
+  } else if ((resource as any)['@context'] && !['Collection', 'Manifest'].includes(type)) {
+    warnings.push('@context should only be on top-level resources (Collection, Manifest)');
   }
 
   return {
@@ -862,7 +1630,7 @@ export interface MinimumResourceTemplate {
 /**
  * Get minimum viable resource template
  */
-export function getMinimumTemplate(resourceType: string, id: string, label?: Record<string, string[]>): MinimumResourceTemplate {
+export function getMinimumTemplate(resourceType: string, id: string, label?: LanguageMap): MinimumResourceTemplate {
   const base: MinimumResourceTemplate = {
     id,
     type: resourceType
@@ -886,6 +1654,7 @@ export function getMinimumTemplate(resourceType: string, id: string, label?: Rec
     case 'Canvas':
       return {
         ...base,
+        label: label || { none: ['Untitled Canvas'] },
         height: 1000,
         width: 800,
         items: []
@@ -893,6 +1662,7 @@ export function getMinimumTemplate(resourceType: string, id: string, label?: Rec
     case 'Range':
       return {
         ...base,
+        label: label || { none: ['Untitled Range'] },
         items: []
       };
     case 'AnnotationPage':
@@ -904,14 +1674,183 @@ export function getMinimumTemplate(resourceType: string, id: string, label?: Rec
       return {
         ...base,
         motivation: 'painting',
-        body: null,
+        body: {
+          id: '',
+          type: 'ContentResource'
+        },
         target: ''
       };
     case 'AnnotationCollection':
       return {
-        ...base
+        ...base,
+        label: label || { none: ['Untitled Annotation Collection'] }
+      };
+    case 'Agent':
+      return {
+        ...base,
+        label: label || { none: ['Untitled Agent'] }
+      };
+    case 'SpecificResource':
+      return {
+        ...base,
+        source: ''
+      };
+    case 'Choice':
+      return {
+        ...base,
+        items: []
+      };
+    case 'TextualBody':
+      return {
+        ...base,
+        value: '',
+        language: 'none'
+      };
+    case 'ContentResource':
+      return {
+        ...base,
+        label: label || { none: ['Untitled Content Resource'] }
       };
     default:
       return base;
   }
 }
+
+// ============================================================================
+// Helper Functions for Common Operations
+// ============================================================================
+
+/**
+ * Create a language map for a property
+ */
+export function createLanguageMap(value: string, language: string = 'none'): LanguageMap {
+  return { [language]: [value] };
+}
+
+/**
+ * Create a metadata entry
+ */
+export function createMetadataEntry(label: string, value: string, labelLang: string = 'none', valueLang: string = 'none'): MetadataEntry {
+  return {
+    label: createLanguageMap(label, labelLang),
+    value: createLanguageMap(value, valueLang)
+  };
+}
+
+/**
+ * Check if a resource needs @context (top-level resources)
+ */
+export function needsContext(resourceType: string): boolean {
+  return ['Collection', 'Manifest'].includes(resourceType);
+}
+
+/**
+ * Get the default context URI
+ */
+export function getDefaultContext(): string {
+  return "http://iiif.io/api/presentation/3/context.json";
+}
+
+/**
+ * Generate a default label based on resource type and index
+ */
+export function generateDefaultLabel(resourceType: string, index?: number): LanguageMap {
+  const baseLabel = `Untitled ${resourceType}`;
+  const label = index !== undefined ? `${baseLabel} ${index + 1}` : baseLabel;
+  return createLanguageMap(label);
+}
+
+// ============================================================================
+// Rights Statements and Licenses
+// ============================================================================
+
+export const COMMON_RIGHTS_URIS = {
+  'CC BY 4.0': 'http://creativecommons.org/licenses/by/4.0/',
+  'CC BY-SA 4.0': 'http://creativecommons.org/licenses/by-sa/4.0/',
+  'CC BY-NC 4.0': 'http://creativecommons.org/licenses/by-nc/4.0/',
+  'CC BY-ND 4.0': 'http://creativecommons.org/licenses/by-nd/4.0/',
+  'CC BY-NC-SA 4.0': 'http://creativecommons.org/licenses/by-nc-sa/4.0/',
+  'CC BY-NC-ND 4.0': 'http://creativecommons.org/licenses/by-nc-nd/4.0/',
+  'CC0 1.0': 'http://creativecommons.org/publicdomain/zero/1.0/',
+  'Public Domain Mark': 'http://creativecommons.org/publicdomain/mark/1.0/',
+  'In Copyright': 'http://rightsstatements.org/vocab/InC/1.0/',
+  'In Copyright - Educational Use Permitted': 'http://rightsstatements.org/vocab/InC-EDU/1.0/',
+  'In Copyright - EU Orphan Work': 'http://rightsstatements.org/vocab/InC-OW-EU/1.0/',
+  'No Copyright - Non-Commercial Use Only': 'http://rightsstatements.org/vocab/NoC-NC/1.0/',
+  'No Copyright - Other Known Legal Restrictions': 'http://rightsstatements.org/vocab/NoC-OKLR/1.0/',
+  'No Copyright - United States': 'http://rightsstatements.org/vocab/NoC-US/1.0/',
+  'Copyright Not Evaluated': 'http://rightsstatements.org/vocab/CNE/1.0/',
+  'Copyright Undetermined': 'http://rightsstatements.org/vocab/UND/1.0/'
+};
+
+/**
+ * Check if a URI is a valid rights statement
+ */
+export function isValidRightsUri(uri: string): boolean {
+  return Object.values(COMMON_RIGHTS_URIS).includes(uri);
+}
+
+/**
+ * Get the display name for a rights URI
+ */
+export function getRightsDisplayName(uri: string): string {
+  for (const [name, rightsUri] of Object.entries(COMMON_RIGHTS_URIS)) {
+    if (rightsUri === uri) {
+      return name;
+    }
+  }
+  return uri;
+}
+
+// ============================================================================
+// Export everything
+// ============================================================================
+
+export default {
+  PROPERTY_MATRIX,
+  ITEMS_CONTAINMENT,
+  VIEWING_DIRECTIONS,
+  DEFAULT_VIEWING_DIRECTION,
+  TIME_MODES,
+  DEFAULT_TIME_MODE,
+  MOTIVATIONS,
+  DEFAULT_MOTIVATION,
+  BEHAVIOR_VALIDITY,
+  CONTENT_RESOURCE_TYPES,
+  IIIF_SCHEMA,
+  
+  // Functions
+  normalizeResourceType,
+  getPropertyRequirement,
+  isPropertyAllowed,
+  getAllowedProperties,
+  getRequiredProperties,
+  getRecommendedProperties,
+  isBehaviorAllowed,
+  getAllowedBehaviors,
+  getNotAllowedBehaviors,
+  isValidViewingDirection,
+  canHaveViewingDirection,
+  isValidTimeMode,
+  isValidMotivation,
+  getValidItemTypes,
+  isValidItemType,
+  checkConditionalRequirements,
+  isValidContentResourceType,
+  getContentResourceRecommendations,
+  validateResource,
+  validateResourceFull,
+  getMinimumTemplate,
+  
+  // Helper functions
+  createLanguageMap,
+  createMetadataEntry,
+  needsContext,
+  getDefaultContext,
+  generateDefaultLabel,
+  
+  // Rights
+  COMMON_RIGHTS_URIS,
+  isValidRightsUri,
+  getRightsDisplayName
+};

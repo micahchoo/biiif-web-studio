@@ -430,58 +430,68 @@ interface IIIFHierarchicalItem extends IIIFItemLike {
 }
 
 /**
- * Resolve a thumbnail for any IIIF item with cascading fallback.
+ * Recursively find the first N leaf-node canvases in a IIIF hierarchy.
+ * Used for generating aggregated thumbnails for Collections and Manifests.
+ * 
+ * @param item - The starting IIIF item
+ * @param limit - Maximum number of canvases to find (default: 4)
+ * @param depth - Internal recursion depth tracking
+ */
+export function resolveLeafCanvases(
+  item: IIIFHierarchicalItem | null | undefined,
+  limit: number = 4,
+  depth: number = 0
+): IIIFItemLike[] {
+  if (!item || depth > 10) return [];
+  
+  if (item.type === 'Canvas') {
+    return [item];
+  }
+
+  const results: IIIFItemLike[] = [];
+  const children = item.items || [];
+  
+  for (const child of children) {
+    const leaves = resolveLeafCanvases(child, limit - results.length, depth + 1);
+    results.push(...leaves);
+    if (results.length >= limit) break;
+  }
+
+  return results.slice(0, limit);
+}
+
+/**
+ * Resolve up to 4 thumbnail URLs for a IIIF resource (Collection, Manifest, or Canvas).
  *
- * Resolution Priority:
- * 1. Explicit thumbnail property (if set on the item)
- * 2. For Manifests: First Canvas thumbnail
- * 3. For Collections: First Manifest's first Canvas
- * 4. null (caller can show placeholder)
- *
- * @param item - The IIIF item (Collection, Manifest, Canvas, etc.)
- * @param preferredWidth - Desired width for the thumbnail
- * @returns Resolved thumbnail URL or null
+ * @param item - The IIIF item
+ * @param preferredWidth - Desired width for the thumbnails
+ * @returns Array of resolved thumbnail URLs
+ */
+export function resolveHierarchicalThumbs(
+  item: IIIFHierarchicalItem | null | undefined,
+  preferredWidth: number = 150
+): string[] {
+  if (!item) return [];
+
+  // If item has a direct thumbnail, use it as the primary (single) thumbnail
+  const directThumb = resolveThumbUrl(item, preferredWidth);
+  if (directThumb) return [directThumb];
+
+  // Otherwise, find leaf canvases and resolve their thumbnails
+  const leaves = resolveLeafCanvases(item, 4);
+  return leaves
+    .map(leaf => resolveThumbUrl(leaf, preferredWidth))
+    .filter((url): url is string => url !== null);
+}
+
+/**
+ * Resolve a single thumbnail URL for any IIIF item with cascading fallback.
+ * Maintains backward compatibility while using the new hierarchical logic.
  */
 export function resolveHierarchicalThumb(
   item: IIIFHierarchicalItem | null | undefined,
   preferredWidth: number = 150
 ): string | null {
-  if (!item) return null;
-
-  // 1. Check for explicit thumbnail on the item
-  const directThumb = resolveThumbUrl(item, preferredWidth);
-  if (directThumb) return directThumb;
-
-  // 2. For Manifests, try first Canvas
-  if (item.type === 'Manifest' && item.items && item.items.length > 0) {
-    const firstCanvas = item.items[0];
-    const canvasThumb = resolveHierarchicalThumb(firstCanvas, preferredWidth);
-    if (canvasThumb) return canvasThumb;
-  }
-
-  // 3. For Collections, try first child (Manifest or Collection)
-  if (item.type === 'Collection' && item.items && item.items.length > 0) {
-    // Try first Manifest
-    const firstManifest = item.items.find(child => child.type === 'Manifest');
-    if (firstManifest) {
-      const manifestThumb = resolveHierarchicalThumb(firstManifest, preferredWidth);
-      if (manifestThumb) return manifestThumb;
-    }
-
-    // Try first Collection (nested)
-    const firstCollection = item.items.find(child => child.type === 'Collection');
-    if (firstCollection) {
-      const collectionThumb = resolveHierarchicalThumb(firstCollection, preferredWidth);
-      if (collectionThumb) return collectionThumb;
-    }
-  }
-
-  // 4. For Canvases, we should have already found it via resolveThumbUrl
-  // but try the canvas-specific resolution as fallback
-  if (item.type === 'Canvas') {
-    const result = resolveImageSource(item as IIIFCanvasLike, { width: preferredWidth });
-    return result.url;
-  }
-
-  return null;
+  const thumbs = resolveHierarchicalThumbs(item, preferredWidth);
+  return thumbs.length > 0 ? thumbs[0] : null;
 }

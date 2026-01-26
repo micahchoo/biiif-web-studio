@@ -12,7 +12,9 @@ import {
   getPropertyRequirement,
   getAllowedBehaviors,
   VIEWING_DIRECTIONS,
-  canHaveViewingDirection
+  canHaveViewingDirection,
+  getAllowedProperties,
+  PROPERTY_MATRIX
 } from '../utils/iiifSchema';
 import { resolvePreviewUrl } from '../utils/imageSourceResolver';
 
@@ -182,8 +184,22 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
   };
 
   const handleAddMetadataField = (labelStr: string) => {
-      const newMeta = [...(resource.metadata || []), { label: { [settings.language]: [labelStr] }, value: { [settings.language]: [''] } }];
-      onUpdateResource({ metadata: newMeta });
+      const propName = labelStr.charAt(0).toLowerCase() + labelStr.slice(1);
+      
+      // Handle special properties that are first-class fields in IIIFItem
+      if (propName === 'rights' || propName === 'navDate' || propName === 'behavior' || propName === 'viewingDirection' || propName === 'requiredStatement' || propName === 'navPlace') {
+          // These are already handled by the UI if they are not undefined
+          if (propName === 'navPlace') {
+              onUpdateResource({ navPlace: { type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] }, properties: {} } } as any);
+          } else {
+              // Trigger visibility of standard fields
+              onUpdateResource({ [propName]: propName === 'behavior' ? [] : '' });
+          }
+      } else {
+          // Generic metadata
+          const newMeta = [...(resource.metadata || []), { label: { [settings.language]: [labelStr] }, value: { [settings.language]: [''] } }];
+          onUpdateResource({ metadata: newMeta });
+      }
       setShowAddMenu(false);
   };
 
@@ -266,6 +282,29 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
                         />
                     </div>
 
+                    {/* Integrated Geospatial Editor */}
+                    {(resource as any).navPlace && (
+                        <div className={`pt-4 border-t ${settings.fieldMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                             <div className="flex justify-between items-center mb-2">
+                                <label className={`text-[10px] font-black uppercase tracking-widest ${settings.fieldMode ? 'text-slate-500' : 'text-slate-400'}`}>Geospatial Location</label>
+                                <button 
+                                    onClick={() => onUpdateResource({ navPlace: undefined } as any)}
+                                    className="text-[10px] text-red-400 hover:text-red-600 uppercase font-black"
+                                >
+                                    Remove
+                                </button>
+                             </div>
+                             <div className={`border rounded-lg overflow-hidden ${settings.fieldMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                <GeoEditor
+                                    item={resource}
+                                    onChange={(navPlace) => onUpdateResource({ navPlace } as any)}
+                                    height={200}
+                                    editable={true}
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     <div className={`pt-4 border-t ${settings.fieldMode ? 'border-slate-800' : 'border-slate-100'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <label className={`text-[10px] font-black uppercase tracking-widest ${settings.fieldMode ? 'text-slate-500' : 'text-slate-400'}`}>Field Metadata</label>
@@ -280,7 +319,22 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
                                     Add Field <Icon name="expand_more" className="text-[10px]"/>
                                 </button>
                                 {showAddMenu && (
-                                    <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 shadow-xl rounded-lg py-2 z-50 min-w-[140px] max-h-[200px] overflow-y-auto custom-scrollbar">
+                                    <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 shadow-xl rounded-lg py-2 z-50 min-w-[180px] max-h-[300px] overflow-y-auto custom-scrollbar animate-in zoom-in-95">
+                                        {/* Dynamic suggestions from Spec */}
+                                        <div className="px-4 py-1 text-[8px] font-black text-slate-400 uppercase tracking-widest border-b mb-1">Spec Properties</div>
+                                        {getAllowedProperties(resource.type)
+                                            .filter(p => !['id', 'type', 'items', 'annotations', 'structures', 'label', 'summary', 'metadata'].includes(p))
+                                            .map(p => (
+                                            <button 
+                                                key={p} 
+                                                onClick={() => handleAddMetadataField(p.charAt(0).toUpperCase() + p.slice(1))} 
+                                                className="w-full px-4 py-1.5 text-left text-[10px] font-bold text-slate-600 hover:bg-blue-50 transition-colors flex justify-between items-center group"
+                                            >
+                                                <span>{p}</span>
+                                                <span className="text-[7px] opacity-0 group-hover:opacity-50 font-mono italic">{getPropertyRequirement(resource.type, p).toLowerCase()}</span>
+                                            </button>
+                                        ))}
+                                        <div className="px-4 py-1 text-[8px] font-black text-slate-400 uppercase tracking-widest border-b mt-2 mb-1">Templates</div>
                                         {settings.metadataTemplate.map(prop => (
                                             <button key={prop} onClick={() => handleAddMetadataField(prop)} className="w-full px-4 py-1.5 text-left text-[10px] font-bold text-slate-600 hover:bg-blue-50 transition-colors">{prop}</button>
                                         ))}

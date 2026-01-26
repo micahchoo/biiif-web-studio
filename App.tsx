@@ -469,6 +469,7 @@ const MainApp: React.FC = () => {
             onComposerOpened={() => setPipelineContext(ctx => ({ ...ctx, preloadedManifest: null }))}
             onModeChange={setCurrentMode}
             onShowInspector={() => setShowInspector(true)}
+            settings={settings}
           />
           <ContextualHelp mode={currentMode} isInspectorOpen={showInspector && !!selectedItem && !settings.fieldMode} />
         </main>

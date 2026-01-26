@@ -717,13 +717,34 @@ export function updateEntity(
 ): NormalizedState {
   const type = state.typeIndex[id];
   if (!type) {
-    console.warn(`Entity not found: ${id}`);
-    return state;
+    // If ID not found in normalized type index, try a direct search in entities (fallback for stale index)
+    let foundType: EntityType | null = null;
+    for (const t of Object.keys(state.entities) as EntityType[]) {
+        if (state.entities[t][id]) {
+            foundType = t;
+            break;
+        }
+    }
+    
+    if (!foundType) {
+        console.warn(`Entity not found in vault: ${id}. Update aborted.`);
+        return state;
+    }
+    
+    // Auto-fix stale type index
+    state.typeIndex[id] = foundType;
+    console.info(`Fixed stale type index for ${id} (${foundType})`);
   }
 
-  const store = state.entities[type] as Record<string, IIIFItem>;
+  const actualType = type || state.typeIndex[id];
+  const store = state.entities[actualType] as Record<string, IIIFItem>;
   const existing = store[id];
   if (!existing) return state;
+
+  // Special handling: if ID itself is being updated, we need a more complex update
+  if (updates.id && updates.id !== id) {
+      console.warn("Direct ID update through updateEntity is discouraged. Use renameEntity logic.");
+  }
 
   // Create new entity with updates
   const updated = { ...existing, ...updates };
@@ -733,7 +754,7 @@ export function updateEntity(
     ...state,
     entities: {
       ...state.entities,
-      [type]: {
+      [actualType]: {
         ...store,
         [id]: updated
       }

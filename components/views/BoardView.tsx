@@ -1,25 +1,49 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { IIIFManifest, IIIFItem, IIIFCanvas, IIIFAnnotationPage, IIIFAnnotation, ConnectionType, getIIIFValue } from '../../types';
+import { IIIFManifest, IIIFItem, IIIFCanvas, IIIFAnnotationPage, IIIFAnnotation, ConnectionType, getIIIFValue, AppSettings } from '../../types';
 import { Icon } from '../Icon';
 import { useToast } from '../Toast';
+import { Inspector } from '../Inspector';
 import { saveAs } from 'file-saver';
 import { useViewport, usePanZoomGestures } from '../../hooks';
 import { useHistory } from '../../hooks/useHistory';
 import { PolygonAnnotationTool } from '../PolygonAnnotationTool';
 import { ImageRequestWorkbench } from '../ImageRequestWorkbench';
 import { CanvasComposer } from '../CanvasComposer';
+import { resolveHierarchicalThumbs } from '../../utils/imageSourceResolver';
+import { StackedThumbnail } from '../StackedThumbnail';
+
+export type AnchorSide = 'T' | 'R' | 'B' | 'L';
 
 interface BoardItem {
   id: string; resourceId: string; x: number; y: number; w: number; h: number;
-  resourceType: string; label: string; blobUrl?: string; annotation?: string;
+  resourceType: string; label: string; blobUrl?: string; blobUrls?: string[]; annotation?: string;
   isNote?: boolean;
   annotations?: IIIFAnnotation[]; // Drawing annotations
   layers?: any[]; // Composed layers
+  // Full IIIF properties
+  metadata?: IIIFItem['metadata'];
+  summary?: IIIFItem['summary'];
+  requiredStatement?: IIIFItem['requiredStatement'];
+  rights?: IIIFItem['rights'];
+  provider?: IIIFItem['provider'];
+  behavior?: IIIFItem['behavior'];
 }
 
 interface Connection {
-  id: string; fromId: string; toId: string; type: ConnectionType; label?: string;
+  id: string; 
+  fromId: string; 
+  toId: string; 
+  type: ConnectionType; 
+  label?: string;
+  fromAnchor?: AnchorSide;
+  toAnchor?: AnchorSide;
+  waypoints?: { x: number, y: number }[];
+  // Full IIIF properties for connection (Annotation)
+  metadata?: IIIFItem['metadata'];
+  summary?: IIIFItem['summary'];
+  requiredStatement?: IIIFItem['requiredStatement'];
+  rights?: IIIFItem['rights'];
 }
 
 interface BoardState {
@@ -27,7 +51,7 @@ interface BoardState {
     connections: Connection[];
 }
 
-export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
+export const BoardView: React.FC<{ root: IIIFItem | null, settings: AppSettings }> = ({ root, settings }) => {
   const { showToast } = useToast();
   
   // History state
@@ -129,6 +153,8 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
           blob = (resource as any).thumbnail?.[0]?.id;
       }
 
+      const blobUrls = resolveHierarchicalThumbs(resource, 400);
+
       updateBoard(prev => ({
           ...prev,
           items: [...prev.items, { 
@@ -137,6 +163,7 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
             resourceType: resource?.type || 'Resource', 
             label, 
             blobUrl: blob,
+            blobUrls: blobUrls,
             x: coords.x - 100, 
             y: coords.y - 75, 
             w: 200, 
@@ -216,6 +243,8 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
       }
   }, [draggingId, connectingStart, handleMouseMove, handleGlobalMouseUp]);
 
+  const [activeAnchor, setActiveAnchor] = useState<{ id: string, side: AnchorSide } | null>(null);
+
   const handleItemDown = (e: React.MouseEvent, id: string) => {
       e.stopPropagation();
       if (mode === 'view') return;
@@ -226,23 +255,34 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
       if (tool === 'select') {
           setDraggingId(id);
       } else {
-          setConnectingStart(id);
+          // If we clicked near an anchor, start connecting from there
+          // Handled by anchor hit areas now
       }
   };
 
   const handleItemUp = (id: string) => {
     if (tool === 'connect' && connectingStart && connectingStart !== id) {
-        const exists = connections.some(c => (c.fromId === connectingStart && c.toId === id) || (c.fromId === id && c.toId === connectingStart));
+        const exists = connections.some(c => 
+            (c.fromId === connectingStart && c.toId === id && c.fromAnchor === activeAnchor?.side)
+        );
         if (!exists) {
             updateBoard(prev => ({
                 ...prev,
-                connections: [...prev.connections, { id: crypto.randomUUID(), fromId: connectingStart, toId: id, type: 'relatesTo' }]
+                connections: [...prev.connections, { 
+                    id: crypto.randomUUID(), 
+                    fromId: connectingStart, 
+                    toId: id, 
+                    type: 'relatesTo',
+                    fromAnchor: activeAnchor?.side || 'B',
+                    toAnchor: 'T' // Default to top for now
+                }]
             }));
             showToast("Archive connection synthesized", "success");
         }
     }
     setDraggingId(null);
     setConnectingStart(null);
+    setActiveAnchor(null);
   };
 
   const applyTemplate = (type: 'grid' | 'sequence' | 'comparison') => {
@@ -285,6 +325,17 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
       }));
       setShowTemplates(false);
       showToast("Template applied", "success");
+  };
+
+  const getAnchorPos = (id: string, side: AnchorSide = 'B') => {
+      const it = items.find(i => i.id === id);
+      if (!it) return { x: 0, y: 0 };
+      switch (side) {
+          case 'T': return { x: it.x + it.w / 2, y: it.y };
+          case 'R': return { x: it.x + it.w, y: it.y + it.h / 2 };
+          case 'B': return { x: it.x + it.w / 2, y: it.y + it.h };
+          case 'L': return { x: it.x, y: it.y + it.h / 2 };
+      }
   };
 
   const getCenter = (id: string) => {
@@ -443,24 +494,31 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
           format: "text/plain"
       });
 
-      return {
+      const anno: any = {
         id: `${canvasId}/annotation/item-${idx}`,
         type: "Annotation",
         motivation: "painting",
         label: { none: [item.label] },
         body: body as any,
-        target: `${canvasId}#xywh=${Math.round(normX)},${Math.round(normY)},${Math.round(item.w)},${Math.round(item.h)}`
+        target: `${canvasId}#xywh=${Math.round(normX)},${Math.round(normY)},${Math.round(item.w)},${Math.round(item.h)}`,
+        metadata: item.metadata,
+        summary: item.summary,
+        requiredStatement: item.requiredStatement,
+        rights: item.rights,
+        provider: item.provider
       };
+      if (item.behavior) anno.behavior = item.behavior;
+      return anno;
     });
 
-    // ... (Linking annotations same as before) ...
-    // To save space, reusing existing logic structure
     const linkingAnnotations: IIIFAnnotation[] = connections.map((conn, idx) => {
         const fromItem = items.find(i => i.id === conn.fromId);
         const toItem = items.find(i => i.id === conn.toId);
         if (!fromItem || !toItem) return null;
   
-        const fromCenter = { x: fromItem.x - minX + fromItem.w / 2, y: fromItem.y - minY + fromItem.h / 2 };
+        const fromAnchor = getAnchorPos(conn.fromId, conn.fromAnchor || 'B');
+        const normX = (fromAnchor?.x || 0) - minX;
+        const normY = (fromAnchor?.y || 0) - minY;
         
         return {
           id: `${canvasId}/annotation/link-${idx}`,
@@ -469,11 +527,21 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
           label: { none: [conn.label || conn.type] },
           body: {
             type: "TextualBody",
-            value: JSON.stringify({ relationshipType: conn.type, label: conn.label }),
+            value: JSON.stringify({ 
+                relationshipType: conn.type, 
+                label: conn.label,
+                fromAnchor: conn.fromAnchor,
+                toAnchor: conn.toAnchor,
+                waypoints: conn.waypoints
+            }),
             format: "application/json"
           },
-          target: `${canvasId}#xywh=${Math.round(fromCenter.x)},${Math.round(fromCenter.y)},1,1`
-        };
+          target: `${canvasId}#xywh=${Math.round(normX)},${Math.round(normY)},1,1`,
+          metadata: conn.metadata,
+          summary: conn.summary,
+          requiredStatement: conn.requiredStatement,
+          rights: conn.rights
+        } as IIIFAnnotation;
     }).filter(Boolean) as IIIFAnnotation[];
 
     const paintingPage: IIIFAnnotationPage = {
@@ -502,7 +570,7 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
     const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/ld+json' });
     saveAs(blob, `board-export-${new Date().toISOString().split('T')[0]}.json`);
     showToast("Board exported as IIIF Manifest", "success");
-  }, [items, connections, showToast]);
+  }, [items, connections, showToast, getAnchorPos]);
 
   return (
     <div className="flex flex-col h-full bg-slate-100 overflow-hidden relative font-sans">
@@ -594,23 +662,98 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
                 <div style={{ transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.scale})`, transformOrigin: '0 0', width: '100%', height: '100%' }}>
                     <svg className="absolute inset-0 overflow-visible pointer-events-none z-10" style={{ width: '10000px', height: '10000px' }}>
                         {connections.map(c => {
-                            const start = getCenter(c.fromId), end = getCenter(c.toId);
+                            const start = getAnchorPos(c.fromId, c.fromAnchor || 'B');
+                            const end = getAnchorPos(c.toId, c.toAnchor || 'T');
                             const isSelected = selectedConnectionId === c.id;
+
+                            // Build path string for multi-segment connections
+                            let pathD = `M ${start?.x || 0} ${start?.y || 0}`;
+                            if (c.waypoints && c.waypoints.length > 0) {
+                                c.waypoints.forEach(wp => {
+                                    pathD += ` L ${wp.x} ${wp.y}`;
+                                });
+                            }
+                            pathD += ` L ${end?.x || 0} ${end?.y || 0}`;
+
                             return (
                                 <g key={c.id} className="pointer-events-auto cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedConnectionId(c.id); setActiveId(null); }}>
-                                    <line 
-                                        x1={start.x} y1={start.y} x2={end.x} y2={end.y} 
+                                    <path 
+                                        d={pathD}
+                                        fill="none"
                                         stroke={isSelected ? "#005596" : "#3b82f6"} 
                                         strokeWidth={isSelected ? "5" : "2.5"} 
                                         strokeDasharray={isSelected ? "none" : "6,4"} 
+                                        strokeLinejoin="round"
+                                        strokeLinecap="round"
                                     />
-                                    {c.label && <text x={(start.x + end.x)/2} y={(start.y + end.y)/2 - 10} textAnchor="middle" className="text-[10px] font-black uppercase fill-slate-700 bg-white">{c.label}</text>}
+                                    
+                                    {/* Mid-point handle for transformation */}
+                                    {isSelected && !c.waypoints?.length && (
+                                        <circle 
+                                            cx={((start?.x || 0) + (end?.x || 0)) / 2} 
+                                            cy={((start?.y || 0) + (end?.y || 0)) / 2} 
+                                            r="4" 
+                                            fill="white" 
+                                            stroke="#005596" 
+                                            strokeWidth="2"
+                                            className="cursor-pointer"
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                // Create a waypoint at current mid-point
+                                                const mid = { x: ((start?.x || 0) + (end?.x || 0)) / 2, y: ((start?.y || 0) + (end?.y || 0)) / 2 };
+                                                updateBoard(prev => ({
+                                                    ...prev,
+                                                    connections: prev.connections.map(conn => conn.id === c.id ? { ...conn, waypoints: [mid] } : conn)
+                                                }));
+                                            }}
+                                        />
+                                    )}
+
+                                    {/* Draggable waypoints */}
+                                    {isSelected && c.waypoints?.map((wp, i) => (
+                                        <circle 
+                                            key={i}
+                                            cx={wp.x} cy={wp.y} r="5" 
+                                            fill="#005596" 
+                                            className="cursor-move"
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                const handleWPMove = (me: MouseEvent) => {
+                                                    const coords = getCanvasCoords(me);
+                                                    updateBoard(prev => ({
+                                                        ...prev,
+                                                        connections: prev.connections.map(conn => {
+                                                            if (conn.id !== c.id || !conn.waypoints) return conn;
+                                                            const newWPs = [...conn.waypoints];
+                                                            newWPs[i] = coords;
+                                                            return { ...conn, waypoints: newWPs };
+                                                        })
+                                                    }));
+                                                };
+                                                const handleWPUp = () => {
+                                                    window.removeEventListener('mousemove', handleWPMove);
+                                                    window.removeEventListener('mouseup', handleWPUp);
+                                                };
+                                                window.addEventListener('mousemove', handleWPMove);
+                                                window.addEventListener('mouseup', handleWPUp);
+                                            }}
+                                            onDoubleClick={(e) => {
+                                                e.stopPropagation();
+                                                updateBoard(prev => ({
+                                                    ...prev,
+                                                    connections: prev.connections.map(conn => conn.id === c.id ? { ...conn, waypoints: conn.waypoints?.filter((_, idx) => idx !== i) } : conn)
+                                                }));
+                                            }}
+                                        />
+                                    ))}
+
+                                    {c.label && <text x={((start?.x || 0) + (end?.x || 0))/2} y={((start?.y || 0) + (end?.y || 0))/2 - 10} textAnchor="middle" className="text-[10px] font-black uppercase fill-slate-700 bg-white">{c.label}</text>}
                                 </g>
                             );
                         })}
                         {connectingStart && (
                             <line 
-                                x1={getCenter(connectingStart).x} y1={getCenter(connectingStart).y} 
+                                x1={getAnchorPos(connectingStart, activeAnchor?.side || 'B')?.x || 0} y1={getAnchorPos(connectingStart, activeAnchor?.side || 'B')?.y || 0} 
                                 x2={mousePos.x} y2={mousePos.y} 
                                 stroke="#3b82f6" strokeWidth="2" strokeDasharray="4,4" 
                             />
@@ -625,6 +768,103 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
                             className={`absolute bg-white shadow-2xl rounded-2xl overflow-hidden group select-none transition-shadow ${activeId === it.id ? 'ring-4 ring-iiif-blue/20 border-iiif-blue' : 'border-slate-200'} border-2 z-20 ${it.isNote ? 'bg-yellow-50 border-yellow-200' : ''}`} 
                             style={{ left: it.x, top: it.y, width: it.w, height: it.h }}
                         >
+                            {/* Anchor Points */}
+                            {(tool === 'connect' || activeId === it.id) && (
+                                <>
+                                    <div 
+                                        className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-iiif-blue border-2 border-white z-50 cursor-crosshair hover:scale-150 transition-transform" 
+                                        onMouseDown={(e) => { e.stopPropagation(); setConnectingStart(it.id); setActiveAnchor({ id: it.id, side: 'T' }); }}
+                                        onMouseUp={(e) => {
+                                            if (connectingStart && connectingStart !== it.id) {
+                                                e.stopPropagation();
+                                                const fromAnchor = activeAnchor?.side || 'B';
+                                                updateBoard(prev => ({
+                                                    ...prev,
+                                                    connections: [...prev.connections, { 
+                                                        id: crypto.randomUUID(), 
+                                                        fromId: connectingStart, 
+                                                        toId: it.id, 
+                                                        type: 'relatesTo',
+                                                        fromAnchor,
+                                                        toAnchor: 'T'
+                                                    }]
+                                                }));
+                                                setConnectingStart(null);
+                                                setActiveAnchor(null);
+                                            }
+                                        }}
+                                    />
+                                    <div 
+                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 rounded-full bg-iiif-blue border-2 border-white z-50 cursor-crosshair hover:scale-150 transition-transform" 
+                                        onMouseDown={(e) => { e.stopPropagation(); setConnectingStart(it.id); setActiveAnchor({ id: it.id, side: 'B' }); }}
+                                        onMouseUp={(e) => {
+                                            if (connectingStart && connectingStart !== it.id) {
+                                                e.stopPropagation();
+                                                const fromAnchor = activeAnchor?.side || 'B';
+                                                updateBoard(prev => ({
+                                                    ...prev,
+                                                    connections: [...prev.connections, { 
+                                                        id: crypto.randomUUID(), 
+                                                        fromId: connectingStart, 
+                                                        toId: it.id, 
+                                                        type: 'relatesTo',
+                                                        fromAnchor,
+                                                        toAnchor: 'B'
+                                                    }]
+                                                }));
+                                                setConnectingStart(null);
+                                                setActiveAnchor(null);
+                                            }
+                                        }}
+                                    />
+                                    <div 
+                                        className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-iiif-blue border-2 border-white z-50 cursor-crosshair hover:scale-150 transition-transform" 
+                                        onMouseDown={(e) => { e.stopPropagation(); setConnectingStart(it.id); setActiveAnchor({ id: it.id, side: 'L' }); }}
+                                        onMouseUp={(e) => {
+                                            if (connectingStart && connectingStart !== it.id) {
+                                                e.stopPropagation();
+                                                const fromAnchor = activeAnchor?.side || 'B';
+                                                updateBoard(prev => ({
+                                                    ...prev,
+                                                    connections: [...prev.connections, { 
+                                                        id: crypto.randomUUID(), 
+                                                        fromId: connectingStart, 
+                                                        toId: it.id, 
+                                                        type: 'relatesTo',
+                                                        fromAnchor,
+                                                        toAnchor: 'L'
+                                                    }]
+                                                }));
+                                                setConnectingStart(null);
+                                                setActiveAnchor(null);
+                                            }
+                                        }}
+                                    />
+                                    <div 
+                                        className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-iiif-blue border-2 border-white z-50 cursor-crosshair hover:scale-150 transition-transform" 
+                                        onMouseDown={(e) => { e.stopPropagation(); setConnectingStart(it.id); setActiveAnchor({ id: it.id, side: 'R' }); }}
+                                        onMouseUp={(e) => {
+                                            if (connectingStart && connectingStart !== it.id) {
+                                                e.stopPropagation();
+                                                const fromAnchor = activeAnchor?.side || 'B';
+                                                updateBoard(prev => ({
+                                                    ...prev,
+                                                    connections: [...prev.connections, { 
+                                                        id: crypto.randomUUID(), 
+                                                        fromId: connectingStart, 
+                                                        toId: it.id, 
+                                                        type: 'relatesTo',
+                                                        fromAnchor,
+                                                        toAnchor: 'R'
+                                                    }]
+                                                }));
+                                                setConnectingStart(null);
+                                                setActiveAnchor(null);
+                                            }
+                                        }}
+                                    />
+                                </>
+                            )}
                             {it.isNote ? (
                                 <div className="h-full flex flex-col p-4 bg-yellow-50">
                                     <textarea 
@@ -638,7 +878,14 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
                             ) : (
                                 <div className="h-full flex flex-col relative">
                                     <div className="flex-1 bg-slate-900 flex items-center justify-center relative overflow-hidden">
-                                        {it.blobUrl ? (
+                                        {it.blobUrls && it.blobUrls.length > 0 ? (
+                                            <StackedThumbnail 
+                                                urls={it.blobUrls} 
+                                                size="xl" 
+                                                className="w-full h-full"
+                                                icon="description"
+                                            />
+                                        ) : it.blobUrl ? (
                                             <img src={it.blobUrl} className="w-full h-full object-contain pointer-events-none" alt="Pin" />
                                         ) : (
                                             <Icon name="description" className="text-5xl text-slate-700 opacity-50"/>
@@ -697,49 +944,77 @@ export const BoardView: React.FC<{ root: IIIFItem | null }> = ({ root }) => {
             <div className="w-80 bg-white border-l shadow-xl z-30 flex flex-col">
                 <div className="h-12 border-b flex items-center px-4 justify-between bg-slate-50">
                     <div className="flex gap-4">
-                        <button onClick={() => setInspectorTab('properties')} className={`text-[10px] font-black uppercase tracking-widest py-3 border-b-2 transition-all ${inspectorTab === 'properties' ? 'text-iiif-blue border-iiif-blue' : 'text-slate-400 border-transparent'}`}>Properties</button>
+                        <button onClick={() => setInspectorTab('properties')} className={`text-[10px] font-black uppercase tracking-widest py-3 border-b-2 transition-all ${inspectorTab === 'properties' ? 'text-iiif-blue border-iiif-blue' : 'text-slate-400 border-transparent'}`}>IIIF Properties</button>
                         <button onClick={() => setInspectorTab('design')} className={`text-[10px] font-black uppercase tracking-widest py-3 border-b-2 transition-all ${inspectorTab === 'design' ? 'text-iiif-blue border-iiif-blue' : 'text-slate-400 border-transparent'}`}>Design</button>
                     </div>
                     <button onClick={() => { setActiveId(null); setSelectedConnectionId(null); }}><Icon name="close" className="text-slate-300 text-sm"/></button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {inspectorTab === 'properties' ? (
-                        <>
-                            {activeItem && (
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Item Label</label>
-                                        <input 
-                                            value={activeItem.label || ''} 
-                                            onChange={(e) => updateBoard(prev => ({...prev, items: prev.items.map(it => it.id === activeId ? {...it, label: e.target.value} : it)}))}
-                                            className="w-full text-xs p-2 rounded-lg border outline-none font-bold"
-                                        />
-                                    </div>
-                                    {!activeItem.isNote && (
-                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Annotation</label>
-                                            <textarea 
-                                                value={activeItem.annotation || ''} 
-                                                onChange={(e) => updateBoard(prev => ({...prev, items: prev.items.map(it => it.id === activeId ? {...it, annotation: e.target.value} : it)}))}
-                                                placeholder="Add scholarly notes..."
-                                                className="w-full text-xs p-3 rounded-lg border outline-none min-h-[100px]"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {activeConn && (
-                                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                                    <label className="block text-[10px] font-black text-blue-700 uppercase mb-2">Relationship</label>
-                                    <input 
-                                        value={activeConn.label || ''}
-                                        onChange={(e) => updateBoard(prev => ({...prev, connections: prev.connections.map(c => c.id === selectedConnectionId ? {...c, label: e.target.value} : c)}))}
-                                        className="w-full text-xs font-bold p-3 rounded-lg border-2 border-blue-100 outline-none uppercase tracking-widest"
-                                    />
-                                </div>
-                            )}
-                        </>
+                        <div className="h-full">
+                            {activeItem ? (
+                                <Inspector 
+                                    resource={{
+                                        id: activeItem.resourceId,
+                                        type: activeItem.resourceType as any,
+                                        label: { none: [activeItem.label] },
+                                        metadata: activeItem.metadata,
+                                        summary: activeItem.summary,
+                                        requiredStatement: activeItem.requiredStatement,
+                                        rights: activeItem.rights,
+                                        provider: activeItem.provider,
+                                        behavior: activeItem.behavior
+                                    }}
+                                    onUpdateResource={(updates) => {
+                                        updateBoard(prev => ({
+                                            ...prev,
+                                            items: prev.items.map(it => it.id === activeId ? {
+                                                ...it,
+                                                label: updates.label ? getIIIFValue(updates.label) : it.label,
+                                                metadata: updates.metadata || it.metadata,
+                                                summary: updates.summary || it.summary,
+                                                requiredStatement: updates.requiredStatement || it.requiredStatement,
+                                                rights: updates.rights || it.rights,
+                                                provider: updates.provider || it.provider,
+                                                behavior: updates.behavior || it.behavior
+                                            } : it)
+                                        }));
+                                    }}
+                                    settings={settings}
+                                    visible={true}
+                                    onClose={() => setActiveId(null)}
+                                />
+                            ) : activeConn ? (
+                                <Inspector 
+                                    resource={{
+                                        id: activeConn.id,
+                                        type: 'Annotation',
+                                        label: { none: [activeConn.label || 'Connection'] },
+                                        metadata: activeConn.metadata,
+                                        summary: activeConn.summary,
+                                        requiredStatement: activeConn.requiredStatement,
+                                        rights: activeConn.rights
+                                    }}
+                                    onUpdateResource={(updates) => {
+                                        updateBoard(prev => ({
+                                            ...prev,
+                                            connections: prev.connections.map(c => c.id === selectedConnectionId ? {
+                                                ...c,
+                                                label: updates.label ? getIIIFValue(updates.label) : c.label,
+                                                metadata: updates.metadata || c.metadata,
+                                                summary: updates.summary || c.summary,
+                                                requiredStatement: updates.requiredStatement || c.requiredStatement,
+                                                rights: updates.rights || c.rights
+                                            } : c)
+                                        }));
+                                    }}
+                                    settings={settings}
+                                    visible={true}
+                                    onClose={() => setSelectedConnectionId(null)}
+                                />
+                            ) : null}
+                        </div>
                     ) : (
                         <div className="space-y-6">
                             {activeItem && (

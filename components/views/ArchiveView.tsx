@@ -14,7 +14,8 @@ import {
   getRelationshipType,
   findCanvasParent
 } from '../../utils/iiifHierarchy';
-import { resolveThumbUrl } from '../../utils/imageSourceResolver';
+import { resolveThumbUrl, resolveHierarchicalThumbs } from '../../utils/imageSourceResolver';
+import { StackedThumbnail } from '../StackedThumbnail';
 
 // Virtualization hook for efficient rendering of large lists
 const useVirtualization = (totalItems: number, itemHeight: number, containerRef: React.RefObject<HTMLDivElement | null>, overscan = 5) => {
@@ -658,7 +659,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
               renderItem={(asset) => {
                 const dna = getFileDNA(asset);
                 const isSelected = selectedIds.has(asset.id);
-                const imageUrl = resolveThumbUrl(asset, 200);
+                const thumbUrls = resolveHierarchicalThumbs(asset, 200);
                 const config = RESOURCE_TYPE_CONFIG['Canvas'];
 
                 return (
@@ -677,7 +678,12 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ root, onSelect, onOpen
                     onClick={(e) => handleItemClick(e, asset)}
                     >
                     <div className={`aspect-square rounded overflow-hidden flex items-center justify-center mb-2 relative ${fieldMode ? 'bg-black' : 'bg-slate-100'}`}>
-                        {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover" loading="lazy" /> : null}
+                        <StackedThumbnail 
+                          urls={thumbUrls} 
+                          size="lg" 
+                          className="w-full h-full"
+                          icon={config.icon}
+                        />
                         <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-sm text-white text-[9px] px-1.5 py-0.5 rounded-full flex gap-1.5 font-sans">
                             {dna.time && <Icon name="schedule" className="text-[10px] text-yellow-400" title="Has Time metadata"/>}
                             {dna.location && <Icon name="location_on" className="text-[10px] text-green-400" title="Has GPS metadata"/>}
@@ -855,13 +861,11 @@ const VirtualizedList: React.FC<VirtualizedListProps> = ({
                   </td>
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 overflow-hidden ${fieldMode ? 'bg-black' : 'bg-slate-100'}`}>
-                        {resolveThumbUrl(asset, 64) ? (
-                          <img src={resolveThumbUrl(asset, 64)!} className="w-full h-full object-cover" loading="lazy" />
-                        ) : (
-                          <Icon name={config.icon} className={`${config.colorClass} opacity-70`} />
-                        )}
-                      </div>
+                      <StackedThumbnail 
+                        urls={resolveHierarchicalThumbs(asset, 64)} 
+                        size="xs" 
+                        icon={config.icon}
+                      />
                       <span className="truncate max-w-[200px] md:max-w-md" title={label}>{label}</span>
                     </div>
                   </td>

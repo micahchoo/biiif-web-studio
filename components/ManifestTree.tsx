@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { IIIFItem, IIIFCollection, IIIFManifest } from '../types';
 import { Icon } from './Icon';
 import { getRelationshipType } from '../utils/iiifHierarchy';
+import { resolveHierarchicalThumbs } from '../utils/imageSourceResolver';
+import { StackedThumbnail } from './StackedThumbnail';
 
 interface ManifestTreeProps {
   root: IIIFItem | null;
@@ -307,6 +309,7 @@ export const ManifestTree: React.FC<ManifestTreeProps> = ({ root, selectedId, on
               const children = (item as any).items || [];
               const hasChildren = children.length > 0;
               const isExpanded = expandedIds.has(item.id);
+              const thumbUrls = resolveHierarchicalThumbs(item, 40);
 
               // Get parent type to determine relationship using centralized IIIF hierarchy logic
               const parentItem = parentId ? flatItems.find(f => f.id === parentId)?.item : null;
@@ -361,9 +364,14 @@ export const ManifestTree: React.FC<ManifestTreeProps> = ({ root, selectedId, on
                     <span className="w-5 flex-shrink-0" />
                   )}
 
-                  {/* Icon with reference indicator */}
+                  {/* Thumbnail/Icon with reference indicator */}
                   <div className="relative flex-shrink-0">
-                    <Icon name={getIcon(item.type)} className={`text-sm ${isSelected ? 'text-white' : colors.text}`} />
+                    <StackedThumbnail 
+                      urls={thumbUrls} 
+                      size="xs" 
+                      icon={getIcon(item.type)}
+                      placeholderBg="bg-transparent"
+                    />
                     {/* Show link badge for referenced items (Collections reference Manifests) */}
                     {isReference && (
                       <Icon name="link" className="absolute -bottom-0.5 -right-0.5 text-[8px] text-amber-400" />

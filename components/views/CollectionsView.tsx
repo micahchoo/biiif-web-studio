@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { IIIFItem, IIIFCollection, IIIFManifest, IIIFCanvas, AbstractionLevel, getIIIFValue, isCollection, isManifest, isCanvas } from '../../types';
 import { Icon } from '../Icon';
 import { useToast } from '../Toast';
@@ -7,7 +7,8 @@ import { MuseumLabel } from '../MuseumLabel';
 import { RESOURCE_TYPE_CONFIG } from '../../constants';
 import { autoStructureService } from '../../services/autoStructure';
 import { StructureCanvas } from '../StructureCanvas';
-import { resolveThumbUrl, resolveHierarchicalThumb } from '../../utils/imageSourceResolver';
+import { resolveThumbUrl, resolveHierarchicalThumb, resolveHierarchicalThumbs } from '../../utils/imageSourceResolver';
+import { StackedThumbnail } from '../StackedThumbnail';
 import {
   findAllOfType,
   findCollectionsContaining,
@@ -44,11 +45,37 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
   onToggleInspector
 }) => {
   const { showToast } = useToast();
-  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(root?.id || null);
+  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [structureViewMode, setStructureViewMode] = useState<'grid' | 'list'>('grid');
   const [multiSelectedIds, setMultiSelectedIds] = useState<Set<string>>(new Set());
+
+  // Sync internal selection with root when root changes
+  useEffect(() => {
+    if (root && !internalSelectedId) {
+      setInternalSelectedId(root.id);
+    } else if (root && internalSelectedId) {
+      // Verify the selected ID still exists in the current tree
+      const findNode = (node: IIIFItem, id: string): IIIFItem | null => {
+        if (node.id === id) return node;
+        const children = (node as any).items || (node as any).annotations || [];
+        for (const child of children) {
+          const found = findNode(child, id);
+          if (found) return found;
+        }
+        return null;
+      };
+      if (!findNode(root, internalSelectedId)) {
+        // Selected ID no longer exists, reset to root
+        setInternalSelectedId(root.id);
+        setMultiSelectedIds(new Set());
+      }
+    } else if (!root) {
+      setInternalSelectedId(null);
+      setMultiSelectedIds(new Set());
+    }
+  }, [root?.id]);
 
   const selectedId = externalSelectedId !== undefined ? externalSelectedId : internalSelectedId;
 
@@ -503,18 +530,13 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
                   {/* Canvas Preview */}
                   {selectedNode.type === 'Canvas' && (
                     <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-                      <div className="aspect-video bg-slate-900 rounded-xl overflow-hidden mb-4">
-                        {resolveThumbUrl(selectedNode, 800) ? (
-                          <img
-                            src={resolveThumbUrl(selectedNode, 800) || ''}
-                            alt={getIIIFValue(selectedNode.label)}
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-500">
-                            <Icon name="image" className="text-4xl" />
-                          </div>
-                        )}
+                      <div className="aspect-video bg-slate-900 rounded-xl overflow-hidden mb-4 flex items-center justify-center">
+                        <StackedThumbnail 
+                          urls={resolveHierarchicalThumbs(selectedNode, 800)} 
+                          size="xl" 
+                          className="w-full h-full"
+                          icon="image"
+                        />
                       </div>
                       <h3 className="font-bold text-lg text-slate-800">{getIIIFValue(selectedNode.label)}</h3>
                       {isCanvas(selectedNode) && (
@@ -577,8 +599,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   // Get reference count
   const refCount = referenceMap.get(node.id)?.length || 0;
 
-  // Get thumbnail
-  const thumbUrl = resolveHierarchicalThumb(node, 40);
+  // Get thumbnails
+  const thumbUrls = resolveHierarchicalThumbs(node, 40);
 
   return (
     <div style={{ paddingLeft: level > 0 ? 12 : 0 }} className="mb-0.5">
@@ -599,18 +621,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         </div>
 
         {/* Thumbnail */}
-        {thumbUrl ? (
-          <div className="w-6 h-6 rounded bg-slate-100 overflow-hidden shrink-0">
-            <img src={thumbUrl} alt="" className="w-full h-full object-cover" />
-          </div>
-        ) : (
-          <div className="relative">
-            <Icon name={config.icon} className={`text-[18px] ${isSelected ? config.colorClass : 'text-slate-400'}`} />
-            {nodeIsCollection && level > 0 && (
-              <Icon name="link" className="absolute -bottom-1 -right-1 text-[10px] text-amber-500" />
-            )}
-          </div>
-        )}
+        <StackedThumbnail 
+          urls={thumbUrls} 
+          size="xs" 
+          icon={config.icon}
+          placeholderBg="bg-transparent"
+        />
 
         <span className="text-sm truncate flex-1">{getIIIFValue(node.label) || 'Untitled'}</span>
 

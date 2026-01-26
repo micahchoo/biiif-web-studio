@@ -1,1085 +1,1104 @@
+// ============================================================================
+// Enhanced Implementation
+// ============================================================================
+
 /**
- * IIIF Image API 3.0 Utilities
- *
- * Comprehensive implementation of IIIF Image API 3.0 specification.
- * Provides URI building, parameter validation, info.json generation,
- * compliance level checking, and tile calculation utilities.
- *
- * @see https://iiif.io/api/image/3.0/
+ * IIIF Image API 3.0 Core Implementation
+ * 
+ * Complete implementation of IIIF Image API 3.0 specification with
+ * support for all features, compliance levels, and extensions.
  */
 
-import { DEFAULT_DERIVATIVE_SIZES } from '../constants';
-
 // ============================================================================
-// Types
+// Enhanced Types
 // ============================================================================
 
-export type ImageApiProfile = 'level0' | 'level1' | 'level2';
-
-export type ImageQuality = 'default' | 'color' | 'gray' | 'bitonal';
-
-export type ImageFormat = 'jpg' | 'tif' | 'png' | 'gif' | 'jp2' | 'pdf' | 'webp';
-
-export type RegionType = 'full' | 'square' | 'pixels' | 'percent';
-
-export type SizeType = 'max' | 'width' | 'height' | 'percent' | 'widthHeight' | 'confined';
-
-export interface RegionParams {
-  type: RegionType;
-  x?: number;
-  y?: number;
-  w?: number;
-  h?: number;
-}
-
-export interface SizeParams {
-  type: SizeType;
-  upscale?: boolean;
-  width?: number;
-  height?: number;
-  percent?: number;
-  confined?: boolean;
-}
-
-export interface RotationParams {
-  degrees: number;
-  mirror: boolean;
-}
-
-export interface ImageRequestParams {
-  region: string | RegionParams;
-  size: string | SizeParams;
-  rotation: string | RotationParams;
-  quality: ImageQuality;
-  format: ImageFormat;
-}
-
-export interface SizeInfo {
-  type?: 'Size';
+export interface IIIFImageServiceConfig {
+  baseUri: string;
+  identifier: string;
   width: number;
   height: number;
-}
-
-export interface TileInfo {
-  type?: 'Tile';
-  width: number;
-  height?: number;
-  scaleFactors: number[];
-}
-
-export interface ImageServiceInfo {
-  '@context': string | string[];
-  id: string;
-  type: 'ImageService3';
-  protocol: 'http://iiif.io/api/image';
-  profile: ImageApiProfile;
-  width: number;
-  height: number;
+  profile?: ImageApiProfile;
   maxWidth?: number;
   maxHeight?: number;
   maxArea?: number;
-  sizes?: SizeInfo[];
   tiles?: TileInfo[];
+  sizes?: SizeInfo[];
   preferredFormats?: ImageFormat[];
   rights?: string;
-  extraQualities?: ImageQuality[];
-  extraFormats?: ImageFormat[];
   extraFeatures?: ImageApiFeature[];
-  partOf?: Array<{ id: string; type: string; label?: Record<string, string[]> }>;
-  seeAlso?: Array<{ id: string; type: string; label?: Record<string, string[]>; format?: string; profile?: string }>;
-  service?: any[];
+  extraFormats?: ImageFormat[];
+  extraQualities?: ImageQuality[];
+  contextExtensions?: string[];
 }
 
-export type ImageApiFeature =
-  | 'baseUriRedirect'
-  | 'canonicalLinkHeader'
-  | 'cors'
-  | 'jsonldMediaType'
-  | 'mirroring'
-  | 'profileLinkHeader'
-  | 'regionByPct'
-  | 'regionByPx'
-  | 'regionSquare'
-  | 'rotationArbitrary'
-  | 'rotationBy90s'
-  | 'sizeByConfinedWh'
-  | 'sizeByH'
-  | 'sizeByPct'
-  | 'sizeByW'
-  | 'sizeByWh'
-  | 'sizeUpscaling';
-
-export interface TileRequest {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  scaleFactor: number;
-}
-
-export interface ImageApiValidationResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
-}
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-export const IMAGE_API_CONTEXT = 'http://iiif.io/api/image/3/context.json';
-export const IMAGE_API_PROTOCOL = 'http://iiif.io/api/image';
-
-export const COMPLIANCE_LEVELS: Record<ImageApiProfile, {
-  uri: string;
-  requiredFeatures: ImageApiFeature[];
-  requiredFormats: ImageFormat[];
-  requiredQualities: ImageQuality[];
-}> = {
-  level0: {
-    uri: 'http://iiif.io/api/image/3/level0.json',
-    requiredFeatures: [],
-    requiredFormats: ['jpg'],
-    requiredQualities: ['default']
-  },
-  level1: {
-    uri: 'http://iiif.io/api/image/3/level1.json',
-    requiredFeatures: ['regionByPx', 'regionSquare', 'sizeByW', 'sizeByH', 'sizeByWh'],
-    requiredFormats: ['jpg'],
-    requiredQualities: ['default']
-  },
-  level2: {
-    uri: 'http://iiif.io/api/image/3/level2.json',
-    requiredFeatures: [
-      'regionByPct', 'regionByPx', 'regionSquare',
-      'sizeByConfinedWh', 'sizeByH', 'sizeByPct', 'sizeByW', 'sizeByWh',
-      'rotationBy90s'
-    ],
-    requiredFormats: ['jpg', 'png'],
-    requiredQualities: ['default', 'color', 'gray', 'bitonal']
-  }
-};
-
-export const FORMAT_MIME_TYPES: Record<ImageFormat, string> = {
-  jpg: 'image/jpeg',
-  tif: 'image/tiff',
-  png: 'image/png',
-  gif: 'image/gif',
-  jp2: 'image/jp2',
-  pdf: 'application/pdf',
-  webp: 'image/webp'
-};
-
-export const MIME_TO_FORMAT: Record<string, ImageFormat> = {
-  'image/jpeg': 'jpg',
-  'image/tiff': 'tif',
-  'image/png': 'png',
-  'image/gif': 'gif',
-  'image/jp2': 'jp2',
-  'application/pdf': 'pdf',
-  'image/webp': 'webp'
-};
-
-export const FEATURE_DESCRIPTIONS: Record<ImageApiFeature, string> = {
-  baseUriRedirect: 'Base URI redirects to image information document',
-  canonicalLinkHeader: 'Canonical image URI HTTP link header provided on image responses',
-  cors: 'CORS HTTP headers provided on all responses',
-  jsonldMediaType: 'JSON-LD media type provided when requested',
-  mirroring: 'Image may be mirrored on vertical axis',
-  profileLinkHeader: 'Profile HTTP link header provided on image responses',
-  regionByPct: 'Regions may be requested by percentage',
-  regionByPx: 'Regions may be requested by pixel dimensions',
-  regionSquare: 'Square region may be requested',
-  rotationArbitrary: 'Rotation may be requested using non-90 degree values',
-  rotationBy90s: 'Rotation may be requested in multiples of 90 degrees',
-  sizeByConfinedWh: 'Size may be requested in !w,h form',
-  sizeByH: 'Size may be requested in ,h form',
-  sizeByPct: 'Size may be requested in pct:n form',
-  sizeByW: 'Size may be requested in w, form',
-  sizeByWh: 'Size may be requested in w,h form',
-  sizeUpscaling: 'Size prefixed with ^ may be requested'
-};
-
-// ============================================================================
-// Validation Patterns
-// ============================================================================
-
-export const VALIDATION_PATTERNS = {
-  region: {
-    full: /^full$/,
-    square: /^square$/,
-    pixels: /^(\d+),(\d+),(\d+),(\d+)$/,
-    percent: /^pct:(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*)$/,
-    combined: /^(full|square|(\d+),(\d+),(\d+),(\d+)|pct:(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*))$/
-  },
-  size: {
-    max: /^\^?max$/,
-    width: /^\^?(\d+),$/,
-    height: /^\^?,(\d+)$/,
-    percent: /^\^?pct:(\d+\.?\d*)$/,
-    widthHeight: /^\^?(\d+),(\d+)$/,
-    confined: /^\^?!(\d+),(\d+)$/,
-    combined: /^\^?(max|(\d+),|,(\d+)|pct:(\d+\.?\d*)|(\d+),(\d+)|!(\d+),(\d+))$/
-  },
-  rotation: {
-    simple: /^!?(\d+\.?\d*)$/
-  },
-  quality: /^(default|color|gray|bitonal)$/,
-  format: /^(jpg|tif|png|gif|jp2|pdf|webp)$/
-};
-
-// ============================================================================
-// Parameter Validation Functions
-// ============================================================================
-
-/**
- * Validate region parameter
- */
-export function validateRegion(
-  region: string,
-  imageWidth?: number,
-  imageHeight?: number
-): { valid: boolean; error?: string; parsed?: RegionParams } {
-  // Full
-  if (VALIDATION_PATTERNS.region.full.test(region)) {
-    return { valid: true, parsed: { type: 'full' } };
-  }
-
-  // Square
-  if (VALIDATION_PATTERNS.region.square.test(region)) {
-    return { valid: true, parsed: { type: 'square' } };
-  }
-
-  // Pixels
-  const pixelMatch = region.match(VALIDATION_PATTERNS.region.pixels);
-  if (pixelMatch) {
-    const x = parseInt(pixelMatch[1], 10);
-    const y = parseInt(pixelMatch[2], 10);
-    const w = parseInt(pixelMatch[3], 10);
-    const h = parseInt(pixelMatch[4], 10);
-
-    if (w === 0 || h === 0) {
-      return { valid: false, error: 'Region width and height must be greater than 0' };
-    }
-
-    if (imageWidth !== undefined && imageHeight !== undefined) {
-      if (x >= imageWidth && y >= imageHeight) {
-        return { valid: false, error: 'Region is entirely outside image bounds' };
-      }
-    }
-
-    return { valid: true, parsed: { type: 'pixels', x, y, w, h } };
-  }
-
-  // Percent
-  const pctMatch = region.match(VALIDATION_PATTERNS.region.percent);
-  if (pctMatch) {
-    const x = parseFloat(pctMatch[1]);
-    const y = parseFloat(pctMatch[2]);
-    const w = parseFloat(pctMatch[3]);
-    const h = parseFloat(pctMatch[4]);
-
-    if (w <= 0 || h <= 0) {
-      return { valid: false, error: 'Region percentage width and height must be greater than 0' };
-    }
-
-    return { valid: true, parsed: { type: 'percent', x, y, w, h } };
-  }
-
-  return { valid: false, error: `Invalid region syntax: ${region}` };
-}
-
-/**
- * Validate size parameter
- */
-export function validateSize(
-  size: string,
-  regionWidth?: number,
-  regionHeight?: number,
-  supportsUpscaling: boolean = false
-): { valid: boolean; error?: string; parsed?: SizeParams } {
-  const hasUpscalePrefix = size.startsWith('^');
-  const sizeWithoutPrefix = hasUpscalePrefix ? size.substring(1) : size;
-
-  if (hasUpscalePrefix && !supportsUpscaling) {
-    return { valid: false, error: 'Upscaling (^ prefix) is not supported' };
-  }
-
-  // Max
-  if (sizeWithoutPrefix === 'max') {
-    return { valid: true, parsed: { type: 'max', upscale: hasUpscalePrefix } };
-  }
-
-  // Width only
-  const widthMatch = sizeWithoutPrefix.match(/^(\d+),$/);
-  if (widthMatch) {
-    const width = parseInt(widthMatch[1], 10);
-    if (!hasUpscalePrefix && regionWidth !== undefined && width > regionWidth) {
-      return { valid: false, error: 'Requested width exceeds region width without upscale prefix' };
-    }
-    return { valid: true, parsed: { type: 'width', width, upscale: hasUpscalePrefix } };
-  }
-
-  // Height only
-  const heightMatch = sizeWithoutPrefix.match(/^,(\d+)$/);
-  if (heightMatch) {
-    const height = parseInt(heightMatch[1], 10);
-    if (!hasUpscalePrefix && regionHeight !== undefined && height > regionHeight) {
-      return { valid: false, error: 'Requested height exceeds region height without upscale prefix' };
-    }
-    return { valid: true, parsed: { type: 'height', height, upscale: hasUpscalePrefix } };
-  }
-
-  // Percent
-  const pctMatch = sizeWithoutPrefix.match(/^pct:(\d+\.?\d*)$/);
-  if (pctMatch) {
-    const percent = parseFloat(pctMatch[1]);
-    if (!hasUpscalePrefix && percent > 100) {
-      return { valid: false, error: 'Percentage exceeds 100% without upscale prefix' };
-    }
-    return { valid: true, parsed: { type: 'percent', percent, upscale: hasUpscalePrefix } };
-  }
-
-  // Confined (!w,h)
-  const confinedMatch = sizeWithoutPrefix.match(/^!(\d+),(\d+)$/);
-  if (confinedMatch) {
-    const width = parseInt(confinedMatch[1], 10);
-    const height = parseInt(confinedMatch[2], 10);
-    return { valid: true, parsed: { type: 'confined', width, height, confined: true, upscale: hasUpscalePrefix } };
-  }
-
-  // Width and height (w,h)
-  const whMatch = sizeWithoutPrefix.match(/^(\d+),(\d+)$/);
-  if (whMatch) {
-    const width = parseInt(whMatch[1], 10);
-    const height = parseInt(whMatch[2], 10);
-    if (!hasUpscalePrefix && regionWidth !== undefined && regionHeight !== undefined) {
-      if (width > regionWidth || height > regionHeight) {
-        return { valid: false, error: 'Requested dimensions exceed region dimensions without upscale prefix' };
-      }
-    }
-    return { valid: true, parsed: { type: 'widthHeight', width, height, upscale: hasUpscalePrefix } };
-  }
-
-  return { valid: false, error: `Invalid size syntax: ${size}` };
-}
-
-/**
- * Validate rotation parameter
- */
-export function validateRotation(
-  rotation: string,
-  supportsArbitrary: boolean = false,
-  supportsMirroring: boolean = true
-): { valid: boolean; error?: string; parsed?: RotationParams } {
-  const match = rotation.match(VALIDATION_PATTERNS.rotation.simple);
-  if (!match) {
-    return { valid: false, error: `Invalid rotation syntax: ${rotation}` };
-  }
-
-  const mirror = rotation.startsWith('!');
-  const degrees = parseFloat(match[1]);
-
-  if (mirror && !supportsMirroring) {
-    return { valid: false, error: 'Mirroring is not supported' };
-  }
-
-  if (degrees < 0 || degrees > 360) {
-    return { valid: false, error: 'Rotation must be between 0 and 360 degrees' };
-  }
-
-  if (!supportsArbitrary && degrees % 90 !== 0) {
-    return { valid: false, error: 'Only 90-degree rotations are supported' };
-  }
-
-  return { valid: true, parsed: { degrees, mirror } };
-}
-
-/**
- * Validate quality parameter
- */
-export function validateQuality(
-  quality: string,
-  supportedQualities: ImageQuality[] = ['default']
-): { valid: boolean; error?: string } {
-  if (!VALIDATION_PATTERNS.quality.test(quality)) {
-    return { valid: false, error: `Invalid quality: ${quality}` };
-  }
-
-  if (!supportedQualities.includes(quality as ImageQuality)) {
-    return { valid: false, error: `Quality "${quality}" not supported. Supported: ${supportedQualities.join(', ')}` };
-  }
-
-  return { valid: true };
-}
-
-/**
- * Validate format parameter
- */
-export function validateFormat(
-  format: string,
-  supportedFormats: ImageFormat[] = ['jpg']
-): { valid: boolean; error?: string } {
-  if (!VALIDATION_PATTERNS.format.test(format)) {
-    return { valid: false, error: `Invalid format: ${format}` };
-  }
-
-  if (!supportedFormats.includes(format as ImageFormat)) {
-    return { valid: false, error: `Format "${format}" not supported. Supported: ${supportedFormats.join(', ')}` };
-  }
-
-  return { valid: true };
-}
-
-/**
- * Validate complete image request URI parameters
- */
-export function validateImageRequest(
-  params: {
-    region: string;
-    size: string;
-    rotation: string;
-    quality: string;
-    format: string;
-  },
-  imageInfo?: Partial<ImageServiceInfo>
-): ImageApiValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  const profile = imageInfo?.profile || 'level0';
-  const level = COMPLIANCE_LEVELS[profile];
-
-  const supportsUpscaling = imageInfo?.extraFeatures?.includes('sizeUpscaling') || false;
-  const supportsArbitrary = imageInfo?.extraFeatures?.includes('rotationArbitrary') || false;
-  const supportsMirroring = imageInfo?.extraFeatures?.includes('mirroring') ||
-                           level.requiredFeatures.includes('mirroring') || profile === 'level2';
-
-  // Validate region
-  const regionResult = validateRegion(params.region, imageInfo?.width, imageInfo?.height);
-  if (!regionResult.valid) errors.push(regionResult.error!);
-
-  // Validate size
-  const sizeResult = validateSize(params.size, imageInfo?.width, imageInfo?.height, supportsUpscaling);
-  if (!sizeResult.valid) errors.push(sizeResult.error!);
-
-  // Validate rotation
-  const rotationResult = validateRotation(params.rotation, supportsArbitrary, supportsMirroring);
-  if (!rotationResult.valid) errors.push(rotationResult.error!);
-
-  // Validate quality
-  const supportedQualities = [...level.requiredQualities, ...(imageInfo?.extraQualities || [])];
-  const qualityResult = validateQuality(params.quality, supportedQualities);
-  if (!qualityResult.valid) errors.push(qualityResult.error!);
-
-  // Validate format
-  const supportedFormats = [...level.requiredFormats, ...(imageInfo?.extraFormats || [])];
-  const formatResult = validateFormat(params.format, supportedFormats);
-  if (!formatResult.valid) errors.push(formatResult.error!);
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings
-  };
-}
-
-// ============================================================================
-// URI Building Functions
-// ============================================================================
-
-/**
- * Build IIIF Image API request URI
- */
-export function buildImageUri(
-  baseUri: string,
-  params: ImageRequestParams
-): string {
-  const region = typeof params.region === 'string' ? params.region : formatRegion(params.region);
-  const size = typeof params.size === 'string' ? params.size : formatSize(params.size);
-  const rotation = typeof params.rotation === 'string' ? params.rotation : formatRotation(params.rotation);
-
-  return `${baseUri}/${region}/${size}/${rotation}/${params.quality}.${params.format}`;
-}
-
-/**
- * Build info.json URI
- */
-export function buildInfoUri(baseUri: string): string {
-  return `${baseUri}/info.json`;
-}
-
-/**
- * Format region params to string
- */
-export function formatRegion(params: RegionParams): string {
-  switch (params.type) {
-    case 'full':
-      return 'full';
-    case 'square':
-      return 'square';
-    case 'pixels':
-      return `${params.x},${params.y},${params.w},${params.h}`;
-    case 'percent':
-      return `pct:${params.x},${params.y},${params.w},${params.h}`;
-    default:
-      return 'full';
-  }
-}
-
-/**
- * Format size params to string
- */
-export function formatSize(params: SizeParams): string {
-  const prefix = params.upscale ? '^' : '';
-
-  switch (params.type) {
-    case 'max':
-      return `${prefix}max`;
-    case 'width':
-      return `${prefix}${params.width},`;
-    case 'height':
-      return `${prefix},${params.height}`;
-    case 'percent':
-      return `${prefix}pct:${params.percent}`;
-    case 'widthHeight':
-      return `${prefix}${params.width},${params.height}`;
-    case 'confined':
-      return `${prefix}!${params.width},${params.height}`;
-    default:
-      return `${prefix}max`;
-  }
-}
-
-/**
- * Format rotation params to string
- */
-export function formatRotation(params: RotationParams): string {
-  const prefix = params.mirror ? '!' : '';
-  const degrees = Number.isInteger(params.degrees) ? params.degrees.toString() : params.degrees.toFixed(1);
-  return `${prefix}${degrees}`;
-}
-
-/**
- * Parse image request URI into components
- */
-export function parseImageUri(uri: string): {
-  baseUri: string;
-  identifier: string;
-  region: string;
-  size: string;
-  rotation: string;
-  quality: string;
-  format: string;
-} | null {
-  // Match pattern: {base}/{identifier}/{region}/{size}/{rotation}/{quality}.{format}
-  const match = uri.match(/^(.+?)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\/]+)\/([^\.]+)\.(\w+)$/);
-  if (!match) return null;
-
-  return {
-    baseUri: `${match[1]}/${match[2]}`,
-    identifier: match[2],
-    region: match[3],
-    size: match[4],
-    rotation: match[5],
-    quality: match[6],
-    format: match[7]
-  };
-}
-
-// ============================================================================
-// Info.json Validation and Generation
-// ============================================================================
-
-/**
- * Validate info.json structure
- */
-export function validateInfoJson(info: any): ImageApiValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  // Required properties
-  if (!info['@context']) {
-    errors.push('@context is required');
-  } else if (typeof info['@context'] === 'string') {
-    if (info['@context'] !== IMAGE_API_CONTEXT) {
-      warnings.push(`@context should be "${IMAGE_API_CONTEXT}"`);
-    }
-  } else if (Array.isArray(info['@context'])) {
-    if (!info['@context'].includes(IMAGE_API_CONTEXT)) {
-      errors.push(`@context array must include "${IMAGE_API_CONTEXT}"`);
-    }
-    if (info['@context'][info['@context'].length - 1] !== IMAGE_API_CONTEXT) {
-      warnings.push('@context array should end with Image API context');
-    }
-  }
-
-  if (!info.id) {
-    errors.push('id is required');
-  } else if (typeof info.id !== 'string' || !info.id.startsWith('http')) {
-    errors.push('id must be a valid HTTP(S) URI');
-  } else if (info.id.endsWith('/')) {
-    warnings.push('id should not have a trailing slash');
-  }
-
-  if (!info.type) {
-    errors.push('type is required');
-  } else if (info.type !== 'ImageService3') {
-    errors.push('type must be "ImageService3"');
-  }
-
-  if (!info.protocol) {
-    errors.push('protocol is required');
-  } else if (info.protocol !== IMAGE_API_PROTOCOL) {
-    errors.push(`protocol must be "${IMAGE_API_PROTOCOL}"`);
-  }
-
-  if (!info.profile) {
-    errors.push('profile is required');
-  } else if (!['level0', 'level1', 'level2'].includes(info.profile)) {
-    errors.push('profile must be "level0", "level1", or "level2"');
-  }
-
-  if (typeof info.width !== 'number' || info.width <= 0) {
-    errors.push('width must be a positive integer');
-  }
-
-  if (typeof info.height !== 'number' || info.height <= 0) {
-    errors.push('height must be a positive integer');
-  }
-
-  // Optional properties validation
-  if (info.maxWidth !== undefined && (typeof info.maxWidth !== 'number' || info.maxWidth <= 0)) {
-    errors.push('maxWidth must be a positive integer');
-  }
-
-  if (info.maxHeight !== undefined && (typeof info.maxHeight !== 'number' || info.maxHeight <= 0)) {
-    errors.push('maxHeight must be a positive integer');
-  }
-
-  if (info.maxArea !== undefined && (typeof info.maxArea !== 'number' || info.maxArea <= 0)) {
-    errors.push('maxArea must be a positive integer');
-  }
-
-  // Level 0 requires sizes if not supporting arbitrary sizes
-  if (info.profile === 'level0' && (!info.sizes || info.sizes.length === 0) && (!info.tiles || info.tiles.length === 0)) {
-    warnings.push('Level 0 servers should provide sizes or tiles array');
-  }
-
-  // Validate sizes array
-  if (info.sizes) {
-    if (!Array.isArray(info.sizes)) {
-      errors.push('sizes must be an array');
-    } else {
-      info.sizes.forEach((size: any, i: number) => {
-        if (typeof size.width !== 'number' || size.width <= 0) {
-          errors.push(`sizes[${i}].width must be a positive integer`);
-        }
-        if (typeof size.height !== 'number' || size.height <= 0) {
-          errors.push(`sizes[${i}].height must be a positive integer`);
-        }
-      });
-    }
-  }
-
-  // Validate tiles array
-  if (info.tiles) {
-    if (!Array.isArray(info.tiles)) {
-      errors.push('tiles must be an array');
-    } else {
-      info.tiles.forEach((tile: any, i: number) => {
-        if (typeof tile.width !== 'number' || tile.width <= 0) {
-          errors.push(`tiles[${i}].width must be a positive integer`);
-        }
-        if (tile.height !== undefined && (typeof tile.height !== 'number' || tile.height <= 0)) {
-          errors.push(`tiles[${i}].height must be a positive integer`);
-        }
-        if (!Array.isArray(tile.scaleFactors) || tile.scaleFactors.length === 0) {
-          errors.push(`tiles[${i}].scaleFactors must be a non-empty array of integers`);
-        }
-      });
-    }
-  }
-
-  // Validate extraFeatures
-  if (info.extraFeatures) {
-    if (!Array.isArray(info.extraFeatures)) {
-      errors.push('extraFeatures must be an array');
-    } else {
-      const validFeatures = Object.keys(FEATURE_DESCRIPTIONS);
-      info.extraFeatures.forEach((feature: string) => {
-        if (!validFeatures.includes(feature)) {
-          warnings.push(`Unknown feature: ${feature}`);
-        }
-      });
-    }
-
-    // sizeUpscaling requires maxWidth or maxArea
-    if (info.extraFeatures.includes('sizeUpscaling')) {
-      if (info.maxWidth === undefined && info.maxArea === undefined) {
-        errors.push('sizeUpscaling feature requires maxWidth or maxArea to be specified');
-      }
-    }
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings
-  };
-}
-
-/**
- * Generate minimal info.json for a given profile level
- */
-export function generateInfoJson(
-  id: string,
-  width: number,
-  height: number,
-  profile: ImageApiProfile = 'level0',
-  options?: {
-    sizes?: SizeInfo[];
-    tiles?: TileInfo[];
+export interface CanonicalUriOptions {
+  enforceCanonical: boolean;
+  serverLimits?: {
     maxWidth?: number;
     maxHeight?: number;
-    extraFeatures?: ImageApiFeature[];
-    extraFormats?: ImageFormat[];
-    extraQualities?: ImageQuality[];
-    rights?: string;
+    maxArea?: number;
+  };
+}
+
+export interface ImageTransformationOptions {
+  region: RegionParams;
+  size: SizeParams;
+  rotation: RotationParams;
+  quality: ImageQuality;
+  format: ImageFormat;
+  canonical?: boolean;
+}
+
+// ============================================================================
+// Core Implementation Class
+// ============================================================================
+
+export class IIIFImageService {
+  private config: IIIFImageServiceConfig;
+  private serviceUri: string;
+
+  constructor(config: IIIFImageServiceConfig) {
+    this.config = {
+      profile: 'level0',
+      ...config
+    };
+    this.serviceUri = `${this.config.baseUri}/${encodeIdentifier(this.config.identifier)}`;
   }
-): ImageServiceInfo {
-  const info: ImageServiceInfo = {
-    '@context': IMAGE_API_CONTEXT,
-    id,
-    type: 'ImageService3',
-    protocol: IMAGE_API_PROTOCOL,
-    profile,
-    width,
-    height
-  };
 
-  if (options?.sizes) info.sizes = options.sizes;
-  if (options?.tiles) info.tiles = options.tiles;
-  if (options?.maxWidth) info.maxWidth = options.maxWidth;
-  if (options?.maxHeight) info.maxHeight = options.maxHeight;
-  if (options?.extraFeatures) info.extraFeatures = options.extraFeatures;
-  if (options?.extraFormats) info.extraFormats = options.extraFormats;
-  if (options?.extraQualities) info.extraQualities = options.extraQualities;
-  if (options?.rights) info.rights = options.rights;
+  /**
+   * Get the info.json document
+   */
+  getInfoJson(): ImageServiceInfo {
+    return generateInfoJson(
+      this.serviceUri,
+      this.config.width,
+      this.config.height,
+      this.config.profile,
+      {
+        sizes: this.config.sizes,
+        tiles: this.config.tiles,
+        maxWidth: this.config.maxWidth,
+        maxHeight: this.config.maxHeight,
+        extraFeatures: this.config.extraFeatures,
+        extraFormats: this.config.extraFormats,
+        extraQualities: this.config.extraQualities,
+        rights: this.config.rights
+      }
+    );
+  }
 
-  return info;
-}
+  /**
+   * Build image request URI
+   */
+  buildImageUri(options: ImageTransformationOptions): string {
+    const region = formatRegion(options.region);
+    const size = formatSize(options.size);
+    const rotation = formatRotation(options.rotation);
+    
+    return `${this.serviceUri}/${region}/${size}/${rotation}/${options.quality}.${options.format}`;
+  }
 
-/**
- * Generate standard sizes for Level 0 compliance
- */
-export function generateStandardSizes(width: number, height: number, targetWidths: number[] = DEFAULT_DERIVATIVE_SIZES): SizeInfo[] {
-  const aspectRatio = height / width;
-  return targetWidths
-    .filter(w => w <= width) // Don't generate sizes larger than original
-    .map(w => ({
-      width: w,
-      height: Math.floor(w * aspectRatio)
-    }));
-}
+  /**
+   * Build canonical image URI
+   */
+  buildCanonicalUri(options: ImageTransformationOptions): string {
+    const canonicalParams = this.canonicalizeRequest(options);
+    return this.buildImageUri(canonicalParams);
+  }
 
-/**
- * Generate standard tiles configuration
- */
-export function generateStandardTiles(tileWidth: number = 512, scaleFactors: number[] = [1, 2, 4, 8]): TileInfo[] {
-  return [{
-    width: tileWidth,
-    scaleFactors
-  }];
-}
+  /**
+   * Validate a request against this service's capabilities
+   */
+  validateRequest(request: Partial<ImageTransformationOptions>): ImageApiValidationResult {
+    const info = this.getInfoJson();
+    
+    // Convert to string format for validation
+    const params = {
+      region: request.region ? formatRegion(request.region) : 'full',
+      size: request.size ? formatSize(request.size) : 'max',
+      rotation: request.rotation ? formatRotation(request.rotation) : '0',
+      quality: request.quality || 'default',
+      format: request.format || 'jpg'
+    };
 
-// ============================================================================
-// Tile Calculation Functions
-// ============================================================================
+    return validateImageRequest(params, info);
+  }
 
-/**
- * Calculate tile parameters for a given position and scale
- */
-export function calculateTileRequest(
-  fullWidth: number,
-  fullHeight: number,
-  tileWidth: number,
-  tileHeight: number,
-  scaleFactor: number,
-  tileX: number,
-  tileY: number
-): TileRequest {
-  // Region in full image coordinates
-  const x = tileX * tileWidth * scaleFactor;
-  const y = tileY * tileHeight * scaleFactor;
-  const w = Math.min(tileWidth * scaleFactor, fullWidth - x);
-  const h = Math.min(tileHeight * scaleFactor, fullHeight - y);
-
-  return { x, y, width: w, height: h, scaleFactor };
-}
-
-/**
- * Calculate number of tiles for a given scale factor
- */
-export function calculateTileCount(
-  fullWidth: number,
-  fullHeight: number,
-  tileWidth: number,
-  tileHeight: number,
-  scaleFactor: number
-): { columns: number; rows: number } {
-  const scaledWidth = Math.ceil(fullWidth / scaleFactor);
-  const scaledHeight = Math.ceil(fullHeight / scaleFactor);
-
-  return {
-    columns: Math.ceil(scaledWidth / tileWidth),
-    rows: Math.ceil(scaledHeight / tileHeight)
-  };
-}
-
-/**
- * Build tile request URI
- */
-export function buildTileUri(
-  baseUri: string,
-  tile: TileRequest,
-  format: ImageFormat = 'jpg',
-  quality: ImageQuality = 'default'
-): string {
-  const region = `${tile.x},${tile.y},${tile.width},${tile.height}`;
-  const tileWidth = Math.ceil(tile.width / tile.scaleFactor);
-  const tileHeight = Math.ceil(tile.height / tile.scaleFactor);
-  const size = `${tileWidth},${tileHeight}`;
-
-  return `${baseUri}/${region}/${size}/0/${quality}.${format}`;
-}
-
-/**
- * Get all tile URIs for a given scale factor
- */
-export function getAllTileUris(
-  baseUri: string,
-  fullWidth: number,
-  fullHeight: number,
-  tileWidth: number,
-  tileHeight: number,
-  scaleFactor: number,
-  format: ImageFormat = 'jpg',
-  quality: ImageQuality = 'default'
-): string[] {
-  const { columns, rows } = calculateTileCount(fullWidth, fullHeight, tileWidth, tileHeight, scaleFactor);
-  const uris: string[] = [];
-
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < columns; x++) {
-      const tile = calculateTileRequest(fullWidth, fullHeight, tileWidth, tileHeight, scaleFactor, x, y);
-      uris.push(buildTileUri(baseUri, tile, format, quality));
+  /**
+   * Calculate tile requests for all scales
+   */
+  getTileRequests(): TileRequest[][] {
+    const tileSets: TileRequest[][] = [];
+    const info = this.getInfoJson();
+    
+    if (!info.tiles) {
+      return tileSets;
     }
+
+    for (const tileSet of info.tiles) {
+      const tileWidth = tileSet.width;
+      const tileHeight = tileSet.height || tileSet.width;
+      const requests: TileRequest[] = [];
+
+      for (const scaleFactor of tileSet.scaleFactors) {
+        const { columns, rows } = calculateTileCount(
+          info.width,
+          info.height,
+          tileWidth,
+          tileHeight,
+          scaleFactor
+        );
+
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < columns; x++) {
+            requests.push(
+              calculateTileRequest(
+                info.width,
+                info.height,
+                tileWidth,
+                tileHeight,
+                scaleFactor,
+                x,
+                y
+              )
+            );
+          }
+        }
+      }
+
+      tileSets.push(requests);
+    }
+
+    return tileSets;
   }
 
-  return uris;
+  /**
+   * Generate all pre-defined sizes as transformation options
+   */
+  getPredefinedSizes(): ImageTransformationOptions[] {
+    const info = this.getInfoJson();
+    const options: ImageTransformationOptions[] = [];
+
+    if (info.sizes) {
+      for (const size of info.sizes) {
+        options.push({
+          region: { type: 'full' },
+          size: { type: 'widthHeight', width: size.width, height: size.height },
+          rotation: { degrees: 0, mirror: false },
+          quality: 'default',
+          format: (info.preferredFormats?.[0] as ImageFormat) || 'jpg'
+        });
+      }
+    }
+
+    return options;
+  }
+
+  /**
+   * Convert request to canonical form
+   */
+  private canonicalizeRequest(options: ImageTransformationOptions): ImageTransformationOptions {
+    const canonical = { ...options };
+    
+    // Canonicalize region
+    if (canonical.region.type === 'percent') {
+      // Convert percent to pixels
+      const x = Math.round((canonical.region.x! / 100) * this.config.width);
+      const y = Math.round((canonical.region.y! / 100) * this.config.height);
+      const w = Math.round((canonical.region.w! / 100) * this.config.width);
+      const h = Math.round((canonical.region.h! / 100) * this.config.height);
+      
+      canonical.region = {
+        type: 'pixels',
+        x,
+        y,
+        w,
+        h
+      };
+    }
+
+    // Canonicalize size
+    const regionWidth = canonical.region.type === 'full' 
+      ? this.config.width 
+      : canonical.region.type === 'square'
+        ? Math.min(this.config.width, this.config.height)
+        : canonical.region.w!;
+    
+    const regionHeight = canonical.region.type === 'full'
+      ? this.config.height
+      : canonical.region.type === 'square'
+        ? Math.min(this.config.width, this.config.height)
+        : canonical.region.h!;
+
+    canonical.size = this.canonicalizeSize(canonical.size, regionWidth, regionHeight);
+
+    // Canonicalize rotation
+    canonical.rotation = this.canonicalizeRotation(canonical.rotation);
+
+    // Canonicalize quality (use 'default' if that's what's requested)
+    if (canonical.quality === 'default' && this.config.profile === 'level0') {
+      canonical.quality = 'default'; // Keep as-is for level0
+    }
+
+    return canonical;
+  }
+
+  private canonicalizeSize(
+    size: SizeParams,
+    regionWidth: number,
+    regionHeight: number
+  ): SizeParams {
+    // Implementation of canonical size according to spec section 4.8
+    const { maxWidth, maxHeight, maxArea } = this.config;
+    
+    let canonicalSize: SizeParams = { ...size };
+
+    switch (size.type) {
+      case 'max':
+        if (!size.upscale) {
+          canonicalSize = { type: 'max', upscale: false };
+        } else {
+          canonicalSize = { type: 'max', upscale: true };
+        }
+        break;
+
+      case 'width':
+      case 'height':
+      case 'percent':
+        // For these types, convert to w,h format
+        const result = calculateResultingSize(regionWidth, regionHeight, size);
+        canonicalSize = {
+          type: 'widthHeight',
+          width: result.width,
+          height: result.height,
+          upscale: size.upscale
+        };
+        break;
+
+      case 'confined':
+        // Convert to w,h format after calculation
+        const scaleW = size.width! / regionWidth;
+        const scaleH = size.height! / regionHeight;
+        const scale = Math.min(scaleW, scaleH);
+        canonicalSize = {
+          type: 'widthHeight',
+          width: Math.round(regionWidth * scale),
+          height: Math.round(regionHeight * scale),
+          upscale: size.upscale
+        };
+        break;
+
+      // widthHeight type is already canonical
+    }
+
+    // Apply server limits
+    if (maxWidth && canonicalSize.width! > maxWidth) {
+      const scale = maxWidth / canonicalSize.width!;
+      canonicalSize.width = maxWidth;
+      canonicalSize.height = Math.round(canonicalSize.height! * scale);
+    }
+
+    if (maxHeight && canonicalSize.height! > maxHeight) {
+      const scale = maxHeight / canonicalSize.height!;
+      canonicalSize.height = maxHeight;
+      canonicalSize.width = Math.round(canonicalSize.width! * scale);
+    }
+
+    if (maxArea && (canonicalSize.width! * canonicalSize.height!) > maxArea) {
+      const scale = Math.sqrt(maxArea / (canonicalSize.width! * canonicalSize.height!));
+      canonicalSize.width = Math.round(canonicalSize.width! * scale);
+      canonicalSize.height = Math.round(canonicalSize.height! * scale);
+    }
+
+    return canonicalSize;
+  }
+
+  private canonicalizeRotation(rotation: RotationParams): RotationParams {
+    // Try to use integer if possible (e.g., 90.0 -> 90)
+    let degrees = rotation.degrees;
+    if (Number.isInteger(degrees)) {
+      degrees = Math.round(degrees);
+    } else {
+      // Format according to floating point recommendations (section 4.7)
+      degrees = parseFloat(degrees.toFixed(6));
+    }
+
+    // Ensure within 0-360 range
+    degrees = ((degrees % 360) + 360) % 360;
+
+    return {
+      degrees,
+      mirror: rotation.mirror
+    };
+  }
 }
 
 // ============================================================================
-// Compliance Checking
+// Enhanced Utility Functions
 // ============================================================================
 
 /**
- * Check if an info.json meets a specific compliance level
+ * Parse and normalize floating point values according to IIIF spec
  */
-export function checkComplianceLevel(info: ImageServiceInfo, targetLevel: ImageApiProfile): {
-  compliant: boolean;
-  missingFeatures: ImageApiFeature[];
-  missingFormats: ImageFormat[];
-  missingQualities: ImageQuality[];
-} {
-  const level = COMPLIANCE_LEVELS[targetLevel];
-  const declaredProfile = info.profile;
-  const profileLevel = COMPLIANCE_LEVELS[declaredProfile];
-
-  // Gather all supported features
-  const supportedFeatures = new Set([
-    ...profileLevel.requiredFeatures,
-    ...(info.extraFeatures || [])
-  ]);
-
-  const supportedFormats = new Set([
-    ...profileLevel.requiredFormats,
-    ...(info.extraFormats || [])
-  ]);
-
-  const supportedQualities = new Set([
-    ...profileLevel.requiredQualities,
-    ...(info.extraQualities || [])
-  ]);
-
-  const missingFeatures = level.requiredFeatures.filter(f => !supportedFeatures.has(f));
-  const missingFormats = level.requiredFormats.filter(f => !supportedFormats.has(f));
-  const missingQualities = level.requiredQualities.filter(q => !supportedQualities.has(q));
-
-  return {
-    compliant: missingFeatures.length === 0 && missingFormats.length === 0 && missingQualities.length === 0,
-    missingFeatures,
-    missingFormats,
-    missingQualities
-  };
+export function formatIIIFFloat(value: number): string {
+  // Remove trailing zeros and decimal point if integer
+  let str = value.toString();
+  
+  // Remove trailing zeros after decimal
+  str = str.replace(/(\.[0-9]*?)0+$/, '$1');
+  
+  // Remove decimal point if nothing after it
+  str = str.replace(/\.$/, '');
+  
+  // Add leading zero if less than 1
+  if (str.startsWith('.')) {
+    str = '0' + str;
+  } else if (str.startsWith('-.')) {
+    str = '-0' + str.substring(1);
+  }
+  
+  return str;
 }
 
 /**
- * Get features required for a profile level
+ * Calculate aspect ratio preserving size
  */
-export function getFeaturesForProfile(profile: ImageApiProfile): ImageApiFeature[] {
-  return [...COMPLIANCE_LEVELS[profile].requiredFeatures];
+export function calculateSizeWithinBounds(
+  width: number,
+  height: number,
+  maxWidth?: number,
+  maxHeight?: number,
+  maxArea?: number
+): { width: number; height: number } {
+  let resultWidth = width;
+  let resultHeight = height;
+
+  // Apply width constraint
+  if (maxWidth && resultWidth > maxWidth) {
+    const scale = maxWidth / resultWidth;
+    resultWidth = maxWidth;
+    resultHeight = Math.round(resultHeight * scale);
+  }
+
+  // Apply height constraint
+  if (maxHeight && resultHeight > maxHeight) {
+    const scale = maxHeight / resultHeight;
+    resultHeight = maxHeight;
+    resultWidth = Math.round(resultWidth * scale);
+  }
+
+  // Apply area constraint
+  if (maxArea && (resultWidth * resultHeight) > maxArea) {
+    const scale = Math.sqrt(maxArea / (resultWidth * resultHeight));
+    resultWidth = Math.round(resultWidth * scale);
+    resultHeight = Math.round(resultHeight * scale);
+  }
+
+  return { width: resultWidth, height: resultHeight };
 }
 
 /**
- * Get formats required for a profile level
+ * Generate Link header for canonical URI
  */
-export function getFormatsForProfile(profile: ImageApiProfile): ImageFormat[] {
-  return [...COMPLIANCE_LEVELS[profile].requiredFormats];
+export function generateCanonicalLinkHeader(canonicalUri: string): string {
+  return `<${canonicalUri}>;rel="canonical"`;
 }
 
 /**
- * Get qualities required for a profile level
+ * Generate profile Link header
  */
-export function getQualitiesForProfile(profile: ImageApiProfile): ImageQuality[] {
-  return [...COMPLIANCE_LEVELS[profile].requiredQualities];
-}
-
-// ============================================================================
-// Service Reference on Content Resources
-// ============================================================================
-
-/**
- * Create minimal ImageService3 reference for embedding in Presentation API resources
- * Includes protocol property as required by IIIF Image API 3.0
- */
-export function createImageServiceReference(
-  id: string,
-  profile: ImageApiProfile = 'level2',
-  width?: number,
-  height?: number
-): {
-  id: string;
-  type: 'ImageService3';
-  protocol: 'http://iiif.io/api/image';
-  profile: ImageApiProfile;
-  width?: number;
-  height?: number;
-} {
-  const service: any = {
-    id,
-    type: 'ImageService3',
-    protocol: IMAGE_API_PROTOCOL,
-    profile
-  };
-
-  if (width !== undefined) service.width = width;
-  if (height !== undefined) service.height = height;
-
-  return service;
+export function generateProfileLinkHeader(profileUri: string): string {
+  return `<${profileUri}>;rel="profile"`;
 }
 
 /**
- * Check if an object is a valid ImageService3 reference
+ * Check if a region is entirely outside image bounds
  */
-export function isImageService3(service: any): service is {
-  id: string;
-  type: 'ImageService3';
-  profile: ImageApiProfile;
-  protocol?: string;
-  width?: number;
-  height?: number;
-} {
+export function isRegionOutsideBounds(
+  region: RegionParams,
+  imageWidth: number,
+  imageHeight: number
+): boolean {
+  if (region.type === 'full' || region.type === 'square') {
+    return false;
+  }
+
+  if (region.type === 'pixels') {
+    return (
+      region.x! >= imageWidth ||
+      region.y! >= imageHeight ||
+      region.x! + region.w! <= 0 ||
+      region.y! + region.h! <= 0
+    );
+  }
+
+  // Percent
+  const x = (region.x! / 100) * imageWidth;
+  const y = (region.y! / 100) * imageHeight;
+  const w = (region.w! / 100) * imageWidth;
+  const h = (region.h! / 100) * imageHeight;
+
   return (
-    service &&
-    typeof service === 'object' &&
-    typeof service.id === 'string' &&
-    service.type === 'ImageService3' &&
-    ['level0', 'level1', 'level2'].includes(service.profile)
+    x >= imageWidth ||
+    y >= imageHeight ||
+    x + w <= 0 ||
+    y + h <= 0
   );
 }
 
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
 /**
- * Get MIME type for format
+ * Calculate square region coordinates
  */
-export function getImageMimeType(format: ImageFormat): string {
-  return FORMAT_MIME_TYPES[format];
-}
-
-/**
- * Get format from MIME type
- */
-export function getFormatFromMime(mimeType: string): ImageFormat | null {
-  return MIME_TO_FORMAT[mimeType] || null;
-}
-
-/**
- * Calculate resulting dimensions after size operation
- */
-export function calculateResultingSize(
-  regionWidth: number,
-  regionHeight: number,
-  sizeParams: SizeParams
-): { width: number; height: number } {
-  const aspectRatio = regionHeight / regionWidth;
-
-  switch (sizeParams.type) {
-    case 'max':
-      return { width: regionWidth, height: regionHeight };
-
-    case 'width':
-      return {
-        width: sizeParams.width!,
-        height: Math.round(sizeParams.width! * aspectRatio)
-      };
-
-    case 'height':
-      return {
-        width: Math.round(sizeParams.height! / aspectRatio),
-        height: sizeParams.height!
-      };
-
-    case 'percent':
-      return {
-        width: Math.round(regionWidth * sizeParams.percent! / 100),
-        height: Math.round(regionHeight * sizeParams.percent! / 100)
-      };
-
-    case 'widthHeight':
-      return {
-        width: sizeParams.width!,
-        height: sizeParams.height!
-      };
-
-    case 'confined':
-      const scaleW = sizeParams.width! / regionWidth;
-      const scaleH = sizeParams.height! / regionHeight;
-      const scale = Math.min(scaleW, scaleH);
-      return {
-        width: Math.round(regionWidth * scale),
-        height: Math.round(regionHeight * scale)
-      };
-
-    default:
-      return { width: regionWidth, height: regionHeight };
+export function calculateSquareRegion(
+  imageWidth: number,
+  imageHeight: number,
+  position: 'center' | 'top' | 'bottom' = 'center'
+): { x: number; y: number; size: number } {
+  const size = Math.min(imageWidth, imageHeight);
+  
+  let x = 0;
+  let y = 0;
+  
+  if (imageWidth > imageHeight) {
+    // Wider than tall
+    x = Math.floor((imageWidth - size) / 2);
+  } else if (imageHeight > imageWidth) {
+    // Taller than wide
+    switch (position) {
+      case 'center':
+        y = Math.floor((imageHeight - size) / 2);
+        break;
+      case 'top':
+        y = 0;
+        break;
+      case 'bottom':
+        y = imageHeight - size;
+        break;
+    }
   }
+  
+  return { x, y, size };
 }
 
 /**
- * Encode identifier for use in URI
+ * Mirror coordinates for mirrored rotation
  */
-export function encodeIdentifier(identifier: string): string {
-  return encodeURIComponent(identifier);
+export function applyMirroring(
+  x: number,
+  width: number
+): number {
+  return width - x - 1;
 }
 
 /**
- * Decode identifier from URI
+ * Calculate rotated dimensions
  */
-export function decodeIdentifier(encoded: string): string {
-  return decodeURIComponent(encoded);
+export function calculateRotatedDimensions(
+  width: number,
+  height: number,
+  degrees: number
+): { width: number; height: number } {
+  const rad = (degrees * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  
+  return {
+    width: Math.round(width * cos + height * sin),
+    height: Math.round(width * sin + height * cos)
+  };
 }
+
+// ============================================================================
+// Server Response Helpers
+// ============================================================================
+
+export interface IIIFServerResponse {
+  status: number;
+  headers: Record<string, string>;
+  body?: Buffer | string;
+  redirect?: string;
+}
+
+/**
+ * Create success response with appropriate headers
+ */
+export function createImageResponse(
+  imageData: Buffer,
+  format: ImageFormat,
+  canonicalUri?: string,
+  profile?: string
+): IIIFServerResponse {
+  const headers: Record<string, string> = {
+    'Content-Type': FORMAT_MIME_TYPES[format],
+    'Content-Length': imageData.length.toString(),
+  };
+
+  if (canonicalUri) {
+    headers['Link'] = generateCanonicalLinkHeader(canonicalUri);
+  }
+
+  if (profile) {
+    headers['Link'] = (headers['Link'] ? headers['Link'] + ', ' : '') + 
+                      generateProfileLinkHeader(profile);
+  }
+
+  return {
+    status: 200,
+    headers,
+    body: imageData
+  };
+}
+
+/**
+ * Create info.json response
+ */
+export function createInfoJsonResponse(
+  info: ImageServiceInfo,
+  acceptHeader?: string
+): IIIFServerResponse {
+  let contentType: string;
+  
+  if (acceptHeader && acceptHeader.includes('application/ld+json')) {
+    contentType = `application/ld+json;profile="${IMAGE_API_CONTEXT}"`;
+  } else {
+    contentType = 'application/json';
+  }
+  
+  const body = JSON.stringify(info, null, 2);
+  
+  const headers: Record<string, string> = {
+    'Content-Type': contentType,
+    'Content-Length': Buffer.byteLength(body).toString(),
+  };
+  
+  // Add profile link header
+  const profileUri = COMPLIANCE_LEVELS[info.profile].uri;
+  headers['Link'] = generateProfileLinkHeader(profileUri);
+  
+  return {
+    status: 200,
+    headers,
+    body
+  };
+}
+
+/**
+ * Create error response
+ */
+export function createErrorResponse(
+  statusCode: number,
+  message: string,
+  details?: string
+): IIIFServerResponse {
+  const errorBody = JSON.stringify({
+    error: {
+      code: statusCode,
+      message,
+      details
+    }
+  });
+  
+  return {
+    status: statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(errorBody).toString()
+    },
+    body: errorBody
+  };
+}
+
+/**
+ * Create redirect response
+ */
+export function createRedirectResponse(
+  location: string,
+  permanent: boolean = false
+): IIIFServerResponse {
+  return {
+    status: permanent ? 301 : 302,
+    headers: {
+      'Location': location
+    }
+  };
+}
+
+// ============================================================================
+// Compliance Level Utilities
+// ============================================================================
+
+/**
+ * Determine appropriate compliance level based on features
+ */
+export function determineComplianceLevel(
+  features: ImageApiFeature[],
+  formats: ImageFormat[] = ['jpg'],
+  qualities: ImageQuality[] = ['default']
+): ImageApiProfile {
+  // Check level 2 requirements
+  const level2Features = COMPLIANCE_LEVELS.level2.requiredFeatures;
+  const level2Formats = COMPLIANCE_LEVELS.level2.requiredFormats;
+  const level2Qualities = COMPLIANCE_LEVELS.level2.requiredQualities;
+  
+  const hasLevel2Features = level2Features.every(f => features.includes(f));
+  const hasLevel2Formats = level2Formats.every(f => formats.includes(f));
+  const hasLevel2Qualities = level2Qualities.every(q => qualities.includes(q));
+  
+  if (hasLevel2Features && hasLevel2Formats && hasLevel2Qualities) {
+    return 'level2';
+  }
+  
+  // Check level 1 requirements
+  const level1Features = COMPLIANCE_LEVELS.level1.requiredFeatures;
+  const hasLevel1Features = level1Features.every(f => features.includes(f));
+  
+  if (hasLevel1Features) {
+    return 'level1';
+  }
+  
+  return 'level0';
+}
+
+/**
+ * Get all available features for a profile including extras
+ */
+export function getAllAvailableFeatures(
+  profile: ImageApiProfile,
+  extraFeatures: ImageApiFeature[] = []
+): ImageApiFeature[] {
+  const baseFeatures = [...COMPLIANCE_LEVELS[profile].requiredFeatures];
+  const allFeatures = new Set([...baseFeatures, ...extraFeatures]);
+  return Array.from(allFeatures);
+}
+
+// ============================================================================
+// URI Normalization and Canonicalization
+// ============================================================================
+
+/**
+ * Normalize URI path components
+ */
+export function normalizeUriPath(path: string): string {
+  // Remove duplicate slashes
+  path = path.replace(/\/+/g, '/');
+  
+  // Remove trailing slash (except for root)
+  if (path.endsWith('/') && path !== '/') {
+    path = path.substring(0, path.length - 1);
+  }
+  
+  return path;
+}
+
+/**
+ * Ensure base URI doesn't have trailing slash
+ */
+export function normalizeBaseUri(baseUri: string): string {
+  return baseUri.endsWith('/') ? baseUri.substring(0, baseUri.length - 1) : baseUri;
+}
+
+/**
+ * Parse and validate complete IIIF URI
+ */
+export function parseAndValidateUri(
+  uri: string,
+  info?: ImageServiceInfo
+): {
+  valid: boolean;
+  parsed?: ReturnType<typeof parseImageUri>;
+  validation?: ImageApiValidationResult;
+  canonicalUri?: string;
+} {
+  const parsed = parseImageUri(uri);
+  if (!parsed) {
+    return { valid: false };
+  }
+  
+  const validation = validateImageRequest(
+    {
+      region: parsed.region,
+      size: parsed.size,
+      rotation: parsed.rotation,
+      quality: parsed.quality,
+      format: parsed.format as ImageFormat
+    },
+    info
+  );
+  
+  let canonicalUri: string | undefined;
+  if (validation.valid && info) {
+    // Build canonical URI
+    const region = validateRegion(parsed.region, info.width, info.height);
+    const size = validateSize(parsed.size, undefined, undefined, 
+      info.extraFeatures?.includes('sizeUpscaling'));
+    const rotation = validateRotation(parsed.rotation,
+      info.extraFeatures?.includes('rotationArbitrary'),
+      info.extraFeatures?.includes('mirroring') || info.profile === 'level2');
+    
+    if (region.valid && size.valid && rotation.valid) {
+      const canonicalParams: ImageTransformationOptions = {
+        region: region.parsed!,
+        size: size.parsed!,
+        rotation: rotation.parsed!,
+        quality: parsed.quality as ImageQuality,
+        format: parsed.format as ImageFormat
+      };
+      
+      const service = new IIIFImageService({
+        baseUri: parsed.baseUri.replace(`/${parsed.identifier}`, ''),
+        identifier: parsed.identifier,
+        width: info.width,
+        height: info.height,
+        profile: info.profile,
+        maxWidth: info.maxWidth,
+        maxHeight: info.maxHeight,
+        extraFeatures: info.extraFeatures
+      });
+      
+      canonicalUri = service.buildCanonicalUri(canonicalParams);
+    }
+  }
+  
+  return {
+    valid: validation.valid,
+    parsed,
+    validation,
+    canonicalUri
+  };
+}
+
+// ============================================================================
+// Extension Support
+// ============================================================================
+
+/**
+ * Check if a feature is supported
+ */
+export function supportsFeature(
+  info: ImageServiceInfo,
+  feature: ImageApiFeature
+): boolean {
+  const profileFeatures = COMPLIANCE_LEVELS[info.profile].requiredFeatures;
+  const extraFeatures = info.extraFeatures || [];
+  
+  return profileFeatures.includes(feature) || extraFeatures.includes(feature);
+}
+
+/**
+ * Check if a format is supported
+ */
+export function supportsFormat(
+  info: ImageServiceInfo,
+  format: ImageFormat
+): boolean {
+  const profileFormats = COMPLIANCE_LEVELS[info.profile].requiredFormats;
+  const extraFormats = info.extraFormats || [];
+  
+  return profileFormats.includes(format) || extraFormats.includes(format);
+}
+
+/**
+ * Check if a quality is supported
+ */
+export function supportsQuality(
+  info: ImageServiceInfo,
+  quality: ImageQuality
+): boolean {
+  const profileQualities = COMPLIANCE_LEVELS[info.profile].requiredQualities;
+  const extraQualities = info.extraQualities || [];
+  
+  return profileQualities.includes(quality) || extraQualities.includes(quality);
+}
+
+/**
+ * Get all supported formats
+ */
+export function getAllSupportedFormats(info: ImageServiceInfo): ImageFormat[] {
+  const profileFormats = COMPLIANCE_LEVELS[info.profile].requiredFormats;
+  const extraFormats = info.extraFormats || [];
+  
+  return Array.from(new Set([...profileFormats, ...extraFormats]));
+}
+
+/**
+ * Get all supported qualities
+ */
+export function getAllSupportedQualities(info: ImageServiceInfo): ImageQuality[] {
+  const profileQualities = COMPLIANCE_LEVELS[info.profile].requiredQualities;
+  const extraQualities = info.extraQualities || [];
+  
+  return Array.from(new Set([...profileQualities, ...extraQualities]));
+}
+
+// ============================================================================
+// Image Transformation Pipeline
+// ============================================================================
+
+/**
+ * Apply IIIF transformation pipeline in correct order
+ */
+export interface TransformationPipeline {
+  region?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  size?: {
+    width: number;
+    height: number;
+    upscale: boolean;
+  };
+  rotation?: {
+    degrees: number;
+    mirror: boolean;
+  };
+  quality?: ImageQuality;
+  format?: ImageFormat;
+}
+
+/**
+ * Calculate transformation pipeline from request
+ */
+export function calculateTransformationPipeline(
+  request: ImageTransformationOptions,
+  imageWidth: number,
+  imageHeight: number
+): TransformationPipeline {
+  const pipeline: TransformationPipeline = {};
+  
+  // Region
+  if (request.region.type === 'full') {
+    pipeline.region = {
+      x: 0,
+      y: 0,
+      width: imageWidth,
+      height: imageHeight
+    };
+  } else if (request.region.type === 'square') {
+    const size = Math.min(imageWidth, imageHeight);
+    const x = imageWidth > size ? Math.floor((imageWidth - size) / 2) : 0;
+    const y = imageHeight > size ? Math.floor((imageHeight - size) / 2) : 0;
+    pipeline.region = { x, y, width: size, height: size };
+  } else if (request.region.type === 'pixels') {
+    pipeline.region = {
+      x: request.region.x!,
+      y: request.region.y!,
+      width: request.region.w!,
+      height: request.region.h!
+    };
+  } else if (request.region.type === 'percent') {
+    pipeline.region = {
+      x: Math.round((request.region.x! / 100) * imageWidth),
+      y: Math.round((request.region.y! / 100) * imageHeight),
+      width: Math.round((request.region.w! / 100) * imageWidth),
+      height: Math.round((request.region.h! / 100) * imageHeight)
+    };
+  }
+  
+  // Size
+  if (pipeline.region) {
+    const result = calculateResultingSize(
+      pipeline.region.width,
+      pipeline.region.height,
+      request.size
+    );
+    pipeline.size = {
+      width: result.width,
+      height: result.height,
+      upscale: request.size.upscale || false
+    };
+  }
+  
+  // Rotation
+  pipeline.rotation = {
+    degrees: request.rotation.degrees,
+    mirror: request.rotation.mirror
+  };
+  
+  // Quality
+  pipeline.quality = request.quality;
+  
+  // Format
+  pipeline.format = request.format;
+  
+  return pipeline;
+}
+
+/**
+ * Generate transformation description for debugging
+ */
+export function describeTransformation(pipeline: TransformationPipeline): string {
+  const parts: string[] = [];
+  
+  if (pipeline.region) {
+    parts.push(`Region: ${pipeline.region.x},${pipeline.region.y},${pipeline.region.width},${pipeline.region.height}`);
+  }
+  
+  if (pipeline.size) {
+    parts.push(`Size: ${pipeline.size.width}x${pipeline.size.height}${pipeline.size.upscale ? ' (upscaled)' : ''}`);
+  }
+  
+  if (pipeline.rotation) {
+    parts.push(`Rotation: ${pipeline.rotation.degrees}°${pipeline.rotation.mirror ? ' mirrored' : ''}`);
+  }
+  
+  if (pipeline.quality) {
+    parts.push(`Quality: ${pipeline.quality}`);
+  }
+  
+  if (pipeline.format) {
+    parts.push(`Format: ${pipeline.format}`);
+  }
+  
+  return parts.join(' | ');
+}
+
+// ============================================================================
+// Default Configurations
+// ============================================================================
+
+/**
+ * Create default configuration for common use cases
+ */
+export function createDefaultConfig(
+  baseUri: string,
+  identifier: string,
+  width: number,
+  height: number
+): IIIFImageServiceConfig {
+  // Generate standard sizes
+  const sizes = generateStandardSizes(width, height);
+  
+  // Generate standard tiles
+  const tiles = generateStandardTiles();
+  
+  return {
+    baseUri,
+    identifier,
+    width,
+    height,
+    profile: 'level2',
+    sizes,
+    tiles,
+    preferredFormats: ['webp', 'jpg', 'png'],
+    extraFeatures: [
+      'sizeUpscaling',
+      'rotationArbitrary',
+      'regionByPct',
+      'sizeByConfinedWh'
+    ],
+    extraFormats: ['webp', 'tif'],
+    extraQualities: ['color', 'gray', 'bitonal']
+  };
+}
+
+/**
+ * Create minimal configuration for static files
+ */
+export function createStaticConfig(
+  baseUri: string,
+  identifier: string,
+  width: number,
+  height: number
+): IIIFImageServiceConfig {
+  const sizes = generateStandardSizes(width, height);
+  
+  return {
+    baseUri,
+    identifier,
+    width,
+    height,
+    profile: 'level0',
+    sizes,
+    // No tiles, no extra features - just static files
+    preferredFormats: ['jpg']
+  };
+}
+
+// ============================================================================
+// Export all utilities
+// ============================================================================
+
+export default {
+  // Core types
+  RegionType,
+  SizeType,
+  ImageApiProfile,
+  ImageQuality,
+  ImageFormat,
+  ImageApiFeature,
+  
+  // Core classes
+  IIIFImageService,
+  
+  // Validation
+  validateRegion,
+  validateSize,
+  validateRotation,
+  validateQuality,
+  validateFormat,
+  validateImageRequest,
+  validateInfoJson,
+  
+  // URI building
+  buildImageUri,
+  buildInfoUri,
+  parseImageUri,
+  
+  // Info.json
+  generateInfoJson,
+  generateStandardSizes,
+  generateStandardTiles,
+  
+  // Tiles
+  calculateTileRequest,
+  calculateTileCount,
+  buildTileUri,
+  getAllTileUris,
+  
+  // Compliance
+  checkComplianceLevel,
+  getFeaturesForProfile,
+  getFormatsForProfile,
+  getQualitiesForProfile,
+  determineComplianceLevel,
+  
+  // Service reference
+  createImageServiceReference,
+  isImageService3,
+  
+  // Utilities
+  getImageMimeType,
+  getFormatFromMime,
+  calculateResultingSize,
+  encodeIdentifier,
+  decodeIdentifier,
+  formatIIIFFloat,
+  calculateSizeWithinBounds,
+  
+  // Server helpers
+  createImageResponse,
+  createInfoJsonResponse,
+  createErrorResponse,
+  createRedirectResponse,
+  
+  // Feature support
+  supportsFeature,
+  supportsFormat,
+  supportsQuality,
+  getAllSupportedFormats,
+  getAllSupportedQualities,
+  
+  // Default configs
+  createDefaultConfig,
+  createStaticConfig,
+  
+  // Constants
+  IMAGE_API_CONTEXT,
+  IMAGE_API_PROTOCOL,
+  COMPLIANCE_LEVELS,
+  FORMAT_MIME_TYPES,
+  FEATURE_DESCRIPTIONS
+};

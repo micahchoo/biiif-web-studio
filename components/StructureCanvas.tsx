@@ -3,7 +3,8 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { IIIFItem, IIIFManifest, IIIFCollection, IIIFCanvas, getIIIFValue, isManifest, isCanvas, isCollection } from '../types';
 import { Icon } from './Icon';
 import { RESOURCE_TYPE_CONFIG } from '../constants';
-import { resolveThumbUrl } from '../utils/imageSourceResolver';
+import { resolveThumbUrl, resolveHierarchicalThumbs } from '../utils/imageSourceResolver';
+import { StackedThumbnail } from './StackedThumbnail';
 
 export interface StructureCanvasProps {
   item: IIIFItem | null;
@@ -245,7 +246,7 @@ const StructureCard: React.FC<StructureItemProps> = ({
   onKeyDown,
 }) => {
   const config = RESOURCE_TYPE_CONFIG[item.type] || RESOURCE_TYPE_CONFIG['Content'];
-  const thumbUrl = resolveThumbUrl(item, 200);
+  const thumbUrls = resolveHierarchicalThumbs(item, 200);
   const label = getIIIFValue(item.label) || `${item.type} ${index + 1}`;
 
   // Get annotation count for canvases
@@ -274,19 +275,13 @@ const StructureCard: React.FC<StructureItemProps> = ({
       onKeyDown={(e) => onKeyDown(e, item.id, index)}
     >
       {/* Thumbnail */}
-      <div className="aspect-square bg-slate-100 relative">
-        {thumbUrl ? (
-          <img
-            src={thumbUrl}
-            alt={label}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Icon name={config.icon} className={`text-3xl ${config.colorClass} opacity-50`} />
-          </div>
-        )}
+      <div className="aspect-square bg-slate-100 relative flex items-center justify-center">
+        <StackedThumbnail 
+          urls={thumbUrls} 
+          size="xl" 
+          className="w-full h-full"
+          icon={config.icon}
+        />
 
         {/* Selection indicator */}
         {isSelected && (
@@ -338,7 +333,7 @@ const StructureListItem: React.FC<StructureItemProps> = ({
   onKeyDown,
 }) => {
   const config = RESOURCE_TYPE_CONFIG[item.type] || RESOURCE_TYPE_CONFIG['Content'];
-  const thumbUrl = resolveThumbUrl(item, 80);
+  const thumbUrls = resolveHierarchicalThumbs(item, 80);
   const label = getIIIFValue(item.label) || `${item.type} ${index + 1}`;
 
   const annotationCount = isCanvas(item) ?
@@ -374,15 +369,11 @@ const StructureListItem: React.FC<StructureItemProps> = ({
       <span className="text-xs font-mono text-slate-400 w-6 text-right">{index + 1}</span>
 
       {/* Thumbnail */}
-      <div className="w-10 h-10 rounded bg-slate-100 overflow-hidden shrink-0">
-        {thumbUrl ? (
-          <img src={thumbUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Icon name={config.icon} className={`text-sm ${config.colorClass}`} />
-          </div>
-        )}
-      </div>
+      <StackedThumbnail 
+        urls={thumbUrls} 
+        size="sm" 
+        icon={config.icon}
+      />
 
       {/* Content */}
       <div className="flex-1 min-w-0">

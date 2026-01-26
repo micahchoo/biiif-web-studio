@@ -3,6 +3,8 @@ import { ValidationIssue, IssueCategory } from '../services/validator';
 import { Icon } from './Icon';
 import { IIIFItem, getIIIFValue, isCanvas } from '../types';
 import { createLanguageMap } from '../utils';
+import { resolveHierarchicalThumbs } from '../utils/imageSourceResolver';
+import { StackedThumbnail } from './StackedThumbnail';
 
 interface QCDashboardProps {
   issuesMap: Record<string, ValidationIssue[]>;
@@ -285,14 +287,13 @@ export const QCDashboard: React.FC<QCDashboardProps> = ({ issuesMap, totalItems,
                 {selectedIssue && previewItem ? (
                     <div className="space-y-6 animate-in slide-in-from-right-2">
                         {/* Image Preview */}
-                        <div className="aspect-video bg-slate-900 rounded-2xl overflow-hidden border shadow-inner relative group ring-4 ring-white">
-                            {(previewItem as any)._blobUrl || (previewItem as any).thumbnail?.[0]?.id ? (
-                                <img src={(previewItem as any)._blobUrl || (previewItem as any).thumbnail?.[0].id} className="w-full h-full object-contain" />
-                            ) : (
-                                <div className="h-full flex items-center justify-center text-slate-700">
-                                    <Icon name="image_not_supported" className="text-4xl opacity-20" />
-                                </div>
-                            )}
+                        <div className="aspect-video bg-slate-900 rounded-2xl overflow-hidden border shadow-inner relative group ring-4 ring-white flex items-center justify-center">
+                            <StackedThumbnail 
+                              urls={resolveHierarchicalThumbs(previewItem, 600)} 
+                              size="xl" 
+                              className="w-full h-full"
+                              icon="image_not_supported"
+                            />
                             <div className="absolute top-2 right-2 bg-black/50 text-[8px] text-white px-1.5 py-0.5 rounded uppercase font-black tracking-widest">
                                 {previewItem.type} Preview
                             </div>
