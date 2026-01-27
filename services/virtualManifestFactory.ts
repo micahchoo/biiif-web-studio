@@ -11,6 +11,7 @@
  */
 
 import { IIIFManifest, IIIFCanvas, IIIFAnnotation, LanguageMap } from '../types';
+import { IIIF_SPEC } from '../constants';
 
 // ============================================================================
 // Types
@@ -323,7 +324,7 @@ class VirtualManifestFactory {
 
     // Build the manifest
     const manifest: IIIFManifest = {
-      '@context': 'http://iiif.io/api/presentation/3/context.json',
+      '@context': IIIF_SPEC.PRESENTATION_3.CONTEXT,
       id: manifestId,
       type: 'Manifest',
       label,
@@ -438,7 +439,7 @@ class VirtualManifestFactory {
     );
 
     const manifest: IIIFManifest = {
-      '@context': 'http://iiif.io/api/presentation/3/context.json',
+      '@context': IIIF_SPEC.PRESENTATION_3.CONTEXT,
       id: manifestId,
       type: 'Manifest',
       label,

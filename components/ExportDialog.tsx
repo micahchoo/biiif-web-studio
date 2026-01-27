@@ -45,6 +45,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
   const [canopyConfig, setCanopyConfig] = useState<CanopyConfig>({
     title: root ? getIIIFValue(root.label) || 'IIIF Collection' : 'IIIF Collection',
     baseUrl: '',
+    port: 8765, // Default IIIF server port
     theme: {
         accentColor: 'indigo',
         grayColor: 'slate',
@@ -576,6 +577,19 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
                                     className="w-full border rounded-lg p-2 text-sm"
                                     placeholder="Optional (e.g. https://...)"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">IIIF Server Port</label>
+                                <input
+                                    type="number"
+                                    value={canopyConfig.port || 8765}
+                                    onChange={e => setCanopyConfig({ ...canopyConfig, port: parseInt(e.target.value) || 8765 })}
+                                    className="w-full border rounded-lg p-2 text-sm"
+                                    min={1024}
+                                    max={65535}
+                                    placeholder="8765"
+                                />
+                                <p className="text-xs text-slate-400 mt-1">Change if port 8765 is in use</p>
                             </div>
                         </div>
 

@@ -6,6 +6,69 @@ export const CONSTANTS = {
   TOAST_DURATION: 3000,
 };
 
+/**
+ * Centralized IIIF Configuration
+ * Defines base URL patterns, ID generation rules, and ingest conventions.
+ */
+export const IIIF_CONFIG = {
+  /**
+   * Base URL configuration
+   * Note: Runtime base URL is determined by window.location if not specified
+   */
+  BASE_URL: {
+    DEFAULT: 'http://localhost/iiif',
+    LEGACY_DOMAINS: ['archive.local', 'example.org'],
+    PATH_SEGMENT: 'iiif'
+  },
+  
+  /**
+   * ID Generation Patterns
+   */
+  ID_PATTERNS: {
+    MANIFEST: (baseUrl: string, uuid: string) => `${baseUrl}/manifest/${uuid}`,
+    COLLECTION: (baseUrl: string, uuid: string) => `${baseUrl}/collection/${uuid}`,
+    CANVAS: (manifestId: string, index: number) => `${manifestId}/canvas/${index}`,
+    RANGE: (baseUrl: string, uuid: string) => `${baseUrl}/range/${uuid}`,
+    ANNOTATION_PAGE: (parentId: string, type: string) => `${parentId}/page/${type}`,
+    ANNOTATION: (parentId: string, id: string) => `${parentId}/annotation/${id}`,
+    SEARCH_SERVICE: (baseUrl: string, resourceId: string) => `${baseUrl}/search/${resourceId}`,
+    IMAGE_SERVICE: (baseUrl: string, assetId: string) => `${baseUrl}/image/${assetId}`
+  },
+
+  /**
+   * Ingest Conventions
+   */
+  INGEST: {
+    COLLECTION_PREFIX: '_',
+    ROOT_NAME: 'root',
+    ROOT_DISPLAY_NAME: 'My Archive',
+    LOOSE_FILES_Dir_NAME: 'Files',
+    META_FILE: 'info.yml'
+  }
+};
+
+/**
+ * IIIF Specification Constants
+ * Central source for Contexts, Protocols, and standard URIs
+ */
+export const IIIF_SPEC = {
+  PRESENTATION_3: {
+    CONTEXT: 'http://iiif.io/api/presentation/3/context.json',
+  },
+  IMAGE_3: {
+    CONTEXT: 'http://iiif.io/api/image/3/context.json',
+    PROTOCOL: 'http://iiif.io/api/image',
+    PROFILES: {
+      LEVEL0: 'level0',
+      LEVEL1: 'level1',
+      LEVEL2: 'level2'
+    }
+  },
+  SEARCH_2: {
+    PROFILE: 'http://iiif.io/api/search/2/search'
+  }
+};
+
 export const METADATA_TEMPLATES = {
   RESEARCHER: ["Location", "Site Phase", "Artifact Type", "Material", "Findings"],
   ARCHIVIST: ["Title", "Creator", "Date", "Format", "Rights", "Identifier", "Language", "Source", "Description"],
@@ -337,7 +400,7 @@ export const DEFAULT_ZOOM_CONFIG = {
  * Derivative preset configuration for image size generation.
  * Replaces hardcoded [150, 600, 1200] values throughout the codebase.
  *
- * Based on WAX pattern: DEFAULT_VARIANTS = { 'thumbnail' => 250, 'fullwidth' => 1140 }
+ * : DEFAULT_VARIANTS = { 'thumbnail' => 250, 'fullwidth' => 1140 }
  */
 export interface DerivativePreset {
   /** Unique preset identifier */
@@ -555,7 +618,7 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-amber-100',
     borderClass: 'border-amber-200',
     label: 'Collection',
-    metaphor: 'Box / Folder'
+    metaphor: 'Literary Genres'
   },
   'Manifest': { 
     icon: 'menu_book', 
@@ -563,7 +626,7 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-emerald-100', 
     borderClass: 'border-emerald-200', 
     label: 'Manifest',
-    metaphor: 'Bound Volume'
+    metaphor: 'Book'
   },
   'Canvas': { 
     icon: 'crop_original', 
@@ -571,7 +634,7 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-blue-100', 
     borderClass: 'border-blue-200', 
     label: 'Canvas',
-    metaphor: 'Page / Screen'
+    metaphor: 'Page'
   },
   'Range': { 
     icon: 'segment', 
@@ -579,7 +642,7 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-indigo-100', 
     borderClass: 'border-indigo-200', 
     label: 'Range',
-    metaphor: 'Section'
+    metaphor: 'Table of Contents'
   },
   'AnnotationPage': { 
     icon: 'layers', 
@@ -587,7 +650,7 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-purple-100', 
     borderClass: 'border-purple-200', 
     label: 'Annotation Page',
-    metaphor: 'Layer'
+    metaphor: 'Transparent overlay on page'
   },
   'Annotation': { 
     icon: 'chat_bubble', 
@@ -595,7 +658,7 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-teal-100', 
     borderClass: 'border-teal-200', 
     label: 'Annotation',
-    metaphor: 'Note / Mark'
+    metaphor: 'Note / Mark on the transparent overlay'
   },
   'Content': { 
     icon: 'image', 
@@ -603,7 +666,7 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-slate-100', 
     borderClass: 'border-slate-200', 
     label: 'Content',
-    metaphor: 'File'
+    metaphor: 'The actual thing made with ink on the page'
   },
   'AnnotationCollection': {
     icon: 'collections_bookmark',
@@ -611,6 +674,6 @@ export const RESOURCE_TYPE_CONFIG: Record<string, { icon: string; colorClass: st
     bgClass: 'bg-pink-100',
     borderClass: 'border-pink-200',
     label: 'Annotation Collection',
-    metaphor: 'Set of Layers'
+    metaphor: 'Collections of one/many persons annotations on a single page, book or genre'
   }
 };

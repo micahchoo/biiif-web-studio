@@ -8,6 +8,7 @@
  */
 
 import { IIIFItem } from '../types';
+import { IIIF_SPEC } from '../constants';
 
 // ============================================================================
 // Type Definitions
@@ -1639,14 +1640,14 @@ export function getMinimumTemplate(resourceType: string, id: string, label?: Lan
   switch (resourceType) {
     case 'Collection':
       return {
-        "@context": "http://iiif.io/api/presentation/3/context.json",
+        "@context": IIIF_SPEC.PRESENTATION_3.CONTEXT,
         ...base,
         label: label || { none: ['Untitled Collection'] },
         items: []
       };
     case 'Manifest':
       return {
-        "@context": "http://iiif.io/api/presentation/3/context.json",
+        "@context": IIIF_SPEC.PRESENTATION_3.CONTEXT,
         ...base,
         label: label || { none: ['Untitled Manifest'] },
         items: []
@@ -1748,7 +1749,7 @@ export function needsContext(resourceType: string): boolean {
  * Get the default context URI
  */
 export function getDefaultContext(): string {
-  return "http://iiif.io/api/presentation/3/context.json";
+  return IIIF_SPEC.PRESENTATION_3.CONTEXT;
 }
 
 /**

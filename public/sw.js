@@ -88,9 +88,14 @@ async function handleImageRequest(request) {
 
     if (region === 'full' && rotationParam === '0' && (quality === 'default' || quality === 'color')) {
         let sizeKey = null;
-        if (size === '150,' || size === 'pct:7.5') sizeKey = 'thumb';
-        else if (size === '600,' || size === 'pct:30') sizeKey = 'small';
-        else if (size === '1200,' || size === 'pct:60') sizeKey = 'medium';
+        const widthMatch = size.match(/^(\d+),$/);
+        const width = widthMatch ? parseInt(widthMatch[1]) : null;
+
+        // Flexible matching for derivative sizes
+        // Matches standard presets defined in constants.ts
+        if (width === 150 || size === 'pct:7.5') sizeKey = 'thumb';
+        else if ((width && width <= 600) || size === 'pct:30') sizeKey = 'small';
+        else if ((width && width <= 1200) || size === 'pct:60') sizeKey = 'medium';
 
         if (sizeKey) {
             const derivativeBlob = await getFromIDB(DERIVATIVES_STORE, `${identifier}_${sizeKey}`);
@@ -157,8 +162,10 @@ async function handleImageRequest(request) {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  // Match archive.local (legacy) OR any path containing /image/ followed by IIIF patterns
-  if (url.host === 'archive.local' || (url.pathname.includes('/image/') && (url.pathname.endsWith('/info.json') || /\/default\.(jpg|jpeg|png|webp|gif)$/.test(url.pathname)))) {
+  // Flexible matching: any path containing /iiif/image/ or /image/ followed by IIIF patterns
+  const isIIIFImage = /\/(iiif\/)?image\/[^\/]+\/(info\.json|.+?\/default\.(jpg|jpeg|png|webp|gif))$/.test(url.pathname);
+  
+  if (isIIIFImage) {
     event.respondWith(handleImageRequest(event.request));
   }
 });

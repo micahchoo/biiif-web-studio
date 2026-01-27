@@ -1,9 +1,0 @@
-created 
-Object { type: "Annotation", body: (1) […], target: {…}, "@context": "http://www.w3.org/ns/anno.jsonld", id: "#7b5b8138-2e91-477a-bbd4-670b15031310" }
-app.js:76:19
-created 
-Object { type: "Annotation", body: (1) […], target: {…}, "@context": "http://www.w3.org/ns/anno.jsonld", id: "#37a5d005-00d6-4d5f-878f-b16e7b96e72f" }
-app.js:76:19
-created 
-Object { type: "Annotation", body: (1) […], target: {…}, "@context": "http://www.w3.org/ns/anno.jsonld", id: "#dd0bad20-a26e-45ac-be92-f3aa7ff77ac6" }
-app.js:76:19

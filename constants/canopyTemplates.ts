@@ -3,6 +3,53 @@
  * These are bundled directly into exports for self-contained Canopy sites
  */
 
+/** Default port for local IIIF server */
+export const DEFAULT_CANOPY_IIIF_PORT = 8765;
+
+/**
+ * Generates package.json with configurable IIIF server port
+ */
+export function generateCanopyPackageJson(port: number = DEFAULT_CANOPY_IIIF_PORT): string {
+    return `{
+  "name": "@canopy-iiif/app-root",
+  "version": "1.6.0",
+  "description": "An open-source static site generator designed for fast creation, contextualization, and customization of a discovery-focused digital scholarship and collections website using IIIF APIs.",
+  "private": true,
+  "main": "app/scripts/canopy-build.mjs",
+  "scripts": {
+    "build": "tsx app/scripts/canopy-build.mts",
+    "dev": "tsx app/scripts/canopy-build.mts",
+    "serve:iiif": "npx serve assets -l ${port} --cors",
+    "start": "concurrently \\"npm run serve:iiif\\" \\"sleep 2 && npm run dev\\""
+  },
+  "dependencies": {
+    "@canopy-iiif/app": "^1.6.0",
+    "@samvera/clover-iiif": "^3.3.2",
+    "swiper": "^11.2.10",
+    "esbuild": "^0.21.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "concurrently": "^9.0.0",
+    "serve": "^14.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.13",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.19.1"
+  },
+  "author": "Mat Jordan <mat@northwestern.edu>",
+  "homepage": "https://canopy-iiif.github.io/app/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/canopy-iiif/app.git",
+    "directory": "packages/app"
+  },
+  "license": "MIT"
+}
+`;
+}
+
+/** @deprecated Use generateCanopyPackageJson() instead */
 export const CANOPY_PACKAGE_JSON = `{
   "name": "@canopy-iiif/app-root",
   "version": "1.6.0",

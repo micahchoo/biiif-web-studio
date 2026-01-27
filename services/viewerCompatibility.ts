@@ -10,7 +10,8 @@
  */
 
 import { IIIFItem, IIIFManifest, IIIFCanvas, IIIFCollection, IIIFAnnotation } from '../types';
-import { isImageService3, IMAGE_API_PROTOCOL, createImageServiceReference } from '../utils';
+import { isImageService3, createImageServiceReference } from '../utils';
+import { IIIF_CONFIG, IIIF_SPEC, getDerivativePreset } from '../constants';
 
 // ============================================================================
 // Types
@@ -56,13 +57,13 @@ const REQUIREMENTS: ViewerRequirement[] = [
     check: (item) => {
       const context = item['@context'];
       if (Array.isArray(context)) {
-        return context.includes('http://iiif.io/api/presentation/3/context.json');
+        return context.includes(IIIF_SPEC.PRESENTATION_3.CONTEXT);
       }
-      return context === 'http://iiif.io/api/presentation/3/context.json';
+      return context === IIIF_SPEC.PRESENTATION_3.CONTEXT;
     },
     viewers: ['mirador', 'universalviewer', 'annona', 'clover'],
     severity: 'error',
-    recommendation: 'Set @context to "http://iiif.io/api/presentation/3/context.json"'
+    recommendation: `Set @context to "${IIIF_SPEC.PRESENTATION_3.CONTEXT}"`
   },
 
   // ID requirements
@@ -140,7 +141,7 @@ const REQUIREMENTS: ViewerRequirement[] = [
     },
     viewers: ['mirador', 'universalviewer'],
     severity: 'warning',
-    recommendation: `Add protocol: "${IMAGE_API_PROTOCOL}" to ImageService3`
+    recommendation: `Add protocol: "${IIIF_SPEC.IMAGE_3.PROTOCOL}" to ImageService3`
   },
 
   // Thumbnail requirements
@@ -353,11 +354,12 @@ class ViewerCompatibilityService {
    * Generate a test manifest for compatibility testing
    */
   generateTestManifest(): IIIFManifest {
-    const baseUrl = 'https://example.org/iiif';
-    const manifestId = `${baseUrl}/manifest/test-${Date.now()}`;
+    const baseUrl = IIIF_CONFIG.BASE_URL.LEGACY_DOMAINS[1] + '/iiif'; // example.org/iiif
+    const manifestId = IIIF_CONFIG.ID_PATTERNS.MANIFEST(baseUrl, `test-${Date.now()}`);
+    const preset = getDerivativePreset();
 
     return {
-      '@context': 'http://iiif.io/api/presentation/3/context.json',
+      '@context': IIIF_SPEC.PRESENTATION_3.CONTEXT,
       id: manifestId,
       type: 'Manifest',
       label: { en: ['Compatibility Test Manifest'] },
@@ -367,7 +369,7 @@ class ViewerCompatibilityService {
         { label: { en: ['Generated'] }, value: { en: [new Date().toISOString()] } }
       ],
       thumbnail: [{
-        id: `${baseUrl}/image/test/full/150,/0/default.jpg`,
+        id: `${baseUrl}/image/test/full/${preset.thumbnailWidth},/0/default.jpg`,
         type: 'Image',
         format: 'image/jpeg'
       }],
@@ -375,7 +377,7 @@ class ViewerCompatibilityService {
       behavior: ['individuals'],
       items: [
         {
-          id: `${manifestId}/canvas/1`,
+          id: IIIF_CONFIG.ID_PATTERNS.CANVAS(manifestId, 1),
           type: 'Canvas',
           label: { en: ['Test Canvas 1'] },
           width: 1000,
@@ -387,7 +389,7 @@ class ViewerCompatibilityService {
               id: `${manifestId}/canvas/1/annotation/1`,
               type: 'Annotation',
               motivation: 'painting',
-              target: `${manifestId}/canvas/1`,
+              target: IIIF_CONFIG.ID_PATTERNS.CANVAS(manifestId, 1),
               body: {
                 id: `${baseUrl}/image/test1/full/max/0/default.jpg`,
                 type: 'Image',
@@ -404,7 +406,7 @@ class ViewerCompatibilityService {
               id: `${manifestId}/canvas/1/annotation/comment`,
               type: 'Annotation',
               motivation: 'commenting',
-              target: `${manifestId}/canvas/1#xywh=100,100,200,200`,
+              target: `${IIIF_CONFIG.ID_PATTERNS.CANVAS(manifestId, 1)}#xywh=100,100,200,200`,
               body: {
                 type: 'TextualBody',
                 value: 'Test comment annotation',
@@ -414,7 +416,7 @@ class ViewerCompatibilityService {
           }]
         },
         {
-          id: `${manifestId}/canvas/2`,
+          id: IIIF_CONFIG.ID_PATTERNS.CANVAS(manifestId, 2),
           type: 'Canvas',
           label: { en: ['Test Canvas 2'] },
           width: 1000,
@@ -426,7 +428,7 @@ class ViewerCompatibilityService {
               id: `${manifestId}/canvas/2/annotation/1`,
               type: 'Annotation',
               motivation: 'painting',
-              target: `${manifestId}/canvas/2`,
+              target: IIIF_CONFIG.ID_PATTERNS.CANVAS(manifestId, 2),
               body: {
                 id: `${baseUrl}/image/test2/full/max/0/default.jpg`,
                 type: 'Image',
@@ -439,12 +441,12 @@ class ViewerCompatibilityService {
         }
       ],
       structures: [{
-        id: `${manifestId}/range/1`,
+        id: IIIF_CONFIG.ID_PATTERNS.RANGE(baseUrl, '1'),
         type: 'Range',
         label: { en: ['Chapter 1'] },
         items: [
-          { id: `${manifestId}/canvas/1`, type: 'Canvas' },
-          { id: `${manifestId}/canvas/2`, type: 'Canvas' }
+          { id: IIIF_CONFIG.ID_PATTERNS.CANVAS(manifestId, 1), type: 'Canvas' },
+          { id: IIIF_CONFIG.ID_PATTERNS.CANVAS(manifestId, 2), type: 'Canvas' }
         ]
       }]
     } as IIIFManifest;
