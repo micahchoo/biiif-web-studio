@@ -11,7 +11,7 @@ import {
 } from '../utils';
 import { getDerivativePreset, DEFAULT_DERIVATIVE_SIZES } from '../constants';
 import {
-  CANOPY_PACKAGE_JSON,
+  generateCanopyPackageJson,
   CANOPY_GITIGNORE,
   CANOPY_LICENSE,
   CANOPY_BUILD_SCRIPT,
@@ -33,9 +33,14 @@ import {
   generateCanopyAppMdx
 } from '../constants/canopyTemplates';
 
+/** Default port for local IIIF server */
+export const DEFAULT_IIIF_PORT = 8765;
+
 export interface CanopyConfig {
     title: string;
     baseUrl?: string;
+    /** Port for local IIIF server (default: 8765) */
+    port?: number;
     theme: {
         accentColor: string;
         grayColor: string;
@@ -262,10 +267,11 @@ class ExportService {
 
         // Base path for IIIF files: assets/iiif/ for Canopy, iiif/ for others
         const iiifBasePath = options.format === 'canopy' ? 'assets/iiif' : 'iiif';
-        // For Canopy, use localhost:8765 as base URL for local dev server
+        // For Canopy, use localhost with configured port as base URL for local dev server
         // This matches the serve:iiif script in package.json
+        const iiifPort = options.canopyConfig?.port || DEFAULT_IIIF_PORT;
         const baseUrl = options.format === 'canopy'
-            ? (options.canopyConfig?.baseUrl || 'http://localhost:8765')
+            ? (options.canopyConfig?.baseUrl || `http://localhost:${iiifPort}`)
             : '';
 
         // For Canopy: Build a map of all items with their new IDs
@@ -414,7 +420,9 @@ class ExportService {
                                         imgHeight,
                                         options.format === 'canopy',
                                         true, // includeTiles
-                                        options.imageApiOptions
+                                        options.imageApiOptions,
+                                        undefined, // rights
+                                        iiifPort
                                     ),
                                     type: 'info'
                                 });
@@ -668,9 +676,10 @@ class ExportService {
      */
     private generateCanopyTemplateFiles(config: CanopyConfig): VirtualFile[] {
         const files: VirtualFile[] = [];
+        const port = config.port || DEFAULT_IIIF_PORT;
 
-        // Root config files
-        files.push({ path: 'package.json', content: CANOPY_PACKAGE_JSON, type: 'info' });
+        // Root config files - package.json uses configured port for serve:iiif script
+        files.push({ path: 'package.json', content: generateCanopyPackageJson(port), type: 'info' });
         files.push({ path: '.gitignore', content: CANOPY_GITIGNORE, type: 'info' });
         files.push({ path: 'LICENSE', content: CANOPY_LICENSE, type: 'info' });
 
@@ -914,6 +923,7 @@ This collection contains **${manifestCount} items** organized by metadata includ
         const featuredInfo = config.featured.length > 0
             ? `*   **Featured Items**: ${config.featured.length} items selected for homepage`
             : '';
+        const port = config.port || DEFAULT_IIIF_PORT;
 
         return `# ${config.title} - Canopy IIIF Site
 
@@ -938,7 +948,7 @@ This export includes everything you need - no need to clone the template separat
     \`\`\`bash
     npm run serve:iiif
     \`\`\`
-    This serves your IIIF files at http://localhost:8765
+    This serves your IIIF files at http://localhost:${port}
 
     **Terminal 2 - Start the Canopy build:**
     \`\`\`bash
@@ -956,7 +966,7 @@ This export includes everything you need - no need to clone the template separat
 
 Before deploying, update the URLs in \`canopy.yml\`:
 
-1.  Change the collection URL from \`http://localhost:8765/iiif/...\` to your GitHub Pages URL
+1.  Change the collection URL from \`http://localhost:${port}/iiif/...\` to your GitHub Pages URL
     (e.g., \`https://username.github.io/repo-name/iiif/...\`)
 
 2.  Create a new GitHub repository and push this folder
@@ -1010,10 +1020,11 @@ ${featuredInfo}
     private generateCanopyConfig(root: IIIFItem, config: CanopyConfig): string {
         const rootIdVal = root.id.split('/').pop();
         const rootType = root.type.toLowerCase() + 's'; // Plural for Canopy
+        const port = config.port || DEFAULT_IIIF_PORT;
 
-        // For local development, IIIF files are served from http://localhost:8765/iiif/
+        // For local development, IIIF files are served from http://localhost:{port}/iiif/
         // When deployed, use the baseUrl (or site URL) instead
-        const iiifBaseUrl = config.baseUrl || 'http://localhost:8765';
+        const iiifBaseUrl = config.baseUrl || `http://localhost:${port}`;
         const rootPath = `${iiifBaseUrl}/iiif/${rootType}/${rootIdVal}.json`;
 
         // Determine correct key based on root item type
@@ -1124,11 +1135,12 @@ ${featuredInfo}
         isCanopy: boolean = false,
         includeTiles: boolean = false,
         imageApiOptions?: ImageApiOptions,
-        rights?: string
+        rights?: string,
+        port: number = DEFAULT_IIIF_PORT
     ): string {
-        // For Canopy, use absolute localhost URL; for others, use relative path
+        // For Canopy, use absolute localhost URL with configured port; for others, use relative path
         const basePath = isCanopy
-            ? `http://localhost:8765/iiif/images/${assetId}`
+            ? `http://localhost:${port}/iiif/images/${assetId}`
             : `images/${assetId}`;
 
         // Calculate scale factors for tile pyramid

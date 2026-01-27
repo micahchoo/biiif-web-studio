@@ -8,6 +8,8 @@
  * @see https://iiif.io/api/image/3.0/
  */
 
+import { IIIF_SPEC, getDerivativePreset } from '../constants';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -125,8 +127,8 @@ export interface ImageApiValidationResult {
 // Constants
 // ============================================================================
 
-export const IMAGE_API_CONTEXT = 'http://iiif.io/api/image/3/context.json';
-export const IMAGE_API_PROTOCOL = 'http://iiif.io/api/image';
+export const IMAGE_API_CONTEXT = IIIF_SPEC.IMAGE_3.CONTEXT;
+export const IMAGE_API_PROTOCOL = IIIF_SPEC.IMAGE_3.PROTOCOL as "http://iiif.io/api/image";
 
 export const COMPLIANCE_LEVELS: Record<ImageApiProfile, {
   uri: string;
@@ -771,9 +773,10 @@ export function generateInfoJson(
 /**
  * Generate standard sizes for Level 0 compliance
  */
-export function generateStandardSizes(width: number, height: number, targetWidths: number[] = [150, 600, 1200]): SizeInfo[] {
+export function generateStandardSizes(width: number, height: number, targetWidths?: number[]): SizeInfo[] {
+  const widths = targetWidths || getDerivativePreset().sizes;
   const aspectRatio = height / width;
-  return targetWidths
+  return widths
     .filter(w => w <= width) // Don't generate sizes larger than original
     .map(w => ({
       width: w,

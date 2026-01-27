@@ -1,7 +1,7 @@
 
 import { FileTree, IIIFCollection, IIIFManifest, IIIFCanvas, IIIFItem, IngestReport, IngestResult, IIIFAnnotationPage, IIIFAnnotation, IIIFMotivation, IIIFRange } from '../types';
 import { storage } from './storage';
-import { DEFAULT_INGEST_PREFS, MIME_TYPE_MAP, getDerivativePreset, DEFAULT_BACKGROUND_SIZES } from '../constants';
+import { DEFAULT_INGEST_PREFS, MIME_TYPE_MAP, getDerivativePreset, IIIF_CONFIG, IIIF_SPEC } from '../constants';
 import { load } from 'js-yaml';
 import { extractMetadata } from './metadataHarvester';
 import { getTileWorkerPool, generateDerivativeAsync } from './tileWorker';
@@ -9,7 +9,8 @@ import { fileIntegrity, HashLookupResult } from './fileIntegrity';
 import {
   isValidChildType,
   getRelationshipType,
-  isStandaloneType
+  isStandaloneType,
+  generateId
 } from '../utils/iiifHierarchy';
 import {
   getMimeType,
@@ -54,10 +55,14 @@ async function processTileQueue(onProgress?: (msg: string, percent: number) => v
 
     try {
       const result = await pool.generateDerivatives(task.assetId, task.file, task.sizes);
+      const preset = getDerivativePreset();
 
       // Save each derivative to storage
       for (const [size, blob] of result.derivatives) {
-        const sizeKey = size === 150 ? 'thumb' : size === 600 ? 'small' : 'medium';
+        let sizeKey: 'medium' | 'thumb' | 'small' = 'medium';
+        if (size === preset.thumbnailWidth) sizeKey = 'thumb';
+        else if (size < preset.fullWidth / 2) sizeKey = 'small';
+        
         await storage.saveDerivative(task.assetId, sizeKey, blob);
       }
 
@@ -114,7 +119,7 @@ const processNode = async (
     } else {
       // Auto-detection fallback
       const hasSubdirs = node.directories.size > 0;
-      const isExplicitCollection = node.name === 'root' || node.name.startsWith('_');
+      const isExplicitCollection = node.name === IIIF_CONFIG.INGEST.ROOT_NAME || node.name.startsWith(IIIF_CONFIG.INGEST.COLLECTION_PREFIX);
 
       // Count media files
       const mediaFiles = Array.from(node.files.keys()).filter(fn => {
@@ -139,20 +144,17 @@ const processNode = async (
     }
 
     let ymlMeta: any = {};
-    if (node.files.has('info.yml')) {
+    if (node.files.has(IIIF_CONFIG.INGEST.META_FILE)) {
         try {
-            const text = await node.files.get('info.yml')!.text();
+            const text = await node.files.get(IIIF_CONFIG.INGEST.META_FILE)!.text();
             ymlMeta = load(text) || {};
-        } catch (e) { report.warnings.push(`Invalid info.yml in ${node.path}`); }
+        } catch (e) { report.warnings.push(`Invalid ${IIIF_CONFIG.INGEST.META_FILE} in ${node.path}`); }
     }
 
-    let cleanName = node.name.startsWith('_') ? node.name.substring(1) : node.name;
-    if (cleanName === 'root') cleanName = 'My Archive';
+    let cleanName = node.name.startsWith(IIIF_CONFIG.INGEST.COLLECTION_PREFIX) ? node.name.substring(IIIF_CONFIG.INGEST.COLLECTION_PREFIX.length) : node.name;
+    if (cleanName === IIIF_CONFIG.INGEST.ROOT_NAME) cleanName = IIIF_CONFIG.INGEST.ROOT_DISPLAY_NAME;
 
-    const uuid = typeof crypto.randomUUID === 'function' 
-        ? crypto.randomUUID() 
-        : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const id = `${baseUrl}/${type.toLowerCase()}/${uuid}`;
+    const id = generateId(type, baseUrl);
     const lang = ymlMeta.language || 'none';
     const label = ymlMeta.label ? { [lang]: [ymlMeta.label] } : { none: [cleanName] };
 
@@ -216,7 +218,7 @@ const processNode = async (
                 onProgress(`Ingesting ${file.name}...`, percent);
             }
 
-            const canvasId = `${id}/canvas/${items.length + 1}`;
+            const canvasId = IIIF_CONFIG.ID_PATTERNS.CANVAS(id, items.length + 1);
             const assetId = `${id.split('/').pop()}-${file.name.replace(/[^a-zA-Z0-9-_]/g, '')}`;
 
             // Check for duplicate files before saving
@@ -246,29 +248,31 @@ const processNode = async (
                     console.warn(`Could not read image dimensions for ${file.name}, using defaults`);
                 }
 
+                const preset = getDerivativePreset();
+
                 // Generate thumbnail immediately for UI display
-                const thumb = await generateDerivative(file, 150);
+                const thumb = await generateDerivative(file, preset.thumbnailWidth);
                 if (thumb) await storage.saveDerivative(assetId, 'thumb', thumb);
 
                 // Queue larger derivatives for background generation
-                // Uses DEFAULT_BACKGROUND_SIZES from presets (replaces hardcoded [600, 1200])
                 tileGenerationQueue.push({
                     assetId,
                     file,
-                    sizes: DEFAULT_BACKGROUND_SIZES
+                    sizes: preset.sizes.filter(s => s > preset.thumbnailWidth)
                 });
             }
 
             const extractedMeta = await extractMetadata(file);
             const iiifType = MIME_TYPE_MAP[ext]?.type || 'Image';
             const isImage = iiifType === 'Image';
+            const preset = getDerivativePreset();
 
             const thumbnails = isImage ? [
                 {
-                    id: `${baseUrl}/image/${assetId}/full/150,/0/default.jpg`,
+                    id: `${IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId)}/full/${preset.thumbnailWidth},/0/default.jpg`,
                     type: "Image" as const,
                     format: "image/jpeg",
-                    width: 150
+                    width: preset.thumbnailWidth
                 }
             ] : undefined;
 
@@ -279,12 +283,12 @@ const processNode = async (
                 motivation: "painting",
                 target: canvasId,
                 body: {
-                    id: `${baseUrl}/image/${assetId}/full/max/0/default.jpg`,
+                    id: `${IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId)}/full/max/0/default.jpg`,
                     type: iiifType as any,
                     format: MIME_TYPE_MAP[ext]?.format || 'image/jpeg',
                     // Use centralized Image API service reference
                     service: isImage ? [
-                        createImageServiceReference(`${baseUrl}/image/${assetId}`, 'level2')
+                        createImageServiceReference(IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId), 'level2')
                     ] : undefined
                 }
             };
@@ -348,14 +352,14 @@ const processNode = async (
 
         report.manifestsCreated++;
         const manifest: IIIFManifest = {
-            "@context": "http://iiif.io/api/presentation/3/context.json",
+            "@context": IIIF_SPEC.PRESENTATION_3.CONTEXT,
             id, type: "Manifest", label, items,
             behavior: node.iiifBehavior || ["individuals"],
             viewingDirection: (node as any).viewingDirection || "left-to-right",
             service: [{
-                id: `${baseUrl}/search/${id.split('/').pop()}`,
+                id: IIIF_CONFIG.ID_PATTERNS.SEARCH_SERVICE(baseUrl, id.split('/').pop() || ''),
                 type: "SearchService2",
-                profile: "http://iiif.io/api/search/2/search",
+                profile: IIIF_SPEC.SEARCH_2.PROFILE,
                 label: { en: ["Content Search"] }
             }]
         };
@@ -374,7 +378,7 @@ const processNode = async (
         if (mediaFiles.length > 0) {
             // Create a virtual node for loose files
             const looseFilesNode: FileTree = {
-                name: `${cleanName} - Files`,
+                name: `${cleanName} - ${IIIF_CONFIG.INGEST.LOOSE_FILES_Dir_NAME}`,
                 path: node.path,
                 files: new Map(Array.from(node.files.entries()).filter(([fn]) => {
                     const ext = fn.split('.').pop()?.toLowerCase() || '';
@@ -395,7 +399,7 @@ const processNode = async (
 
         report.collectionsCreated++;
         const collection: IIIFCollection = {
-            "@context": "http://iiif.io/api/presentation/3/context.json",
+            "@context": IIIF_SPEC.PRESENTATION_3.CONTEXT,
             id, type: "Collection", label, items
         };
         return collection;
@@ -414,7 +418,7 @@ export const ingestTree = async (
     if (!baseUrl) {
       // Respect the site base path (e.g. /field-studio/)
       const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-      baseUrl = `${window.location.origin}${basePath}/iiif`;
+      baseUrl = `${window.location.origin}${basePath}/${IIIF_CONFIG.BASE_URL.PATH_SEGMENT}`;
     } else {
       // Clean up potential trailing slash to keep path construction predictable
       baseUrl = baseUrl.replace(/\/$/, '');

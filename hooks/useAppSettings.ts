@@ -7,12 +7,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { AppSettings } from '../types';
-import { DEFAULT_INGEST_PREFS, DEFAULT_MAP_CONFIG, DEFAULT_ZOOM_CONFIG, METADATA_TEMPLATES } from '../constants';
+import { DEFAULT_INGEST_PREFS, DEFAULT_MAP_CONFIG, DEFAULT_ZOOM_CONFIG, METADATA_TEMPLATES, IIIF_CONFIG } from '../constants';
 
 const SETTINGS_KEY = 'iiif-field-settings';
 
 const DEFAULT_SETTINGS: AppSettings = {
-  defaultBaseUrl: 'http://localhost',
+  defaultBaseUrl: IIIF_CONFIG.BASE_URL.DEFAULT,
   language: 'en',
   theme: 'light',
   fieldMode: false,

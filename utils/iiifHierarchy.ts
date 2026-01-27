@@ -31,6 +31,7 @@ import {
   isCanvas,
   isRange
 } from '../types';
+import { IIIF_CONFIG } from '../constants';
 
 // ============================================================================
 // Relationship Types
@@ -481,6 +482,30 @@ export function getReferencingCollections(
 }
 
 // ============================================================================
+// ID Generation
+// ============================================================================
+
+/**
+ * Generate a standard IIIF resource ID using centralized configuration
+ */
+export function generateId(type: 'Manifest' | 'Collection' | 'Range', baseUrl?: string): string {
+  const base = baseUrl || IIIF_CONFIG.BASE_URL.DEFAULT;
+  const uuid = typeof crypto.randomUUID === 'function' 
+    ? crypto.randomUUID() 
+    : Math.random().toString(36).substring(2, 15);
+
+  switch (type) {
+    case 'Manifest':
+      return IIIF_CONFIG.ID_PATTERNS.MANIFEST(base, uuid);
+    case 'Collection':
+      return IIIF_CONFIG.ID_PATTERNS.COLLECTION(base, uuid);
+    case 'Range':
+      return IIIF_CONFIG.ID_PATTERNS.RANGE(base, uuid);
+  }
+  return `${base}/${(type as string).toLowerCase()}/${uuid}`;
+}
+
+// ============================================================================
 // Range Helpers
 // ============================================================================
 
@@ -490,9 +515,9 @@ export function getReferencingCollections(
 export function createRange(
   label: string,
   canvasIds: string[],
-  options: { behavior?: string[]; id?: string } = {}
+  options: { behavior?: string[]; id?: string; baseUrl?: string } = {}
 ): IIIFRange {
-  const id = options.id || `https://archive.local/iiif/range/${crypto.randomUUID()}`;
+  const id = options.id || generateId('Range', options.baseUrl);
 
   return {
     id,
@@ -512,9 +537,9 @@ export function createRange(
 export function createNestedRange(
   label: string,
   childRanges: IIIFRange[],
-  options: { behavior?: string[]; id?: string } = {}
+  options: { behavior?: string[]; id?: string; baseUrl?: string } = {}
 ): IIIFRange {
-  const id = options.id || `https://archive.local/iiif/range/${crypto.randomUUID()}`;
+  const id = options.id || generateId('Range', options.baseUrl);
 
   return {
     id,

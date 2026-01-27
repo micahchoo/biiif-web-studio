@@ -13,6 +13,7 @@
  */
 
 import { IIIFImageService, type SizeParams } from './iiifImageApi';
+import { getDerivativePreset, DEFAULT_DERIVATIVE_PRESET } from '../constants';
 
 // ============================================================================
 // Types
@@ -305,9 +306,10 @@ export function resolveImageSource(
  */
 export function resolveThumbUrl(
   item: IIIFItemLike | null | undefined,
-  preferredWidth: number = 150
+  preferredWidth?: number
 ): string | null {
   if (!item) return null;
+  const width = preferredWidth || getDerivativePreset().thumbnailWidth;
 
   // 1. Check for cached thumbnail URL
   if (item._thumbUrl) {
@@ -324,7 +326,7 @@ export function resolveThumbUrl(
       if (service) {
         const serviceId = getServiceId(service);
         if (serviceId) {
-          return buildServiceUrl(serviceId, { width: preferredWidth });
+          return buildServiceUrl(serviceId, { width });
         }
       }
     }
@@ -349,20 +351,21 @@ export function resolveThumbUrl(
  */
 export function resolvePreviewUrl(
   resource: IIIFCanvasLike | IIIFItemLike | null | undefined,
-  preferredWidth: number = 600
+  preferredWidth?: number
 ): string | null {
   if (!resource) return null;
+  const width = preferredWidth || 600; // Default preview width
 
   // Try to resolve as canvas first (has more information)
   if ('items' in resource || '_fileRef' in resource) {
     const result = resolveImageSource(resource as IIIFCanvasLike, {
-      width: preferredWidth,
+      width,
     });
     return result.url;
   }
 
   // Fall back to thumbnail resolution
-  return resolveThumbUrl(resource as IIIFItemLike, preferredWidth);
+  return resolveThumbUrl(resource as IIIFItemLike, width);
 }
 
 /**
@@ -482,18 +485,19 @@ export function resolveLeafCanvases(
  */
 export function resolveHierarchicalThumbs(
   item: IIIFHierarchicalItem | null | undefined,
-  preferredWidth: number = 150
+  preferredWidth?: number
 ): string[] {
   if (!item) return [];
+  const width = preferredWidth || getDerivativePreset().thumbnailWidth;
 
   // If item has a direct thumbnail, use it as the primary (single) thumbnail
-  const directThumb = resolveThumbUrl(item, preferredWidth);
+  const directThumb = resolveThumbUrl(item, width);
   if (directThumb) return [directThumb];
 
   // Otherwise, find leaf canvases and resolve their thumbnails
   const leaves = resolveLeafCanvases(item, 4);
   return leaves
-    .map(leaf => resolveThumbUrl(leaf, preferredWidth))
+    .map(leaf => resolveThumbUrl(leaf, width))
     .filter((url): url is string => url !== null);
 }
 
@@ -503,8 +507,9 @@ export function resolveHierarchicalThumbs(
  */
 export function resolveHierarchicalThumb(
   item: IIIFHierarchicalItem | null | undefined,
-  preferredWidth: number = 150
+  preferredWidth?: number
 ): string | null {
-  const thumbs = resolveHierarchicalThumbs(item, preferredWidth);
+  const width = preferredWidth || getDerivativePreset().thumbnailWidth;
+  const thumbs = resolveHierarchicalThumbs(item, width);
   return thumbs.length > 0 ? thumbs[0] : null;
 }
