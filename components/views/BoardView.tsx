@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { IIIFManifest, IIIFItem, IIIFCanvas, IIIFAnnotationPage, IIIFAnnotation, ConnectionType, getIIIFValue, AppSettings } from '../../types';
+import { DEFAULT_INGEST_PREFS } from '../../constants';
 import { Icon } from '../Icon';
 import { useToast } from '../Toast';
 import { Inspector } from '../Inspector';
@@ -467,8 +468,8 @@ export const BoardView: React.FC<{ root: IIIFItem | null, settings: AppSettings 
     const minY = Math.min(...items.map(i => i.y)) - padding;
     const maxX = Math.max(...items.map(i => i.x + i.w)) + padding;
     const maxY = Math.max(...items.map(i => i.y + i.h)) + padding;
-    const boardWidth = Math.max(maxX - minX, 2000);
-    const boardHeight = Math.max(maxY - minY, 2000);
+    const boardWidth = Math.max(maxX - minX, DEFAULT_INGEST_PREFS.defaultCanvasWidth);
+    const boardHeight = Math.max(maxY - minY, DEFAULT_INGEST_PREFS.defaultCanvasHeight);
 
     const boardId = `urn:field-studio:board:${crypto.randomUUID()}`;
     const canvasId = `${boardId}/canvas/1`;
@@ -1050,7 +1051,7 @@ export const BoardView: React.FC<{ root: IIIFItem | null, settings: AppSettings 
       {/* Modals */}
       {showAnnotationTool && activeItem && activeItem.blobUrl && (
           <PolygonAnnotationTool
-            canvas={{ id: activeItem.resourceId, width: 2000, height: 2000, type: 'Canvas', items: [] }}
+            canvas={{ id: activeItem.resourceId, width: DEFAULT_INGEST_PREFS.defaultCanvasWidth, height: DEFAULT_INGEST_PREFS.defaultCanvasHeight, type: 'Canvas', items: [] }}
             imageUrl={activeItem.blobUrl}
             onCreateAnnotation={(anno) => {
                 updateBoard(prev => ({
@@ -1079,12 +1080,12 @@ export const BoardView: React.FC<{ root: IIIFItem | null, settings: AppSettings 
       {showComposer && activeItem && (
           <CanvasComposer 
             root={root}
-            canvas={{ 
-                id: activeItem.resourceId, 
-                width: 2000, 
-                height: 2000, 
-                type: 'Canvas', 
-                items: activeItem.layers ? [{ type: 'AnnotationPage', items: activeItem.layers }] : [] 
+            canvas={{
+                id: activeItem.resourceId,
+                width: DEFAULT_INGEST_PREFS.defaultCanvasWidth,
+                height: DEFAULT_INGEST_PREFS.defaultCanvasHeight,
+                type: 'Canvas',
+                items: activeItem.layers ? [{ type: 'AnnotationPage', items: activeItem.layers }] : []
             } as any} 
             onUpdate={(updatedCanvas) => {
                 // Extract layers from the updated canvas

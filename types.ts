@@ -280,6 +280,75 @@ export type LanguageMap = Record<string, string[]>;
  * const text = label.get('en'); // Falls back through chain if 'en' not found
  * const updated = label.set('en', 'New Title'); // Returns new instance
  */
+// =============================================================================
+// SOURCE MANIFESTS - Preserved structure from uploaded folder
+// =============================================================================
+
+/**
+ * A manifest derived from a directory node with direct file children.
+ * Represents files grouped by their deepest containing directory.
+ */
+export interface SourceManifest {
+  id: string;                    // UUID for referencing
+  name: string;                  // Breadcrumb path: "Site A / Trench 1 / Layer 3"
+  breadcrumbs: string[];         // ["Site A", "Trench 1", "Layer 3"]
+  files: File[];                 // Direct file children
+  canvasOrder: string[];         // Reorderable file names (auto-sorted by filenameUtils)
+  detectedPattern?: string;      // Pattern name from filenameUtils (e.g., "Padded numerical sequence")
+}
+
+/**
+ * All source manifests from an import session.
+ * Created once at import, preserved as uploaded.
+ */
+export interface SourceManifests {
+  id: string;                              // UUID for the import session
+  rootPath: string;                        // Original folder name
+  manifests: SourceManifest[];             // Flat list of all manifest-eligible nodes
+  createdAt: string;                       // ISO timestamp
+}
+
+// =============================================================================
+// ARCHIVE LAYOUT - User's curated collection structure for publishing
+// =============================================================================
+
+/**
+ * A collection in the archive being organized.
+ * References source manifests by ID (many-to-many relationship).
+ */
+export interface ArchiveCollection {
+  id: string;
+  name: string;
+  manifestRefs: string[];                  // References to SourceManifest IDs
+  children: ArchiveCollection[];           // Nested sub-collections
+  metadata?: Partial<IIIFItem>;            // Early metadata assignment
+}
+
+/**
+ * The archive layout - the user's organizational structure for publishing.
+ * Can be modified freely; manifests can appear in multiple collections.
+ */
+export interface ArchiveLayout {
+  id: string;
+  root: ArchiveCollection;                 // Root collection
+  unassignedManifests: string[];           // Manifest IDs not in any collection yet
+}
+
+// =============================================================================
+// STAGING STATE - Combines both structures for the workbench UI
+// =============================================================================
+
+export interface StagingState {
+  sourceManifests: SourceManifests;        // What was uploaded (preserved)
+  archiveLayout: ArchiveLayout;            // How user is organizing it (mutable)
+  selectedIds: Set<string>;                // Multi-selection in UI
+  focusedPane: 'source' | 'archive';       // Which pane has focus
+}
+
+// =============================================================================
+// LanguageString - Immutable wrapper for IIIF Language Maps
+// =============================================================================
+
 export class LanguageString {
   private readonly map: LanguageMap;
 

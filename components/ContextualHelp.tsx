@@ -1,110 +1,126 @@
 
 import React, { useState, useEffect } from 'react';
 import { Icon } from './Icon';
-import { guidance, GuidanceTopic } from '../services/guidanceService';
+import { guidance } from '../services/guidanceService';
+import { WELCOME_MESSAGES } from '../constants/helpContent';
 
-interface HelpTip {
-  id: GuidanceTopic;
-  title: string;
-  content: string;
-  context: string[];
-  triggerCondition?: 'onEnter';
-  infographic?: 'hierarchy' | 'annotation' | 'image-api';
+interface ContextualHelpProps {
+  mode: string;
+  isInspectorOpen?: boolean;
 }
 
-const HELP_TIPS: HelpTip[] = [
-  { 
-    id: 'intro-archive', 
-    title: 'The Archive View', 
-    content: 'The Archive is where raw field data becomes scientific evidence. Group your files by context (sites, layers, artifact types). We automatically extract "DNA" metadata like timestamps and GPS coordinates from your photos.', 
-    context: ['archive'], 
-    triggerCondition: 'onEnter' 
-  },
-  { 
-    id: 'intro-collections', 
-    title: 'The Structure View', 
-    content: 'In IIIF, structure is meaning. Use "Collections" for projects, "Manifests" for single objects, and "Canvases" as the virtual trays where sources are examined.', 
-    context: ['collections'], 
-    triggerCondition: 'onEnter',
-    infographic: 'hierarchy'
-  },
-  { 
-    id: 'intro-viewer', 
-    title: 'The Workbench', 
-    content: 'The Workbench is for deep inspection. Use the "Supplementing" motivation to transcribe text or "Commenting" to add your field observations. Annotations travel with the image, not hidden in a separate database.', 
-    context: ['viewer'], 
-    triggerCondition: 'onEnter',
-    infographic: 'annotation'
-  }
-];
-
-export const ContextualHelp: React.FC<{ mode: string, isInspectorOpen?: boolean }> = ({ mode, isInspectorOpen }) => {
-  const [activeTip, setActiveTip] = useState<HelpTip | null>(null);
+/**
+ * Lightweight contextual help banner
+ * Shows a brief welcome message the first time a user visits each view
+ * Non-intrusive: appears at top of content area, easy to dismiss
+ */
+export const ContextualHelp: React.FC<ContextualHelpProps> = ({ mode }) => {
+  const [visible, setVisible] = useState(false);
+  const [content, setContent] = useState<typeof WELCOME_MESSAGES['archive'] | null>(null);
 
   useEffect(() => {
-    const tip = HELP_TIPS.find(t => t.context.includes(mode) && t.triggerCondition === 'onEnter' && !guidance.hasSeen(t.id));
-    if (tip) {
-      const timer = setTimeout(() => setActiveTip(tip), 2000);
+    const topicId = `intro-${mode}` as const;
+    const welcomeContent = WELCOME_MESSAGES[mode];
+
+    if (welcomeContent && !guidance.hasSeen(topicId)) {
+      setContent(welcomeContent);
+      // Small delay so it doesn't flash during view transitions
+      const timer = setTimeout(() => setVisible(true), 300);
       return () => clearTimeout(timer);
+    } else {
+      setVisible(false);
+      setContent(null);
     }
   }, [mode]);
 
-  if (!activeTip) return null;
+  const dismiss = () => {
+    const topicId = `intro-${mode}`;
+    guidance.markSeen(topicId as any);
+    setVisible(false);
+  };
+
+  if (!visible || !content) return null;
 
   return (
-    <div 
-        className={`fixed bottom-20 z-[200] animate-in slide-in-from-right-4 duration-500 pointer-events-none transition-all duration-300 ${isInspectorOpen ? 'right-[360px]' : 'right-8'}`}
-    >
-        <div className="w-80 bg-slate-900 text-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700 pointer-events-auto ring-8 ring-black/5">
-            <div className="bg-slate-800 px-4 py-3 flex justify-between items-center border-b border-slate-700">
-                <div className="flex items-center gap-2">
-                    <Icon name="school" className="text-yellow-400 text-sm shadow-sm" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Archive Academy</span>
-                </div>
-                <button 
-                    onClick={() => { guidance.markSeen(activeTip.id); setActiveTip(null); }} 
-                    className="text-slate-500 hover:text-white transition-colors"
-                >
-                    <Icon name="close" className="text-sm" />
-                </button>
-            </div>
-            
-            {activeTip.infographic === 'hierarchy' && (
-                <div className="bg-white p-4 flex flex-col items-center border-b border-slate-700">
-                    <div className="flex gap-1 w-full justify-between items-center">
-                        <div className="w-8 h-8 bg-amber-100 rounded border border-amber-300" title="Collection"></div>
-                        <Icon name="arrow_forward" className="text-slate-300 text-xs"/>
-                        <div className="w-12 h-12 bg-green-100 rounded border border-green-300" title="Manifest"></div>
-                        <Icon name="arrow_forward" className="text-slate-300 text-xs"/>
-                        <div className="w-16 h-16 bg-blue-100 rounded border border-blue-300" title="Canvas"></div>
-                    </div>
-                    <p className="text-[8px] text-slate-400 mt-2 font-black uppercase">Standard IIIF Stack</p>
-                </div>
+    <div className="mx-4 mt-4 mb-2 animate-in slide-in-from-top-2 duration-300">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+            <Icon name="lightbulb" className="text-blue-600 text-sm" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-semibold text-slate-800 mb-1">{content.title}</h4>
+            <p className="text-xs text-slate-600 leading-relaxed mb-2">{content.body}</p>
+            {content.tips && content.tips.length > 0 && (
+              <ul className="space-y-1">
+                {content.tips.slice(0, 2).map((tip, i) => (
+                  <li key={i} className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                    <Icon name="check" className="text-green-500 text-[10px]" />
+                    {tip}
+                  </li>
+                ))}
+              </ul>
             )}
-
-            <div className="p-5">
-                <h4 className="text-sm font-bold text-white mb-2">{activeTip.title}</h4>
-                <p className="text-xs text-slate-300 leading-relaxed font-medium mb-4">{activeTip.content}</p>
-                
-                <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 mb-4">
-                    <p className="text-[9px] font-black text-yellow-400 uppercase mb-1 flex items-center gap-1">
-                        <Icon name="lightbulb" className="text-[10px]"/> Pro Insight
-                    </p>
-                    <p className="text-[10px] text-slate-400 italic">
-                        "In the field, raw capture is frantic. Here, capture becomes context."
-                    </p>
-                </div>
-
-                <div className="flex justify-end">
-                    <button 
-                        onClick={() => { guidance.markSeen(activeTip.id); setActiveTip(null); }} 
-                        className="px-4 py-1.5 bg-iiif-blue text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-blue-600 transition-all"
-                    >
-                        Mastered
-                    </button>
-                </div>
-            </div>
+          </div>
+          <button
+            onClick={dismiss}
+            className="text-slate-400 hover:text-slate-600 p-1 shrink-0"
+            title="Dismiss"
+          >
+            <Icon name="close" className="text-sm" />
+          </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Compact view-specific help indicator
+ * Shows in the corner, expands on hover/click
+ */
+export const ViewHelp: React.FC<{ mode: string }> = ({ mode }) => {
+  const [expanded, setExpanded] = useState(false);
+  const content = WELCOME_MESSAGES[mode];
+
+  if (!content) return null;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-all ${
+          expanded
+            ? 'bg-blue-100 text-blue-700'
+            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+        }`}
+      >
+        <Icon name="help_outline" className="text-sm" />
+        {expanded && <span>Help</span>}
+      </button>
+
+      {expanded && (
+        <div
+          className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-slate-200 p-3 z-50 animate-in fade-in zoom-in-95 duration-150"
+          onMouseEnter={() => setExpanded(true)}
+          onMouseLeave={() => setExpanded(false)}
+        >
+          <h4 className="text-xs font-semibold text-slate-700 mb-1">{content.title}</h4>
+          <p className="text-[11px] text-slate-500 leading-relaxed mb-2">{content.body}</p>
+          {content.tips && (
+            <ul className="space-y-1">
+              {content.tips.map((tip, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-[10px] text-slate-400">
+                  <Icon name="arrow_right" className="text-[10px] text-slate-300 mt-0.5" />
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 };

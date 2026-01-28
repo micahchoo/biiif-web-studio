@@ -11,6 +11,7 @@
  */
 
 import { IIIFCanvas, IIIFManifest, IIIFAnnotation, LanguageMap } from '../types';
+import { IMAGE_QUALITY } from '../constants';
 
 // ============================================================================
 // Types
@@ -462,7 +463,7 @@ class AVService {
         canvas.height = height;
 
         ctx.drawImage(videoElement, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const dataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY.preview);
 
         // Restore state
         videoElement.currentTime = currentTime;

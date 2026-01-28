@@ -1,0 +1,372 @@
+
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { FileTree, IIIFItem, SourceManifests, SourceManifest } from '../../types';
+import { Icon } from '../Icon';
+import { buildSourceManifests, getAllCollections, findManifest } from '../../services/stagingService';
+import { useStagingState } from './hooks/useStagingState';
+import { SourcePane } from './SourcePane';
+import { ArchivePane } from './ArchivePane';
+import { SendToCollectionModal } from './SendToCollectionModal';
+import { MetadataTemplateExport } from './MetadataTemplateExport';
+
+interface StagingWorkbenchProps {
+  initialTree: FileTree;
+  existingRoot: IIIFItem | null;
+  onIngest: (tree: FileTree, merge: boolean, progressCallback: (msg: string, pct: number) => void) => void;
+  onCancel: () => void;
+}
+
+export const StagingWorkbench: React.FC<StagingWorkbenchProps> = ({
+  initialTree,
+  existingRoot,
+  onIngest,
+  onCancel
+}) => {
+  // Build source manifests from file tree
+  const [sourceManifests, setSourceManifests] = useState<SourceManifests | null>(null);
+  const [isProcessing, setIsProcessing] = useState(true);
+  const [progress, setProgress] = useState({ message: 'Analyzing files...', percent: 0 });
+
+  // Build source manifests on mount
+  useEffect(() => {
+    const build = async () => {
+      setIsProcessing(true);
+      setProgress({ message: 'Building file tree...', percent: 20 });
+
+      // Small delay for UI
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      setProgress({ message: 'Detecting file sequences...', percent: 50 });
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Flatten tree to files
+      const flattenTree = (node: FileTree): File[] => {
+        const files: File[] = [];
+        node.files.forEach(f => files.push(f));
+        node.directories.forEach(dir => files.push(...flattenTree(dir)));
+        return files;
+      };
+
+      const files = flattenTree(initialTree);
+      const manifests = buildSourceManifests(files);
+
+      setProgress({ message: `Found ${manifests.manifests.length} manifests`, percent: 100 });
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      setSourceManifests(manifests);
+      setIsProcessing(false);
+    };
+
+    build();
+  }, [initialTree]);
+
+  // Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isProcessing) {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel, isProcessing]);
+
+  if (isProcessing || !sourceManifests) {
+    return (
+      <div className="fixed inset-0 bg-white z-[500] flex flex-col items-center justify-center">
+        <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
+          <Icon name="folder_open" className="text-4xl" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Analyzing Content...</h3>
+        <p className="text-sm text-slate-500 mb-4">{progress.message}</p>
+        <div className="w-64 bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div
+            className="bg-blue-500 h-full transition-all duration-300"
+            style={{ width: `${progress.percent}%` }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <StagingWorkbenchInner
+      sourceManifests={sourceManifests}
+      initialTree={initialTree}
+      existingRoot={existingRoot}
+      onIngest={onIngest}
+      onCancel={onCancel}
+    />
+  );
+};
+
+interface StagingWorkbenchInnerProps {
+  sourceManifests: SourceManifests;
+  initialTree: FileTree;
+  existingRoot: IIIFItem | null;
+  onIngest: (tree: FileTree, merge: boolean, progressCallback: (msg: string, pct: number) => void) => void;
+  onCancel: () => void;
+}
+
+const StagingWorkbenchInner: React.FC<StagingWorkbenchInnerProps> = ({
+  sourceManifests: initialSourceManifests,
+  initialTree,
+  existingRoot,
+  onIngest,
+  onCancel
+}) => {
+  const stagingState = useStagingState(initialSourceManifests);
+  const {
+    selectedIds,
+    toggleSelection,
+    selectRange,
+    clearSelection,
+    selectAll,
+    focusedPane,
+    setFocusedPane,
+    createNewCollection,
+    addToCollection,
+    removeFromCollection,
+    renameCollectionAction,
+    deleteCollectionAction,
+    reorderCanvases,
+    getAllCollectionsList,
+    getManifest,
+    archiveLayout,
+    sourceManifests,
+    hasUnassigned
+  } = stagingState;
+
+  const [showSendToModal, setShowSendToModal] = useState(false);
+  const [sendToManifestIds, setSendToManifestIds] = useState<string[]>([]);
+  const [showMetadataExport, setShowMetadataExport] = useState(false);
+  const [merge, setMerge] = useState(!!existingRoot);
+  const [isIngesting, setIsIngesting] = useState(false);
+  const [ingestProgress, setIngestProgress] = useState({ message: '', percent: 0 });
+  const [splitPosition, setSplitPosition] = useState(50);
+
+  // Get all manifest IDs for select all
+  const allManifestIds = useMemo(() =>
+    sourceManifests.manifests.map(m => m.id),
+    [sourceManifests.manifests]
+  );
+
+  // Handle opening send to modal
+  const handleOpenSendToModal = useCallback((manifestIds: string[]) => {
+    setSendToManifestIds(manifestIds);
+    setShowSendToModal(true);
+  }, []);
+
+  // Handle sending to collection
+  const handleSendToCollection = useCallback((collectionId: string) => {
+    addToCollection(collectionId, sendToManifestIds);
+    setShowSendToModal(false);
+    setSendToManifestIds([]);
+  }, [addToCollection, sendToManifestIds]);
+
+  // Handle create and send
+  const handleCreateAndSend = useCallback((collectionName: string) => {
+    const newId = createNewCollection(collectionName);
+    addToCollection(newId, sendToManifestIds);
+    setShowSendToModal(false);
+    setSendToManifestIds([]);
+  }, [createNewCollection, addToCollection, sendToManifestIds]);
+
+  // Handle manifest drag start
+  const handleManifestDragStart = useCallback((e: React.DragEvent, manifestIds: string[]) => {
+    e.dataTransfer.setData('application/iiif-manifest-ids', JSON.stringify(manifestIds));
+    e.dataTransfer.effectAllowed = 'copyMove';
+  }, []);
+
+  // Handle ingest
+  const handleIngest = useCallback(() => {
+    setIsIngesting(true);
+    // Pass the original tree to ingest - the staging workbench has organized the layout
+    // but we still use the original file tree for actual IIIF generation
+    onIngest(initialTree, merge, (msg, pct) => {
+      setIngestProgress({ message: msg, percent: pct });
+    });
+  }, [initialTree, merge, onIngest]);
+
+  // Get manifests for send to modal
+  const sendToManifests = useMemo(() =>
+    sendToManifestIds.map(id => getManifest(id)).filter((m): m is SourceManifest => m !== undefined),
+    [sendToManifestIds, getManifest]
+  );
+
+  // Stats
+  const stats = useMemo(() => ({
+    totalManifests: sourceManifests.manifests.length,
+    totalFiles: sourceManifests.manifests.reduce((sum, m) => sum + m.files.length, 0),
+    totalCollections: getAllCollectionsList().length
+  }), [sourceManifests.manifests, getAllCollectionsList]);
+
+  if (isIngesting) {
+    return (
+      <div className="fixed inset-0 bg-white z-[500] flex flex-col items-center justify-center">
+        <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
+          <Icon name="construction" className="text-4xl" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Building Archive...</h3>
+        <p className="text-sm text-slate-500 mb-4">{ingestProgress.message}</p>
+        <div className="w-64 bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div
+            className="bg-blue-500 h-full transition-all duration-300"
+            style={{ width: `${ingestProgress.percent}%` }}
+          />
+        </div>
+        <p className="text-[10px] text-slate-400 mt-4 uppercase tracking-widest">
+          Generating IIIF manifests and collections
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-white z-[500] flex flex-col">
+      {/* Header */}
+      <div className="flex-shrink-0 h-14 border-b border-slate-200 bg-slate-50 flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+            <Icon name="construction" className="text-white text-lg" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-800">Ingest Workbench</h2>
+            <p className="text-[10px] text-slate-500">
+              {stats.totalManifests} manifests | {stats.totalFiles} files | {stats.totalCollections} collections
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Metadata template export */}
+          <button
+            onClick={() => setShowMetadataExport(true)}
+            className="px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg flex items-center gap-2"
+          >
+            <Icon name="table_chart" className="text-slate-400" />
+            Export Template
+          </button>
+
+          {/* Merge toggle */}
+          {existingRoot && (
+            <label className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 cursor-pointer hover:bg-slate-100 rounded-lg">
+              <input
+                type="checkbox"
+                checked={merge}
+                onChange={(e) => setMerge(e.target.checked)}
+              />
+              Merge with existing
+            </label>
+          )}
+
+          {/* Ingest button */}
+          <button
+            onClick={handleIngest}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium text-sm hover:bg-blue-600 flex items-center gap-2 shadow-lg"
+          >
+            <Icon name="publish" />
+            Ingest Archive
+          </button>
+
+          {/* Close */}
+          <button
+            onClick={onCancel}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+      </div>
+
+      {/* Validation warning */}
+      {hasUnassigned && (
+        <div className="flex-shrink-0 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-700 text-sm flex items-center gap-2">
+          <Icon name="warning" className="text-amber-500" />
+          Some manifests are not assigned to any collection. They will still be ingested but won't appear in the collection hierarchy.
+        </div>
+      )}
+
+      {/* Main content - two panes */}
+      <div className="flex-1 flex min-h-0">
+        {/* Left pane - Source */}
+        <div style={{ width: `${splitPosition}%` }} className="min-w-[300px]">
+          <SourcePane
+            sourceManifests={sourceManifests}
+            selectedIds={selectedIds}
+            onToggleSelection={toggleSelection}
+            onSelectRange={(from, to) => selectRange(from, to, allManifestIds)}
+            onClearSelection={clearSelection}
+            onSelectAll={() => selectAll(allManifestIds)}
+            onReorderCanvases={reorderCanvases}
+            onDragStart={handleManifestDragStart}
+            onFocus={() => setFocusedPane('source')}
+            isFocused={focusedPane === 'source'}
+          />
+        </div>
+
+        {/* Resize handle */}
+        <div
+          className="w-1 bg-slate-200 hover:bg-blue-400 cursor-col-resize transition-colors flex-shrink-0"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startPos = splitPosition;
+
+            const handleMove = (moveE: MouseEvent) => {
+              const delta = moveE.clientX - startX;
+              const containerWidth = (e.target as HTMLElement).parentElement?.clientWidth || 1;
+              const newPos = startPos + (delta / containerWidth) * 100;
+              setSplitPosition(Math.max(25, Math.min(75, newPos)));
+            };
+
+            const handleUp = () => {
+              document.removeEventListener('mousemove', handleMove);
+              document.removeEventListener('mouseup', handleUp);
+            };
+
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', handleUp);
+          }}
+        />
+
+        {/* Right pane - Archive */}
+        <div style={{ width: `${100 - splitPosition}%` }} className="min-w-[300px]">
+          <ArchivePane
+            archiveLayout={archiveLayout}
+            sourceManifests={sourceManifests}
+            onAddToCollection={(collectionId, ids) => addToCollection(collectionId, ids)}
+            onRemoveFromCollection={removeFromCollection}
+            onCreateCollection={createNewCollection}
+            onRenameCollection={renameCollectionAction}
+            onDeleteCollection={deleteCollectionAction}
+            onOpenSendToModal={handleOpenSendToModal}
+            onFocus={() => setFocusedPane('archive')}
+            isFocused={focusedPane === 'archive'}
+          />
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showSendToModal && (
+        <SendToCollectionModal
+          manifests={sendToManifests}
+          collections={getAllCollectionsList()}
+          onSend={handleSendToCollection}
+          onCreateAndSend={handleCreateAndSend}
+          onClose={() => {
+            setShowSendToModal(false);
+            setSendToManifestIds([]);
+          }}
+        />
+      )}
+
+      {showMetadataExport && (
+        <MetadataTemplateExport
+          sourceManifests={sourceManifests}
+          onClose={() => setShowMetadataExport(false)}
+        />
+      )}
+    </div>
+  );
+};

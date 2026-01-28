@@ -1,8 +1,9 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AbstractionLevel, AppSettings } from '../types';
 import { Icon } from './Icon';
 import { METADATA_TEMPLATES, MetadataComplexity, getVisibleFields, getFieldsByCategory } from '../constants';
+import { guidance } from '../services/guidanceService';
 
 interface PersonaSettingsProps {
   settings: AppSettings;
@@ -201,6 +202,8 @@ export const PersonaSettings: React.FC<PersonaSettingsProps> = ({ settings, onUp
                     <input type="checkbox" checked={settings.fieldMode} onChange={e => onUpdate({ fieldMode: e.target.checked })} className="rounded text-iiif-blue w-5 h-5"/>
                 </div>
             </section>
+
+            <HelpResetSection />
         </div>
 
         <div className="p-6 bg-slate-50 border-t flex justify-end">
@@ -221,3 +224,59 @@ const PersonaOption: React.FC<{ icon: string, title: string, desc: string, activ
         {active && <Icon name="check_circle" className="text-iiif-blue"/>}
     </button>
 );
+
+const HelpResetSection: React.FC = () => {
+    const [tipCount, setTipCount] = useState(guidance.getSeenCount());
+    const [resetConfirm, setResetConfirm] = useState(false);
+
+    const handleReset = () => {
+        if (resetConfirm) {
+            guidance.reset();
+            setTipCount(0);
+            setResetConfirm(false);
+        } else {
+            setResetConfirm(true);
+            setTimeout(() => setResetConfirm(false), 3000);
+        }
+    };
+
+    const handleResetTooltips = () => {
+        guidance.resetTooltips();
+        setTipCount(guidance.getSeenCount());
+    };
+
+    return (
+        <section className="pt-6 border-t border-slate-100">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Help & Tooltips</label>
+            <div className="bg-slate-50 rounded-xl border p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <span className="text-xs font-bold text-slate-700 block">Contextual Help</span>
+                        <span className="text-[9px] text-slate-400">{tipCount} tips dismissed</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleResetTooltips}
+                            className="text-[10px] font-bold text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                            Reset Tooltips
+                        </button>
+                        <button
+                            onClick={handleReset}
+                            className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors ${
+                                resetConfirm
+                                    ? 'bg-red-500 text-white'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
+                            {resetConfirm ? 'Click to Confirm' : 'Reset All Help'}
+                        </button>
+                    </div>
+                </div>
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Show all help tooltips and welcome messages again. Useful if you want a refresher on features.
+                </p>
+            </div>
+        </section>
+    );
+};

@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { IIIFItem, getIIIFValue } from '../types';
 import { csvImporter, CSVColumnMapping, CSVImportResult, SUPPORTED_IIIF_PROPERTIES } from '../services/csvImporter';
+import { SUPPORTED_LANGUAGES, CSV_SUPPORTED_PROPERTIES } from '../constants';
 import { Icon } from './Icon';
 
 type DialogMode = 'import' | 'export';
@@ -26,6 +27,7 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
   const [filenameColumn, setFilenameColumn] = useState('');
   const [mappings, setMappings] = useState<CSVColumnMapping[]>([]);
   const [importResult, setImportResult] = useState<CSVImportResult | null>(null);
+  const [autoDetected, setAutoDetected] = useState(false);
 
   // Export state
   const [exportStep, setExportStep] = useState<ExportStep>('configure');
@@ -67,11 +69,22 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
       const detected = csvImporter.detectFilenameColumn(parsed.headers);
       if (detected) setFilenameColumn(detected);
 
-      const initialMappings: CSVColumnMapping[] = parsed.headers
-        .filter(h => h !== detected)
-        .slice(0, 5)
-        .map(h => ({ csvColumn: h, iiifProperty: '', language: 'en' }));
-      setMappings(initialMappings);
+      // Try auto-detection first (works well with staging template exports)
+      const autoMappings = csvImporter.autoDetectMappings(parsed.headers, detected || '');
+
+      if (autoMappings.length > 0) {
+        // Use auto-detected mappings
+        setMappings(autoMappings);
+        setAutoDetected(true);
+      } else {
+        // Fall back to manual mapping setup
+        const initialMappings: CSVColumnMapping[] = parsed.headers
+          .filter(h => h !== detected)
+          .slice(0, 5)
+          .map(h => ({ csvColumn: h, iiifProperty: '', language: 'en' }));
+        setMappings(initialMappings);
+        setAutoDetected(false);
+      }
 
       setImportStep('map');
     };
@@ -236,6 +249,18 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
                 </p>
               </div>
 
+              {autoDetected && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-800 font-bold mb-1">
+                    <Icon name="auto_awesome" /> Columns Auto-Detected
+                  </div>
+                  <p className="text-blue-700 text-sm">
+                    {mappings.filter(m => m.iiifProperty).length} columns were automatically mapped to IIIF properties.
+                    This CSV appears to be from the Ingest Workbench metadata template.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">
                   Filename Column (to match with archive items)
@@ -296,11 +321,9 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
                         onChange={(e) => handleMappingChange(idx, 'language', e.target.value)}
                         className="w-20 border rounded p-2 text-sm"
                       >
-                        <option value="en">en</option>
-                        <option value="none">none</option>
-                        <option value="fr">fr</option>
-                        <option value="de">de</option>
-                        <option value="es">es</option>
+                        {SUPPORTED_LANGUAGES.slice(0, 6).map(lang => (
+                          <option key={lang.code} value={lang.code}>{lang.code}</option>
+                        ))}
                       </select>
 
                       <button
@@ -421,11 +444,11 @@ export const CSVImportDialog: React.FC<CSVImportDialogProps> = ({ root, onApply,
                   onChange={(e) => setExportLanguage(e.target.value)}
                   className="border rounded-lg p-2 text-sm"
                 >
-                  <option value="en">English (en)</option>
-                  <option value="none">Language-neutral (none)</option>
-                  <option value="fr">French (fr)</option>
-                  <option value="de">German (de)</option>
-                  <option value="es">Spanish (es)</option>
+                  {SUPPORTED_LANGUAGES.map(lang => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.label} ({lang.code})
+                    </option>
+                  ))}
                 </select>
               </div>
 
