@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { IIIFItem, getIIIFValue } from '../types';
-import { exportService, ExportOptions, VirtualFile, CanopyConfig } from '../services/exportService';
+import { exportService, ExportOptions, VirtualFile, CanopyConfig, ImageApiOptions } from '../services/exportService';
 import { archivalPackageService, ArchivalPackageOptions } from '../services/archivalPackageService';
 import { activityStream as activityStreamService } from '../services/activityStream';
 import { validator, ValidationIssue } from '../services/validator';
 import { Icon } from './Icon';
 import { ExportDryRun } from './ExportDryRun';
+import { FirstTimeHint } from './Tooltip';
 import FileSaver from 'file-saver';
 import JSZip from 'jszip';
 
@@ -59,6 +60,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
     featured: []  // Will be selected by user
   });
 
+  // IIIF Image API options for export
+  const [imageApiOptions, setImageApiOptions] = useState<ImageApiOptions>({
+    includeWebP: false,
+    includeGrayscale: false,
+    includeSquare: false,
+    tileSize: 512
+  });
+
   // Archival package configuration (OCFL/BagIt)
   const [archivalConfig, setArchivalConfig] = useState<Partial<ArchivalPackageOptions>>({
     includeMedia: true,
@@ -88,11 +97,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
       setProcessing(true);
       try {
           const exportFormat = format === 'canopy' ? 'canopy' : 'raw-iiif';
-          const files = await exportService.prepareExport(root, { 
-              format: exportFormat, 
-              includeAssets, 
+          const files = await exportService.prepareExport(root, {
+              format: exportFormat,
+              includeAssets,
               ignoreErrors,
-              canopyConfig: format === 'canopy' ? canopyConfig : undefined
+              canopyConfig: format === 'canopy' ? canopyConfig : undefined,
+              imageApiOptions: format === 'canopy' ? imageApiOptions : undefined
           });
           setVirtualFiles(files);
           
@@ -111,11 +121,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
     setErrorMsg(null);
     try {
         const exportFormat = format === 'canopy' ? 'canopy' : 'raw-iiif';
-        const blob = await exportService.exportArchive(root, { 
-            format: exportFormat, 
-            includeAssets, 
+        const blob = await exportService.exportArchive(root, {
+            format: exportFormat,
+            includeAssets,
             ignoreErrors,
-            canopyConfig: format === 'canopy' ? canopyConfig : undefined
+            canopyConfig: format === 'canopy' ? canopyConfig : undefined,
+            imageApiOptions: format === 'canopy' ? imageApiOptions : undefined
         }, (p) => {
             setProgress(p);
         });
@@ -327,6 +338,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
 
                 {step === 'config' && (
                     <div className="space-y-8 animate-in slide-in-from-right-4">
+                        <FirstTimeHint
+                            id="export-intro"
+                            message="Choose how to package your archive. Canopy creates a ready-to-deploy website. Raw IIIF gives you just the JSON files."
+                            icon="info"
+                            className="mb-4"
+                        />
                         <div className="grid grid-cols-2 gap-4" role="radiogroup" aria-labelledby="export-format-label">
                             <span id="export-format-label" className="sr-only">Choose Export Format</span>
                             <button
@@ -643,6 +660,64 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
                                 />
                                 <span className="text-sm text-slate-700">Enable Search</span>
                             </label>
+                        </div>
+
+                        {/* Image API Options */}
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">Image Processing Options</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <input
+                                        type="checkbox"
+                                        checked={imageApiOptions.includeWebP}
+                                        onChange={e => setImageApiOptions({ ...imageApiOptions, includeWebP: e.target.checked })}
+                                        className="rounded text-iiif-blue"
+                                    />
+                                    <div>
+                                        <span className="text-sm text-slate-700">WebP Format</span>
+                                        <p className="text-[10px] text-slate-400">Smaller file sizes</p>
+                                    </div>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <input
+                                        type="checkbox"
+                                        checked={imageApiOptions.includeGrayscale}
+                                        onChange={e => setImageApiOptions({ ...imageApiOptions, includeGrayscale: e.target.checked })}
+                                        className="rounded text-iiif-blue"
+                                    />
+                                    <div>
+                                        <span className="text-sm text-slate-700">Grayscale</span>
+                                        <p className="text-[10px] text-slate-400">Gray quality option</p>
+                                    </div>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <input
+                                        type="checkbox"
+                                        checked={imageApiOptions.includeSquare}
+                                        onChange={e => setImageApiOptions({ ...imageApiOptions, includeSquare: e.target.checked })}
+                                        className="rounded text-iiif-blue"
+                                    />
+                                    <div>
+                                        <span className="text-sm text-slate-700">Square Crops</span>
+                                        <p className="text-[10px] text-slate-400">For thumbnails</p>
+                                    </div>
+                                </label>
+                                <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <div className="flex-1">
+                                        <span className="text-sm text-slate-700">Tile Size</span>
+                                        <p className="text-[10px] text-slate-400">Deep zoom tiles</p>
+                                    </div>
+                                    <select
+                                        value={imageApiOptions.tileSize || 512}
+                                        onChange={e => setImageApiOptions({ ...imageApiOptions, tileSize: parseInt(e.target.value) })}
+                                        className="border rounded p-1 text-sm w-20"
+                                    >
+                                        <option value={256}>256</option>
+                                        <option value={512}>512</option>
+                                        <option value={1024}>1024</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Featured Items Picker */}

@@ -103,7 +103,10 @@ export { contentSearchService } from './contentSearchService';
 // Validation & Quality
 // ============================================================================
 export { validator } from './validator';
-export type { ValidationIssue } from './validator';
+export type { ValidationIssue, IssueCategory } from './validator';
+
+export { healIssue, healAllIssues, applyHealToTree, getFixDescription } from './validationHealer';
+export type { HealResult } from './validationHealer';
 
 export { fileIntegrity } from './fileIntegrity';
 export type { IntegrityCheckResult } from './fileIntegrity';
@@ -145,3 +148,30 @@ export type { RemoteResource, FetchResult, AuthRequiredResult, ExtendedFetchResu
 // Virtual Manifest Factory
 // ============================================================================
 export { virtualManifestFactory } from './virtualManifestFactory';
+
+// ============================================================================
+// Staging / Ingest Workbench
+// ============================================================================
+export {
+  buildSourceManifests,
+  createInitialArchiveLayout,
+  createCollection,
+  addManifestsToCollection,
+  removeManifestsFromCollection,
+  updateCanvasOrder,
+  renameCollection,
+  deleteCollection,
+  moveCollection,
+  getAllCollections,
+  findManifest,
+  getTotalFileCount,
+  getManifestStats
+} from './stagingService';
+
+export {
+  exportMetadataTemplate,
+  previewMetadataTemplate,
+  getVocabularyOptions,
+  downloadMetadataTemplate
+} from './metadataTemplateService';
+export type { VocabularyOption, MetadataTemplateOptions, MetadataTemplateExport } from './metadataTemplateService';

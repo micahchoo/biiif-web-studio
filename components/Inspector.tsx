@@ -14,9 +14,9 @@ import {
   VIEWING_DIRECTIONS,
   canHaveViewingDirection,
   getAllowedProperties,
-  PROPERTY_MATRIX,
-  validateResourceFull
+  PROPERTY_MATRIX
 } from '../utils/iiifSchema';
+import { validator, ValidationIssue, healIssue, getFixDescription } from '../services';
 import { suggestBehaviors } from '../utils/iiifBehaviors';
 import { resolvePreviewUrl } from '../utils/imageSourceResolver';
 
@@ -143,16 +143,25 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
     resource ? getStoredTab(resource.type) : 'metadata'
   );
   const [showAddMenu, setShowAddMenu] = useState(false);
-  const [validation, setValidation] = useState<{valid: boolean, errors: string[], warnings: string[]} | null>(null);
+  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
 
-  // Run validation when resource changes
+  // Run validation when resource changes - using unified validator service
   useEffect(() => {
     if (resource) {
-      setValidation(validateResourceFull(resource));
+      setValidationIssues(validator.validateItem(resource));
     } else {
-      setValidation(null);
+      setValidationIssues([]);
     }
   }, [resource]);
+
+  // Handle fixing a single validation issue
+  const handleFixIssue = (issue: ValidationIssue) => {
+    if (!resource || !issue.fixable) return;
+    const result = healIssue(resource, issue);
+    if (result.success && result.updatedItem) {
+      onUpdateResource(result.updatedItem);
+    }
+  };
 
   // Restore tab when resource type changes
   useEffect(() => {
@@ -282,23 +291,42 @@ export const Inspector: React.FC<InspectorProps> = ({ resource, onUpdateResource
       <div className={`flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar min-h-0 ${settings.fieldMode ? 'bg-black' : 'bg-white'}`}>
         {tab === 'metadata' && (
             <div role="tabpanel" id="inspector-tab-metadata" aria-labelledby="tab-metadata" className="space-y-6">
-                {/* Validation Status */}
-                {validation && (validation.errors.length > 0 || validation.warnings.length > 0) && (
+                {/* Validation Status - Unified with QC Dashboard */}
+                {validationIssues.length > 0 && (
                     <div className={`p-3 rounded-lg border text-[10px] space-y-2 ${settings.fieldMode ? 'bg-slate-900 border-slate-800' : 'bg-orange-50 border-orange-200'}`}>
-                        <div className="flex items-center gap-2 font-black uppercase tracking-widest text-orange-600">
-                            <Icon name="report_problem" className="text-sm" />
-                            <span>Spec Validation</span>
-                        </div>
-                        {validation.errors.map((err, i) => (
-                            <div key={`err-${i}`} className="flex gap-2 text-red-500 font-bold">
-                                <span>•</span>
-                                <span>{err}</span>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 font-black uppercase tracking-widest text-orange-600">
+                                <Icon name="report_problem" className="text-sm" />
+                                <span>Spec Validation ({validationIssues.length})</span>
                             </div>
-                        ))}
-                        {validation.warnings.map((warn, i) => (
-                            <div key={`warn-${i}`} className={`flex gap-2 font-bold ${settings.fieldMode ? 'text-slate-400' : 'text-orange-700'}`}>
-                                <span>•</span>
-                                <span>{warn}</span>
+                            {validationIssues.some(i => i.fixable) && (
+                                <button
+                                    onClick={() => validationIssues.filter(i => i.fixable).forEach(handleFixIssue)}
+                                    className={`text-[8px] font-black uppercase px-2 py-1 rounded transition-colors ${settings.fieldMode ? 'bg-green-900 text-green-400 hover:bg-green-800' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                                >
+                                    Fix All
+                                </button>
+                            )}
+                        </div>
+                        {validationIssues.map((issue) => (
+                            <div key={issue.id} className={`flex items-start gap-2 group ${issue.level === 'error' ? 'text-red-500' : (settings.fieldMode ? 'text-slate-400' : 'text-orange-700')}`}>
+                                <span className={`text-[7px] font-black uppercase px-1 py-0.5 rounded shrink-0 mt-0.5 ${
+                                    issue.level === 'error'
+                                        ? (settings.fieldMode ? 'bg-red-900 text-red-400' : 'bg-red-100 text-red-600')
+                                        : (settings.fieldMode ? 'bg-amber-900 text-amber-400' : 'bg-amber-100 text-amber-600')
+                                }`}>
+                                    {issue.category.slice(0, 4)}
+                                </span>
+                                <span className="flex-1 font-bold leading-tight">{issue.message}</span>
+                                {issue.fixable && (
+                                    <button
+                                        onClick={() => handleFixIssue(issue)}
+                                        title={getFixDescription(issue)}
+                                        className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ${settings.fieldMode ? 'bg-green-900 text-green-400' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                                    >
+                                        Fix
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>

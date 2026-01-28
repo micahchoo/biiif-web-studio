@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { IIIFCanvas, IIIFAnnotation, IIIFItem, IIIFAnnotationPage } from '../types';
+import { DEFAULT_INGEST_PREFS } from '../constants';
 import { Icon } from './Icon';
 import { useToast } from './Toast';
 import { useViewport, usePanZoomGestures, useViewportKeyboard } from '../hooks';
@@ -32,7 +33,7 @@ const MAX_HISTORY = 50;
 export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, root, onUpdate, onClose }) => {
   const { showToast } = useToast();
   const [history, setHistory] = useState<HistoryState>({ past: [], present: [], future: [] });
-  const [canvasDimensions, setCanvasDimensions] = useState({ w: canvas.width || 2000, h: canvas.height || 2000 });
+  const [canvasDimensions, setCanvasDimensions] = useState({ w: canvas.width || DEFAULT_INGEST_PREFS.defaultCanvasWidth, h: canvas.height || DEFAULT_INGEST_PREFS.defaultCanvasHeight });
   const [activeId, setActiveId] = useState<string | null>(null);
   const [bgMode, setBgMode] = useState<'grid' | 'dark' | 'light'>('grid');
   const [sidebarTab, setSidebarTab] = useState<'layers' | 'library'>('layers');

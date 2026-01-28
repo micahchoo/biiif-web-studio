@@ -9,7 +9,7 @@ import {
   createImageServiceReference,
   ImageApiProfile
 } from '../utils';
-import { getDerivativePreset, DEFAULT_DERIVATIVE_SIZES } from '../constants';
+import { getDerivativePreset, DEFAULT_DERIVATIVE_SIZES, DEFAULT_INGEST_PREFS } from '../constants';
 import {
   generateCanopyPackageJson,
   CANOPY_GITIGNORE,
@@ -454,9 +454,9 @@ class ExportService {
                             }
 
                             // Update canvas dimensions if not set properly
-                            if (!processedCanvas.width || processedCanvas.width === 2000) {
-                                processedCanvas.width = origCanvas.width || 2000;
-                                processedCanvas.height = origCanvas.height || 2000;
+                            if (!processedCanvas.width || processedCanvas.width === DEFAULT_INGEST_PREFS.defaultCanvasWidth) {
+                                processedCanvas.width = origCanvas.width || DEFAULT_INGEST_PREFS.defaultCanvasWidth;
+                                processedCanvas.height = origCanvas.height || DEFAULT_INGEST_PREFS.defaultCanvasHeight;
                             }
 
                             // Update thumbnail references
@@ -594,7 +594,9 @@ class ExportService {
                     });
 
                     // Generate smaller square thumbnails (common use case)
-                    for (const targetSize of [150, 300, 600]) {
+                    // Use derivative preset sizes for consistency
+                    const thumbnailSizes = getDerivativePreset().sizes.filter(s => s <= 600);
+                    for (const targetSize of thumbnailSizes) {
                         if (targetSize < squareSize) {
                             const smallSquare = await this.resizeImage(squareBlob, targetSize, targetSize);
                             virtualFiles.push({
@@ -791,6 +793,18 @@ class ExportService {
         const description = this.getIIIFValue((root as any).summary) || `A IIIF collection featuring ${this.countManifests(root)} items.`;
 
         // Generate homepage content/index.mdx
+        // Include Featured component if user has selected featured items
+        const hasFeatured = config.featured && config.featured.length > 0;
+        const featuredSection = hasFeatured ? `
+<Container>
+
+## Featured Items
+
+<Featured />
+
+</Container>
+` : '';
+
         const homepageMdx = `---
 title: ${title}
 description: ${description}
@@ -813,7 +827,7 @@ description: ${description}
       type: "secondary",
     },
   ]}
-/>
+/>${featuredSection}
 
 <Container>
 

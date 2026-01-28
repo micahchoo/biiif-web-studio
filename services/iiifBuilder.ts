@@ -1,7 +1,7 @@
 
 import { FileTree, IIIFCollection, IIIFManifest, IIIFCanvas, IIIFItem, IngestReport, IngestResult, IIIFAnnotationPage, IIIFAnnotation, IIIFMotivation, IIIFRange } from '../types';
 import { storage } from './storage';
-import { DEFAULT_INGEST_PREFS, MIME_TYPE_MAP, getDerivativePreset, IIIF_CONFIG, IIIF_SPEC } from '../constants';
+import { DEFAULT_INGEST_PREFS, IMAGE_QUALITY, MIME_TYPE_MAP, getDerivativePreset, IIIF_CONFIG, IIIF_SPEC } from '../constants';
 import { load } from 'js-yaml';
 import { extractMetadata } from './metadataHarvester';
 import { getTileWorkerPool, generateDerivativeAsync } from './tileWorker';
@@ -91,7 +91,7 @@ const generateDerivative = async (file: Blob, width: number): Promise<Blob | nul
         const ctx = canvas.getContext('2d');
         if (!ctx) return null;
         ctx.drawImage(bitmap, 0, 0, width, targetHeight);
-        return await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.8 });
+        return await canvas.convertToBlob({ type: 'image/jpeg', quality: IMAGE_QUALITY.preview });
     } catch (e) {
         return null;
     }
@@ -234,8 +234,8 @@ const processNode = async (
             await storage.saveAsset(file, assetId);
 
             // Get actual image dimensions for proper canvas sizing
-            let imageWidth = 2000;
-            let imageHeight = 2000;
+            let imageWidth = DEFAULT_INGEST_PREFS.defaultCanvasWidth;
+            let imageHeight = DEFAULT_INGEST_PREFS.defaultCanvasHeight;
 
             if (file.type.startsWith('image/')) {
                 // Read actual dimensions from image file

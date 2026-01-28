@@ -1,8 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ValidationIssue, IssueCategory } from '../services/validator';
+import { ValidationIssue, IssueCategory, healIssue, applyHealToTree, getFixDescription } from '../services';
 import { Icon } from './Icon';
 import { IIIFItem, getIIIFValue, isCanvas } from '../types';
-import { createLanguageMap } from '../utils';
 import { resolveHierarchicalThumbs } from '../utils/imageSourceResolver';
 import { StackedThumbnail } from './StackedThumbnail';
 
@@ -109,70 +108,17 @@ export const QCDashboard: React.FC<QCDashboardProps> = ({ issuesMap, totalItems,
       if (traverse(newRoot)) onUpdate(newRoot);
   };
 
+  // Use centralized healer service for consistent fix behavior across Inspector and QCDashboard
   const handleHeal = (issue: ValidationIssue) => {
       if (!root) return;
-      const newRoot = JSON.parse(JSON.stringify(root));
-      let solved = false;
-      const visited = new Set<string>();
+      const { item: targetItem } = findItemAndPath(issue.itemId);
+      if (!targetItem) return;
 
-      const traverseAndFix = (node: IIIFItem): boolean => {
-          if (visited.has(node.id)) return false;
-          visited.add(node.id);
-
-          if (node.id === issue.itemId) {
-              if (issue.message.includes('label')) {
-                  // Use centralized language map creation
-                  node.label = createLanguageMap(node.id.split('/').pop() || 'Fixed Resource', 'none');
-                  solved = true;
-              }
-              if (issue.message.includes('summary')) {
-                  // Use centralized language map creation
-                  node.summary = createLanguageMap(`Summary for ${getIIIFValue(node.label) || 'resource'}`, 'none');
-                  solved = true;
-              }
-              if (issue.message.includes('HTTP')) {
-                  // Generate valid HTTP URI for IIIF resources
-                  node.id = `http://archive.local/iiif/resource/${crypto.randomUUID()}`;
-                  solved = true;
-              }
-              if (issue.message.includes('Duplicate ID')) {
-                  node.id = `${node.id}-${crypto.randomUUID().slice(0,4)}`;
-                  solved = true;
-              }
-              if (issue.message.includes('dimensions') || issue.message.includes('width')) {
-                  (node as any).width = 2000;
-                  (node as any).height = 2000;
-                  solved = true;
-              }
-              if (issue.message.includes('structures') && node.type === 'Collection') {
-                  delete (node as any).structures;
-                  solved = true;
-              }
-              if (issue.message.includes('items')) {
-                  if (!node.items) node.items = [];
-                  if (node.type === 'Manifest' && node.items.length === 0) {
-                      // Create minimal Canvas with proper IIIF structure
-                      const canvasId = `${node.id}/canvas/1`;
-                      node.items.push({
-                          id: canvasId,
-                          type: 'Canvas' as const,
-                          label: createLanguageMap('Page 1', 'none'),
-                          width: 2000,
-                          height: 2000,
-                          items: []
-                      });
-                  }
-                  solved = true;
-              }
-              return true;
-          }
-          const children = (node as any).items || (node as any).annotations || (node as any).structures || [];
-          for (const child of children) if (traverseAndFix(child)) return true;
-          return false;
-      };
-
-      traverseAndFix(newRoot);
-      if (solved) onUpdate(newRoot);
+      const result = healIssue(targetItem, issue);
+      if (result.success && result.updatedItem) {
+          const newRoot = applyHealToTree(root, issue.itemId, result.updatedItem);
+          onUpdate(newRoot);
+      }
   };
 
   const handleRemoveMetadata = (itemId: string, index: number) => {
@@ -263,8 +209,9 @@ export const QCDashboard: React.FC<QCDashboardProps> = ({ issuesMap, totalItems,
                                 <p className="text-xs text-slate-500 line-clamp-1">{issue.message}</p>
                             </div>
                             {issue.fixable && (
-                                <button 
+                                <button
                                     onClick={(e) => { e.stopPropagation(); handleHeal(issue); }}
+                                    title={getFixDescription(issue)}
                                     className="px-5 py-1.5 bg-green-600 text-white text-[9px] font-black uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow hover:bg-green-700"
                                 >
                                     Fix It

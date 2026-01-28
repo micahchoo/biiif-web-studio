@@ -6,9 +6,11 @@ import { METADATA_TEMPLATES } from './constants';
 import { Sidebar } from './components/Sidebar';
 import { Inspector } from './components/Inspector';
 import { StatusBar } from './components/StatusBar';
-import { StagingArea } from './components/StagingArea';
+import { StagingWorkbench } from './components/staging/StagingWorkbench';
 import { ExportDialog } from './components/ExportDialog';
 import { ContextualHelp } from './components/ContextualHelp';
+import { QuickReference } from './components/Tooltip';
+import { QUICK_REF_ARCHIVE, QUICK_REF_STRUCTURE, QUICK_REF_VIEWER, QUICK_REF_BOARD, QUICK_REF_METADATA } from './constants/helpContent';
 import { QCDashboard } from './components/QCDashboard';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ExternalImportDialog } from './components/ExternalImportDialog';
@@ -83,6 +85,7 @@ const MainApp: React.FC = () => {
   const [pipelineContext, setPipelineContext] = useState<PipelineContext>({});
   const [validationIssuesMap, setValidationIssuesMap] = useState<Record<string, ValidationIssue[]>>({});
   const [storageUsage, setStorageUsage] = useState<{ usage: number; quota: number } | null>(null);
+  const [showQuickRef, setShowQuickRef] = useState(false);
 
   // ---- Refs for effect guards ----
   const showToastRef = useRef(showToast);
@@ -137,9 +140,19 @@ const MainApp: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Command palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         commandPalette.toggle();
+      }
+      // Quick help - ? key (Shift+/)
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        // Don't trigger if user is typing in an input
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+          e.preventDefault();
+          setShowQuickRef(prev => !prev);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -498,7 +511,7 @@ const MainApp: React.FC = () => {
 
       {/* Modals & Dialogs */}
       {stagingTree && (
-        <StagingArea
+        <StagingWorkbench
           initialTree={stagingTree}
           existingRoot={root}
           onIngest={async (t, m, p) => {
@@ -555,6 +568,19 @@ const MainApp: React.FC = () => {
         isOpen={commandPalette.isOpen}
         onClose={commandPalette.close}
         commands={commands}
+      />
+
+      <QuickReference
+        title={currentMode === 'archive' ? 'Archive View' : currentMode === 'collections' ? 'Structure View' : currentMode === 'viewer' ? 'Viewer' : 'Board View'}
+        items={
+          currentMode === 'archive' ? QUICK_REF_ARCHIVE :
+          currentMode === 'collections' ? QUICK_REF_STRUCTURE :
+          currentMode === 'viewer' ? QUICK_REF_VIEWER :
+          viewType === 'board' ? QUICK_REF_BOARD :
+          QUICK_REF_METADATA
+        }
+        isOpen={showQuickRef}
+        onToggle={() => setShowQuickRef(prev => !prev)}
       />
 
       {authDialog.isOpen && pendingAuth && (

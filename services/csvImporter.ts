@@ -5,6 +5,7 @@ import {
   createLanguageMap,
   isValidRightsUri
 } from '../utils';
+import { CSV_SUPPORTED_PROPERTIES, CSV_COLUMN_ALIASES } from '../constants';
 
 export interface CSVColumnMapping {
   csvColumn: string;
@@ -37,27 +38,8 @@ export interface CSVExportResult {
   columnCount: number;
 }
 
-export const SUPPORTED_IIIF_PROPERTIES: string[] = [
-  'label',
-  'summary',
-  'metadata.title',
-  'metadata.creator',
-  'metadata.date',
-  'metadata.description',
-  'metadata.subject',
-  'metadata.rights',
-  'metadata.source',
-  'metadata.type',
-  'metadata.format',
-  'metadata.identifier',
-  'metadata.language',
-  'metadata.coverage',
-  'metadata.publisher',
-  'requiredStatement.label',
-  'requiredStatement.value',
-  'rights',
-  'navDate'
-];
+/** @deprecated Use CSV_SUPPORTED_PROPERTIES from constants.ts instead */
+export const SUPPORTED_IIIF_PROPERTIES: string[] = CSV_SUPPORTED_PROPERTIES;
 
 export type SupportedIIIFProperty = string;
 
@@ -120,6 +102,49 @@ class CSVImporterService {
       if (found) return found;
     }
     return headers[0] || null;
+  }
+
+  /**
+   * Auto-detect column mappings based on header names
+   * Supports both direct IIIF property names and common aliases
+   * Uses CSV_COLUMN_ALIASES from constants.ts for centralized configuration
+   */
+  autoDetectMappings(headers: string[], filenameColumn: string): CSVColumnMapping[] {
+    const mappings: CSVColumnMapping[] = [];
+
+    for (const header of headers) {
+      // Skip filename column and manifest column (context only)
+      if (header === filenameColumn || header.toLowerCase() === 'manifest') {
+        continue;
+      }
+
+      // Try to find a matching IIIF property using centralized aliases
+      const lowerHeader = header.toLowerCase();
+      const mappedProperty = CSV_COLUMN_ALIASES[header] || CSV_COLUMN_ALIASES[lowerHeader];
+
+      if (mappedProperty && CSV_SUPPORTED_PROPERTIES.includes(mappedProperty)) {
+        mappings.push({
+          csvColumn: header,
+          iiifProperty: mappedProperty,
+          language: 'en'
+        });
+      }
+    }
+
+    return mappings;
+  }
+
+  /**
+   * Check if a CSV appears to be from the staging metadata template export
+   */
+  isFromStagingTemplate(headers: string[]): boolean {
+    // Staging template always has 'filename' and 'manifest' columns
+    const hasFilename = headers.some(h => h.toLowerCase() === 'filename');
+    const hasManifest = headers.some(h => h.toLowerCase() === 'manifest');
+    // And uses metadata.* or IIIF property names
+    const hasMetadataProps = headers.some(h => h.startsWith('metadata.') || ['label', 'summary', 'rights', 'navDate'].includes(h));
+
+    return hasFilename && hasManifest && hasMetadataProps;
   }
 
   applyMappings(
