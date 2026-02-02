@@ -182,25 +182,13 @@ describe('ActionDispatcher', () => {
 });
 
 // ============================================================================
-// Action Validation Tests
+// Action Validation Tests - CONSOLIDATED
 // ============================================================================
+// Mock-heavy tests removed: Tests that acknowledged they validate against
+// empty vaults where entities don't exist provided no meaningful validation.
+// Kept tests that validate actual behavior (format validation, dimension checks).
 
 describe('validateAction', () => {
-  it('should validate UPDATE_LABEL action structure', () => {
-    const validAction = {
-      type: 'UPDATE_LABEL' as const,
-      id: 'https://example.com/manifest',
-      label: { en: ['Valid Label'] },
-    };
-
-    const result = validateAction(validAction);
-    // validateAction tests against an empty vault where entity doesn't exist
-    // The test validates that the action structure is valid
-    // Result.error indicates entity not found (expected with empty test vault)
-    expect(result).toBeDefined();
-    expect(typeof result.valid).toBe('boolean');
-  });
-
   it('should reject invalid label format', () => {
     const invalidAction = {
       type: 'UPDATE_LABEL' as const,
@@ -211,34 +199,6 @@ describe('validateAction', () => {
     const result = validateAction(invalidAction);
     expect(result.valid).toBe(false);
     expect(result.error).toBeTruthy();
-  });
-
-  it('should validate UPDATE_BEHAVIOR action structure', () => {
-    // validateAction creates an empty vault, so entity won't exist
-    // We can only validate that the action has the correct shape
-    const validAction = {
-      type: 'UPDATE_BEHAVIOR' as const,
-      id: 'https://example.com/manifest',
-      behavior: ['paged'],
-    };
-
-    const result = validateAction(validAction);
-    // Empty vault means entity not found - this is expected behavior
-    expect(result.valid).toBe(false);
-    expect(result.error).toContain('not found');
-  });
-
-  it('should reject invalid behavior values', () => {
-    const invalidAction = {
-      type: 'UPDATE_BEHAVIOR' as const,
-      id: 'https://example.com/manifest',
-      behavior: ['invalid-behavior'] as any,
-    };
-
-    const result = validateAction(invalidAction);
-    // Empty vault means entity not found - this is expected behavior
-    expect(result.valid).toBe(false);
-    expect(result.error).toContain('not found');
   });
 
   it('should validate ADD_CANVAS with dimensions', () => {

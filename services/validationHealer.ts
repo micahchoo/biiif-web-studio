@@ -265,6 +265,14 @@ export function healIssue(item: IIIFItem, issue: ValidationIssue): HealResult {
     // Store original ID for verification
     const originalId = item.id;
 
+    // Determine if original ID is valid and should be preserved
+    // Only preserve valid IDs to maintain vault sync - broken IDs can be fixed
+    const shouldPreserveId = originalId &&
+                             typeof originalId === 'string' &&
+                             originalId.length > 0 &&
+                             originalId.startsWith('http') &&
+                             !originalId.includes('#'); // Fragments should be removed
+
     // Clone the item to avoid mutations
     const healed = safeClone(item);
     if (!healed) {
@@ -274,18 +282,18 @@ export function healIssue(item: IIIFItem, issue: ValidationIssue): HealResult {
         return { success: false, error: 'Failed to clone item for healing' };
       }
       const result = performHealing(manualClone, issue);
-      // Verify ID preservation after healing
-      if (result.success && result.updatedItem && result.updatedItem.id !== originalId) {
-        console.warn(`[ValidationHealer] ID changed during healing, restoring original: ${originalId}`);
+      // Only restore ID if original was valid (preserves vault references)
+      if (result.success && result.updatedItem && shouldPreserveId && result.updatedItem.id !== originalId) {
+        console.warn(`[ValidationHealer] ID changed during healing, restoring original to preserve vault references: ${originalId}`);
         result.updatedItem.id = originalId;
       }
       return result;
     }
 
     const result = performHealing(healed, issue);
-    // Verify ID preservation after healing
-    if (result.success && result.updatedItem && result.updatedItem.id !== originalId) {
-      console.warn(`[ValidationHealer] ID changed during healing, restoring original: ${originalId}`);
+    // Only restore ID if original was valid (preserves vault references)
+    if (result.success && result.updatedItem && shouldPreserveId && result.updatedItem.id !== originalId) {
+      console.warn(`[ValidationHealer] ID changed during healing, restoring original to preserve vault references: ${originalId}`);
       result.updatedItem.id = originalId;
     }
     return result;

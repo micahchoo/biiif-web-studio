@@ -81,7 +81,7 @@ export interface LunrExportResult {
 const RECENT_SEARCHES_KEY = 'iiif-field-recent-searches';
 const MAX_RECENT_SEARCHES = 10;
 
-class SearchService {
+export class SearchService {
   private index: any = null;
   private isHealthy: boolean = false;
   private itemMap: Map<string, { item: IIIFItem | IIIFAnnotation; parent?: string }> = new Map();
