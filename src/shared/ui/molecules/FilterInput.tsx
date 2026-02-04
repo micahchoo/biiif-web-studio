@@ -14,9 +14,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Icon } from '../atoms';
 import { Input } from '../atoms';
 import { INPUT_CONSTRAINTS } from '../../config/tokens';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
-import { sanitizeForInput } from '../../../utils/inputValidation';
+import { sanitizeForInput } from '@/utils/inputValidation';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface FilterInputProps {
   /** Current filter value */
@@ -37,6 +36,10 @@ export interface FilterInputProps {
   id?: string;
   /** ARIA label for screen readers */
   ariaLabel?: string;
+  /** Contextual styles from template */
+  cx?: ContextualClassNames;
+  /** Current field mode */
+  fieldMode?: boolean;
 }
 
 /**
@@ -60,10 +63,10 @@ export const FilterInput: React.FC<FilterInputProps> = ({
   showClear = true,
   id,
   ariaLabel,
+  cx = {},
+  fieldMode = false,
 }) => {
-  // No fieldMode prop — get it from context
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
+  // Context is provided via props (no hook calls)
 
   // Local state for uncontrolled input behavior
   const [localValue, setLocalValue] = useState(value);
@@ -133,7 +136,7 @@ export const FilterInput: React.FC<FilterInputProps> = ({
         name="search"
         className={`
           absolute left-3 top-2.5 text-lg
-          ${settings.fieldMode ? 'text-slate-500' : 'text-slate-400'}
+          ${cx.label}
         `}
         aria-hidden="true"
       />
@@ -151,11 +154,7 @@ export const FilterInput: React.FC<FilterInputProps> = ({
           pl-10 pr-8 py-2 border rounded-md text-sm
           outline-none transition-all
           focus:ring-2 focus:ring-offset-2
-          ${
-            settings.fieldMode
-              ? 'bg-slate-800 border-slate-600 text-white focus:border-yellow-400 focus:ring-yellow-400 focus:ring-offset-slate-900 placeholder:text-slate-600'
-              : 'bg-slate-100 border-transparent focus:bg-white focus:border-iiif-blue focus:ring-blue-600 focus:ring-offset-white'
-          }
+          ${cx.searchInput}
         `}
       />
 
@@ -167,11 +166,7 @@ export const FilterInput: React.FC<FilterInputProps> = ({
           className={`
             absolute right-2 top-2 p-0.5 rounded-full
             transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1
-            ${
-              settings.fieldMode
-                ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700 focus:ring-yellow-400 focus:ring-offset-slate-900'
-                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200 focus:ring-blue-600 focus:ring-offset-white'
-            }
+            ${cx.iconButton}
           `}
           title="Clear filter"
           aria-label="Clear filter"

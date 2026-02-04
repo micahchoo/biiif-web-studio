@@ -1,301 +1,121 @@
 # Manifest Entity (`src/entities/manifest/`)
 
-The Manifest entity layer re-exports manifest-specific selectors and actions for safe feature access.
+The **Manifest entity** represents a IIIF Manifest — a collection of Canvases that together form a logical unit (book, photo album, audio recording, etc.).
 
-## Structure
+## What is a Manifest?
+
+In IIIF Presentation API 3.0, a Manifest:
+- Contains an ordered list of Canvases
+- Has descriptive metadata (label, description, attribution)
+- Can belong to one or more Collections
+- Is the primary unit users interact with
+
+## Entity Structure
 
 ```
-manifest/
-├── model.ts     ← Selectors for querying manifest state
-├── actions.ts   ← Action creators for manifest mutations
-├── index.ts     ← Public API
-└── README.md    (this file)
-```
-
-## Selectors (model.ts)
-
-### `selectById(state, id): IIIFManifest | null`
-
-Get a manifest by ID.
-
-```typescript
-import { manifest } from '@/src/entities';
-
-const manifestData = manifest.model.selectById(state, 'manifest-id');
-```
-
-### `selectAll(state): IIIFManifest[]`
-
-Get all manifests in the vault.
-
-```typescript
-const allManifests = manifest.model.selectAll(state);
-```
-
-### `selectCanvases(state, manifestId): string[]`
-
-Get canvas IDs (children) of a manifest.
-
-```typescript
-const canvasIds = manifest.model.selectCanvases(state, manifestId);
-```
-
-### `selectParentCollection(state, manifestId): string | null`
-
-Get parent collection ID (hierarchical ownership).
-
-```typescript
-const collectionId = manifest.model.selectParentCollection(state, manifestId);
-```
-
-### `selectCollectionMemberships(state, manifestId): string[]`
-
-Get all collections that reference this manifest (many-to-many).
-
-```typescript
-const memberOfCollections = manifest.model.selectCollectionMemberships(state, manifestId);
-```
-
-### `selectLabel(state, manifestId): LanguageMap | null`
-
-Get manifest label.
-
-```typescript
-const label = manifest.model.selectLabel(state, manifestId);
-console.log(label?.en?.[0]);
-```
-
-### `selectSummary(state, manifestId): LanguageMap | null`
-
-Get manifest description.
-
-```typescript
-const summary = manifest.model.selectSummary(state, manifestId);
-```
-
-### `selectMetadata(state, manifestId): Metadata[]`
-
-Get manifest metadata fields.
-
-```typescript
-const metadata = manifest.model.selectMetadata(state, manifestId);
-```
-
-### `selectRights(state, manifestId): string | null`
-
-Get rights URI.
-
-```typescript
-const rights = manifest.model.selectRights(state, manifestId);
-```
-
-### `selectAncestors(state, manifestId): string[]`
-
-Get path to root (collection → parent collection → ...).
-
-```typescript
-const ancestors = manifest.model.selectAncestors(state, manifestId);
-```
-
-### `selectDescendants(state, manifestId): string[]`
-
-Get all nested items (canvases, annotation pages, annotations).
-
-```typescript
-const descendants = manifest.model.selectDescendants(state, manifestId);
-```
-
-### `isOrphan(state, manifestId): boolean`
-
-Check if manifest is not in any collection.
-
-```typescript
-if (manifest.model.isOrphan(state, manifestId)) {
-  console.log('Manifest is standalone');
-}
-```
-
-### `countCanvases(state, manifestId): number`
-
-Count total canvases.
-
-```typescript
-const count = manifest.model.countCanvases(state, manifestId);
-```
-
-### `hasCanvases(state, manifestId): boolean`
-
-Check if manifest has any canvases.
-
-```typescript
-if (manifest.model.hasCanvases(state, manifestId)) {
-  console.log('Manifest has canvases');
-}
-```
-
-## Actions (actions.ts)
-
-All action creators return an `Action` object. Features dispatch these via the Vault singleton's ActionDispatcher.
-
-### `updateLabel(manifestId, label): Action`
-
-Update manifest label.
-
-```typescript
-const action = manifest.actions.updateLabel(id, { en: ['New Label'] });
-vault.dispatch(action);
-```
-
-### `updateSummary(manifestId, summary): Action`
-
-Update manifest description.
-
-```typescript
-const action = manifest.actions.updateSummary(id, { en: ['Description'] });
-```
-
-### `updateMetadata(manifestId, metadata): Action`
-
-Update manifest metadata.
-
-```typescript
-const action = manifest.actions.updateMetadata(id, [
-  { label: { en: ['Date'] }, value: { en: ['2024-02-03'] } }
-]);
-```
-
-### `updateRights(manifestId, rights): Action`
-
-Update rights URI.
-
-```typescript
-const action = manifest.actions.updateRights(id, 'https://example.org/rights');
-```
-
-### `updateNavDate(manifestId, navDate): Action`
-
-Update navigation date (ISO 8601).
-
-```typescript
-const action = manifest.actions.updateNavDate(id, '2024-02-03');
-```
-
-### `updateBehavior(manifestId, behavior): Action`
-
-Update viewing behaviors (paged, paginated, continuous, etc.).
-
-```typescript
-const action = manifest.actions.updateBehavior(id, ['paged']);
-```
-
-### `updateViewingDirection(manifestId, direction): Action`
-
-Update viewing direction (left-to-right, right-to-left, etc.).
-
-```typescript
-const action = manifest.actions.updateViewingDirection(id, 'left-to-right');
-```
-
-### `addCanvas(manifestId, canvas, index?): Action`
-
-Add canvas to manifest.
-
-```typescript
-const action = manifest.actions.addCanvas(manifestId, {
-  type: 'Canvas',
-  id: 'canvas-1',
-  label: { en: ['Canvas 1'] },
-  width: 1024,
-  height: 768,
-  items: []
-});
-```
-
-### `removeCanvas(manifestId, canvasId): Action`
-
-Remove canvas from manifest.
-
-```typescript
-const action = manifest.actions.removeCanvas(manifestId, 'canvas-1');
-```
-
-### `reorderCanvases(manifestId, order): Action`
-
-Reorder canvases within manifest.
-
-```typescript
-const action = manifest.actions.reorderCanvases(manifestId, [
-  'canvas-2',
-  'canvas-1',
-  'canvas-3'
-]);
-```
-
-### `moveToCollection(manifestId, collectionId, index?): Action`
-
-Move manifest to different collection.
-
-```typescript
-const action = manifest.actions.moveToCollection(manifestId, newCollectionId);
-```
-
-### `batchUpdate(manifestId, changes): Action`
-
-Batch update multiple properties.
-
-```typescript
-const action = manifest.actions.batchUpdate(manifestId, {
-  label: { en: ['Updated'] },
-  rights: 'https://example.org/rights'
-});
+src/entities/manifest/
+├── model.ts      ← Selectors: read manifest data from vault
+├── actions.ts    ← Action creators: modify manifest data
+├── index.ts      ← Public API export
+└── README.md     ← This file
 ```
 
 ## Usage in Features
 
+### Reading Manifest Data (Model)
+
 ```typescript
-import { manifest, canvas } from '@/src/entities';
-import { getVault } from '@/services';
+import { manifest } from '@/src/entities';
 
-export const ManifestView = ({ manifestId, state }) => {
-  const manifestData = manifest.model.selectById(state, manifestId);
-  const canvasIds = manifest.model.selectCanvases(state, manifestId);
-  const vault = getVault();
+// In a component or selector
+const manifestData = manifest.model.selectById(state, manifestId);
+const canvasIds = manifest.model.selectCanvases(state, manifestId);
+const parentCollection = manifest.model.selectParentCollection(state, manifestId);
+const allManifests = manifest.model.selectAll(state);
+```
 
-  const handleAddCanvas = (newCanvas) => {
-    const action = manifest.actions.addCanvas(manifestId, newCanvas);
-    vault.dispatch(action);
-  };
+### Modifying Manifest Data (Actions)
 
-  const handleReorderCanvases = (newOrder) => {
-    const action = manifest.actions.reorderCanvases(manifestId, newOrder);
-    vault.dispatch(action);
-  };
+```typescript
+import { manifest } from '@/src/entities';
+import { useVault } from '@/services/vault';
 
-  return (
-    <div>
-      <h2>{manifestData?.label?.en?.[0]}</h2>
-      <p>{canvasIds.length} canvases</p>
-      <CanvasList canvasIds={canvasIds} state={state} />
-    </div>
-  );
-};
+const vault = useVault();
+
+// Update manifest label
+const action = manifest.actions.updateLabel(manifestId, { en: ['New Title'] });
+vault.dispatch(action);
+
+// Add canvas to manifest
+const action = manifest.actions.addCanvas(manifestId, canvasId, 0); // at index 0
+vault.dispatch(action);
+
+// Reorder canvases
+const action = manifest.actions.reorderCanvases(manifestId, [canvas3, canvas1, canvas2]);
+vault.dispatch(action);
+```
+
+## Available Selectors (Model)
+
+| Selector | Purpose |
+|----------|---------|
+| `selectById(state, id)` | Get manifest by ID |
+| `selectCanvases(state, manifestId)` | Get canvas IDs in order |
+| `selectParentCollection(state, manifestId)` | Get parent collection ID |
+| `selectCollectionMemberships(state, manifestId)` | Get all collections containing this manifest |
+| `selectAll(state)` | Get all manifests |
+| `selectOrphaned(state)` | Get manifests not in any collection |
+| `selectByLabel(state, query)` | Search manifests by label |
+| `selectMetadata(state, manifestId)` | Get metadata array |
+
+## Available Actions
+
+| Action | Purpose |
+|--------|---------|
+| `updateLabel(manifestId, label)` | Update manifest label |
+| `updateSummary(manifestId, summary)` | Update description |
+| `updateMetadata(manifestId, metadata)` | Update metadata array |
+| `addCanvas(manifestId, canvasId, index?)` | Add canvas at position |
+| `removeCanvas(manifestId, canvasId)` | Remove canvas |
+| `reorderCanvases(manifestId, canvasIds)` | Reorder canvas list |
+| `setThumbnail(manifestId, canvasId)` | Set thumbnail canvas |
+| `addToCollection(manifestId, collectionId)` | Add to collection |
+| `removeFromCollection(manifestId, collectionId)` | Remove from collection |
+
+## Relationships
+
+```
+Collection (parent)
+    └── Manifest (this entity)
+            ├── Canvas (children)
+            │       └── AnnotationPage
+            │               └── Annotation
+            └── Thumbnail (reference to one Canvas)
 ```
 
 ## Rules
 
-✅ **Manifest entity CAN:**
-- Re-export manifest-specific selectors
-- Re-export manifest-specific action creators
-- Use vault functions for traversal
+✅ **Correct Usage:**
+- Import from `@/src/entities` not from `@/services`
+- Use selectors for reading, actions for writing
+- Compose with canvas selectors for full hierarchy
 
-❌ **Manifest entity CANNOT:**
-- Implement new business logic
-- Access other entity models
-- Manage global state
-- Perform UI operations
+❌ **Incorrect Usage:**
+- Don't modify `items` array directly
+- Don't import from `services/vault` in features
+- Don't assume single parent (manifests can be in multiple collections)
 
-## See Also
+## Dependencies
 
-- `../README.md` — Entity layer philosophy
-- `../canvas/README.md` — Canvas entity
-- `../collection/README.md` — Collection entity
+```
+manifest/entity
+  ├── imports: services/vault, services/actions
+  ├── used by: features/archive, features/board-design, features/export
+  └── depends on: types.ts (IIIFManifest), entities/canvas
+```
+
+---
+
+See also:
+- [`src/entities/canvas/`](../canvas/) — Child entity
+- [`src/entities/collection/`](../collection/) — Parent entity

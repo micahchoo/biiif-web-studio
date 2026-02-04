@@ -1,31 +1,34 @@
 /**
  * SelectionToolbar Molecule
  *
- * Composes: Toolbar with selection count + actions
+ * Composes: Toolbar + count badge + actions
  *
- * Appears when items are selected (multi-select).
- * Shows count of selected items and bulk actions.
- * Can be dismissed.
+ * Appears when items are selected, showing selection count
+ * and providing bulk action buttons.
  *
- * IDEAL OUTCOME: Shows selection count and bulk actions clearly
- * FAILURE PREVENTED: User confusion about what's selected and what actions apply
+ * IDEAL OUTCOME: Clear bulk actions available when items selected
+ * FAILURE PREVENTED: Users lose track of selected items or bulk actions
  */
 
 import React from 'react';
-import { Icon } from '../atoms';
-import { Toolbar } from './Toolbar';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
+import { Button, Icon } from '../atoms';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface SelectionToolbarProps {
   /** Number of selected items */
   count: number;
-  /** Action buttons (bulk actions) */
+  /** Action buttons (typically bulk operations) */
   children: React.ReactNode;
-  /** Called when toolbar is dismissed */
-  onDismiss?: () => void;
+  /** Optional clear selection handler */
+  onClear?: () => void;
+  /** Item type label (for count display) */
+  itemLabel?: string;
   /** Additional CSS classes */
   className?: string;
+  /** Contextual styles from template (required for theming) */
+  cx: ContextualClassNames;
+  /** Terminology function for "selected" label */
+  t: (key: string) => string;
 }
 
 /**
@@ -33,82 +36,68 @@ export interface SelectionToolbarProps {
  *
  * @example
  * {selectedIds.length > 0 && (
- *   <SelectionToolbar count={selectedIds.length} onDismiss={clearSelection}>
- *     <Button onClick={onBulkDelete} variant="danger">
- *       Delete {selectedIds.length}
- *     </Button>
- *     <Button onClick={onBulkTag}>Tag</Button>
+ *   <SelectionToolbar
+ *     count={selectedIds.length}
+ *     onClear={() => setSelectedIds([])}
+ *     itemLabel="items"
+ *   >
+ *     <Button onClick={onBulkDelete} variant="danger">Delete</Button>
+ *     <Button onClick={onBulkExport}>Export</Button>
  *   </SelectionToolbar>
  * )}
  */
 export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
   count,
   children,
-  onDismiss,
+  onClear,
+  itemLabel = 'items',
   className = '',
+  cx,
+  t,
 }) => {
-  // Theme via context
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
+
+  // Don't render if nothing selected
+  if (count === 0) {
+    return null;
+  }
 
   return (
     <div
       className={`
-        sticky bottom-0 left-0 right-0
-        border-t
-        ${
-          settings.fieldMode
-            ? 'bg-slate-900 border-slate-700'
-            : 'bg-slate-50 border-slate-200'
-        }
+        flex items-center justify-between
+        py-2 px-4
+        ${cx.accentBadge}
+        rounded-md
+        animate-in fade-in slide-in-from-top-1
         ${className}
       `}
       role="region"
       aria-label="Selection toolbar"
+      aria-live="polite"
     >
-      <div className="px-4 py-3 flex items-center justify-between gap-4">
-        {/* Left: Selection Count */}
-        <div className="flex items-center gap-2">
-          <Icon
-            name="check_circle"
-            className={`
-              text-xl
-              ${settings.fieldMode ? 'text-yellow-400' : 'text-iiif-blue'}
-            `}
-            aria-hidden="true"
-          />
-          <span
-            className={`
-              font-semibold
-              ${settings.fieldMode ? 'text-white' : 'text-slate-900'}
-            `}
-          >
-            {count} selected
-          </span>
-        </div>
+      {/* Selection count */}
+      <div className="flex items-center gap-2">
+        <Icon name="check_circle" className="text-sm" aria-hidden="true" />
+        <span className="font-medium">
+          {count} {itemLabel} {t('selected')}
+        </span>
+      </div>
 
-        {/* Middle: Actions */}
-        <Toolbar position="between">{children}</Toolbar>
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        {children}
 
-        {/* Right: Dismiss Button */}
-        {onDismiss && (
-          <button
-            onClick={onDismiss}
-            className={`
-              p-2 rounded-full transition-colors
-              focus:outline-none focus:ring-2 focus:ring-offset-1
-              ${
-                settings.fieldMode
-                  ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 focus:ring-yellow-400 focus:ring-offset-slate-900'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200 focus:ring-blue-600 focus:ring-offset-white'
-              }
-            `}
-            title="Clear selection"
-            aria-label="Clear selection"
-            type="button"
+        {/* Clear selection button */}
+        {onClear && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClear}
+            aria-label={`Clear selection of ${count} ${itemLabel}`}
           >
-            <Icon name="close" className="text-lg" aria-hidden="true" />
-          </button>
+            <Icon name="close" className="text-sm mr-1" aria-hidden="true" />
+            Clear
+          </Button>
         )}
       </div>
     </div>

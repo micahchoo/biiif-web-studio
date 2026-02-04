@@ -12,10 +12,10 @@
 
 import React, { useMemo } from 'react';
 import { Icon } from '../atoms';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
-import { useTerminology } from '../../../hooks/useTerminology';
-import { useAbstractionLevel } from '../../../hooks/useAbstractionLevel';
+import { useContextualStyles } from '@/hooks/useContextualStyles';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { useTerminology } from '@/hooks/useTerminology';
+import { useAbstractionLevel } from '@/hooks/useAbstractionLevel';
 
 // Mapping of resource types to icon names
 const RESOURCE_ICONS: Record<string, string> = {
@@ -44,11 +44,11 @@ export interface ResourceTypeBadgeProps {
  *
  * @example
  * <ResourceTypeBadge type="Manifest" />
- * {/* Shows icon + "Manifest" (or "Item Group" in simple mode) */}
+ * [Shows icon + "Manifest" (or "Item Group" in simple mode)]
  *
  * @example
  * <ResourceTypeBadge type="Canvas" iconOnly />
- * {/* Shows only the icon */}
+ * [Shows only the icon]
  */
 export const ResourceTypeBadge: React.FC<ResourceTypeBadgeProps> = ({
   type,
@@ -74,7 +74,7 @@ export const ResourceTypeBadge: React.FC<ResourceTypeBadgeProps> = ({
     <div
       className={`
         inline-flex items-center gap-2 px-2 py-1 rounded-md
-        ${settings.fieldMode ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-700'}
+        ${cx.subtleBg} ${cx.subtleText}
         ${className}
       `}
       title={title || `Resource type: ${label}`}

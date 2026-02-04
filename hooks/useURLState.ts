@@ -10,7 +10,7 @@ import { AppMode } from '../types';
 
 const VALID_MODES: AppMode[] = ['archive', 'collections', 'metadata', 'search', 'viewer', 'boards'];
 
-interface URLState {
+export interface URLState {
   mode: AppMode;
   selectedId: string | null;
 }

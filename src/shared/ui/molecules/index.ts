@@ -30,6 +30,17 @@
  * );
  */
 
+// Display & Content
+export { StackedThumbnail } from './StackedThumbnail';
+export type { StackedThumbnailProps } from './StackedThumbnail';
+
+export { MuseumLabel } from './MuseumLabel';
+export type { MuseumLabelProps, MuseumLabelType } from './MuseumLabel';
+
+// Context Menu
+export { ContextMenu } from './ContextMenu';
+export type { ContextMenuProps, ContextMenuItem, ContextMenuSection } from './ContextMenu';
+
 // Filter & Search
 export { FilterInput } from './FilterInput';
 export type { FilterInputProps } from './FilterInput';
@@ -54,6 +65,12 @@ export type { ToolbarProps } from './Toolbar';
 export { SelectionToolbar } from './SelectionToolbar';
 export type { SelectionToolbarProps } from './SelectionToolbar';
 
+export { IconButton } from './IconButton';
+export type { IconButtonProps } from './IconButton';
+
+export { ActionButton } from './ActionButton';
+export type { ActionButtonProps } from './ActionButton';
+
 // State & Info
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps, EmptyStateAction } from './EmptyState';
@@ -63,3 +80,34 @@ export type { LoadingStateProps } from './LoadingState';
 
 export { ResourceTypeBadge } from './ResourceTypeBadge';
 export type { ResourceTypeBadgeProps } from './ResourceTypeBadge';
+
+export { StatusBadge } from './StatusBadge';
+export type { StatusBadgeProps, StatusVariant } from './StatusBadge';
+
+// Search & Discovery (for decomposition)
+export { FacetPill } from './FacetPill';
+export type { FacetPillProps } from './FacetPill';
+
+export { ResultCard } from './ResultCard';
+export type { ResultCardProps } from './ResultCard';
+
+// Viewer Controls (for decomposition)
+export { ZoomControl } from './ZoomControl';
+export type { ZoomControlProps } from './ZoomControl';
+
+export { PageCounter } from './PageCounter';
+export type { PageCounterProps } from './PageCounter';
+
+// Map Components (for decomposition)
+export { MapMarker } from './MapMarker';
+export type { MapMarkerProps } from './MapMarker';
+
+export { ClusterBadge } from './ClusterBadge';
+export type { ClusterBadgeProps, ClusterItem } from './ClusterBadge';
+
+// Timeline Components (for decomposition)
+export { TimelineTick } from './TimelineTick';
+export type { TimelineTickProps, TimelineItem } from './TimelineTick';
+
+export { RangeSelector } from './RangeSelector';
+export type { RangeSelectorProps, RangePreset } from './RangeSelector';

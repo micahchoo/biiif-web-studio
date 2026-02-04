@@ -4,19 +4,40 @@
  * Re-exports indivisible UI elements from the existing ui/primitives/ directory.
  * These are zero-state, zero-logic components that form the foundation of molecules.
  *
- * PRINCIPLE: Atoms are never imported directly in application code.
- * They are always composed into Molecules first.
+ * ATOMIC DESIGN PRINCIPLES:
+ * - Atoms are the smallest building blocks - they cannot be broken down further
+ * - Atoms have ZERO business logic and ZERO state
+ * - Atoms only receive props and render based on design tokens
+ * - Atoms are never imported directly in application code - always composed into Molecules first
+ *
+ * COMPLIANCE CHECKLIST:
+ * ✅ No useState, useEffect, or other React hooks
+ * ✅ No context consumption (useContext, useAppSettings, etc.)
+ * ✅ No domain knowledge (IIIF, vault, etc.)
+ * ✅ Pure props-driven rendering
+ * ✅ Styling from design tokens only
  */
 
-// Re-export all atoms from the existing primitives directory
-export { Button } from '../../ui/primitives/Button';
-export type { ButtonProps, ButtonVariant, ButtonSize } from '../../ui/primitives/Button';
+// ============================================================================
+// Button Atom - Interactive element for user actions
+// ============================================================================
+export { Button } from '@/ui/primitives/Button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from '@/ui/primitives/Button';
 
-export { Input } from '../../ui/primitives/Input';
-export type { InputProps, InputSize } from '../../ui/primitives/Input';
+// ============================================================================
+// Input Atom - Text entry primitive
+// ============================================================================
+export { Input } from '@/ui/primitives/Input';
+export type { InputProps, InputSize } from '@/ui/primitives/Input';
 
-export { Icon } from '../../ui/primitives/Icon';
-export type { IconProps, IconSize } from '../../ui/primitives/Icon';
+// ============================================================================
+// Icon Atom - Visual indicator using Material Icons
+// ============================================================================
+export { Icon } from '@/ui/primitives/Icon';
+export type { IconProps, IconSize } from '@/ui/primitives/Icon';
 
-export { Card } from '../../ui/primitives/Card';
-export type { CardProps } from '../../ui/primitives/Card';
+// ============================================================================
+// Card Atom - Elevated surface container
+// ============================================================================
+export { Card } from '@/ui/primitives/Card';
+export type { CardProps } from '@/ui/primitives/Card';

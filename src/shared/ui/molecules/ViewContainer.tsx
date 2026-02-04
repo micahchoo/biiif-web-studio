@@ -3,45 +3,49 @@
  *
  * Composes: Header + filter input + view toggle + content area
  *
- * Standardized wrapper for views (archive, collections, etc).
- * Provides consistent header layout, filtering, and view mode switching.
+ * Wraps any view with consistent layout, search/filter capabilities,
+ * and view mode toggling. Fieldmode-aware theming throughout.
  *
- * IDEAL OUTCOME: All views have consistent header with filter and view toggle
- * FAILURE PREVENTED: Inconsistent header layouts across different views
+ * IDEAL OUTCOME: Consistent view layout with integrated search and mode switching
+ * FAILURE PREVENTED: Inconsistent view headers, missing search/filter patterns
  */
 
 import React from 'react';
 import { Icon } from '../atoms';
 import { SearchField } from './SearchField';
-import { ViewToggle, ViewToggleOption } from './ViewToggle';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
+import { ViewToggle } from './ViewToggle';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ViewToggleOption } from './ViewToggle';
 
 export interface ViewContainerProps {
   /** View title */
-  title: string;
-  /** Icon name for the view */
-  icon: string;
-  /** Optional filter configuration */
+  title?: string;
+  /** Icon name for header */
+  icon?: string;
+  /** Main content */
+  children: React.ReactNode;
+  /** Optional search/filter configuration */
   filter?: {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
   };
-  /** Optional subtitle or status text */
-  subtitle?: string;
-  /** Action buttons for the header */
-  actions?: React.ReactNode;
-  /** View toggle buttons */
+  /** Optional view mode toggle configuration */
   viewToggle?: {
-    options: ViewToggleOption[];
     value: string;
     onChange: (value: string) => void;
+    options: ViewToggleOption[];
   };
-  /** Children content */
-  children: React.ReactNode;
-  /** Additional CSS classes */
+  /** Optional header actions (buttons, etc.) */
+  headerActions?: React.ReactNode;
+  /** Additional CSS classes for container */
   className?: string;
+  /** Additional CSS classes for content area */
+  contentClassName?: string;
+  /** Contextual styles from template */
+  cx?: ContextualClassNames;
+  /** Current field mode */
+  fieldMode?: boolean;
 }
 
 /**
@@ -51,8 +55,16 @@ export interface ViewContainerProps {
  * <ViewContainer
  *   title="Archive"
  *   icon="inventory_2"
- *   filter={{ value: filter, onChange: setFilter }}
- *   viewToggle={{ value: mode, onChange: setMode, options: viewOptions }}
+ *   filter={{ value: filter, onChange: setFilter, placeholder: "Search items..." }}
+ *   viewToggle={{
+ *     value: viewMode,
+ *     onChange: setViewMode,
+ *     options: [
+ *       { value: 'grid', icon: 'grid_view', label: 'Grid' },
+ *       { value: 'list', icon: 'list', label: 'List' },
+ *     ]
+ *   }}
+ *   headerActions={<Button onClick={onCreate}>Create</Button>}
  * >
  *   <Grid items={items} />
  * </ViewContainer>
@@ -60,83 +72,72 @@ export interface ViewContainerProps {
 export const ViewContainer: React.FC<ViewContainerProps> = ({
   title,
   icon,
-  filter,
-  subtitle,
-  actions,
-  viewToggle,
   children,
+  filter,
+  viewToggle,
+  headerActions,
   className = '',
+  contentClassName = '',
+  cx = {},
+  fieldMode = false,
 }) => {
-  // No fieldMode prop — get from context
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
+  // Context is provided via props (no hook calls)
+
+  const hasHeader = title || icon || filter || viewToggle || headerActions;
 
   return (
     <div
       className={`
-        flex flex-col h-full overflow-hidden
-        ${settings.fieldMode ? 'bg-black text-white' : 'bg-slate-50 text-slate-900'}
+        flex flex-col h-full
+        ${cx.surface}
+        rounded-lg overflow-hidden
         ${className}
       `}
     >
       {/* Header */}
-      <div
-        className={`
-          h-16 border-b px-6 flex items-center justify-between
-          shadow-sm z-10 shrink-0
-          ${
-            settings.fieldMode
-              ? 'bg-slate-900 border-slate-700'
-              : 'bg-white border-slate-200'
-          }
-        `}
-      >
-        <div className="flex items-center gap-4">
-          {/* Icon Badge */}
-          <div
-            className={`
-              p-2 rounded-lg
-              ${
-                settings.fieldMode
-                  ? 'bg-yellow-400/20 text-yellow-400'
-                  : 'bg-iiif-blue/10 text-iiif-blue'
-              }
-            `}
-          >
-            <Icon name={icon} className="text-xl" aria-hidden="true" />
-          </div>
+      {hasHeader && (
+        <div
+          className={`
+            flex items-center gap-4
+            px-4 py-3
+            border-b ${cx.border}
+            ${cx.headerBg}
+          `}
+        >
+          {/* Title */}
+          {(title || icon) && (
+            <div className="flex items-center gap-2 min-w-0">
+              {icon && (
+                <Icon
+                  name={icon}
+                  className={`${cx.text} text-xl flex-shrink-0`}
+                  aria-hidden="true"
+                />
+              )}
+              {title && (
+                <h2 className={`${cx.headingSize} ${cx.text} font-semibold truncate`}>
+                  {title}
+                </h2>
+              )}
+            </div>
+          )}
 
-          {/* Title & Subtitle */}
-          <div>
-            <h2
-              className={`
-                font-bold
-                ${
-                  settings.fieldMode
-                    ? 'text-xl text-yellow-400'
-                    : 'text-lg text-slate-800'
-                }
-              `}
-            >
-              {title}
-            </h2>
-            {subtitle && (
-              <p
-                className={`
-                  text-xs
-                  ${settings.fieldMode ? 'text-slate-500' : 'text-slate-500'}
-                `}
-              >
-                {subtitle}
-              </p>
-            )}
-          </div>
-        </div>
+          {/* Filter/Search */}
+          {filter && (
+            <div className="flex-shrink-0">
+              <SearchField
+                value={filter.value}
+                onChange={filter.onChange}
+                placeholder={filter.placeholder || 'Search...'}
+                showClear
+                cx={cx}
+                fieldMode={fieldMode}
+              />
+            </div>
+          )}
 
-        {/* Right Section: Filter + View Toggle + Actions */}
-        <div className="flex items-center gap-3">
-          {/* Filter Input */}
-          {filter && <SearchField value={filter.value} onChange={filter.onChange} placeholder={filter.placeholder} />}
+          {/* Spacer */}
+          <div className="flex-1" />
 
           {/* View Toggle */}
           {viewToggle && (
@@ -144,16 +145,29 @@ export const ViewContainer: React.FC<ViewContainerProps> = ({
               value={viewToggle.value}
               onChange={viewToggle.onChange}
               options={viewToggle.options}
+              cx={cx}
+              fieldMode={fieldMode}
             />
           )}
 
-          {/* Custom Actions */}
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
+          {/* Header Actions */}
+          {headerActions && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {headerActions}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-hidden">{children}</div>
+      {/* Content */}
+      <div
+        className={`
+          flex-1 overflow-auto
+          ${contentClassName}
+        `}
+      >
+        {children}
+      </div>
     </div>
   );
 };

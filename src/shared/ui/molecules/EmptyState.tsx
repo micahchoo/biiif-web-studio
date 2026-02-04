@@ -12,8 +12,7 @@
 
 import React from 'react';
 import { Icon, Button } from '../atoms';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface EmptyStateAction {
   label: string;
@@ -32,6 +31,10 @@ export interface EmptyStateProps {
   action?: EmptyStateAction;
   /** Additional CSS classes */
   className?: string;
+  /** Contextual styles from template */
+  cx?: ContextualClassNames;
+  /** Current field mode */
+  fieldMode?: boolean;
 }
 
 /**
@@ -51,10 +54,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   message,
   action,
   className = '',
+  cx = {},
+  fieldMode = false,
 }) => {
-  // Theme via context
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
+  // Context is provided via props (no hook calls)
 
   return (
     <div
@@ -68,11 +71,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <div
         className={`
           mb-4 p-3 rounded-lg
-          ${
-            settings.fieldMode
-              ? 'bg-slate-800 text-slate-400'
-              : 'bg-slate-100 text-slate-400'
-          }
+          ${cx.subtleBg} ${cx.textMuted}
         `}
       >
         <Icon name={icon} className="text-4xl" aria-hidden="true" />
@@ -82,7 +81,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <h3
         className={`
           text-lg font-semibold mb-2
-          ${settings.fieldMode ? 'text-slate-200' : 'text-slate-700'}
+          ${cx.subtleText}
         `}
       >
         {title}
@@ -93,7 +92,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <p
           className={`
             text-sm mb-6 text-center max-w-sm
-            ${settings.fieldMode ? 'text-slate-400' : 'text-slate-500'}
+            ${cx.textMuted}
           `}
         >
           {message}
@@ -103,7 +102,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       {/* Action Button */}
       {action && (
         <Button
-          variant={settings.fieldMode ? 'primary' : 'primary'}
+          variant="primary"
           onClick={action.onClick}
           icon={action.icon ? <Icon name={action.icon} /> : undefined}
         >

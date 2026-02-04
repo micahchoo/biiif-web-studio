@@ -1,19 +1,20 @@
 /**
  * FieldModeTemplate
  *
- * Provides fieldMode context and design tokens (cx) to child organisms.
- * This template ensures that organisms don't need to call useAppSettings or
- * useContextualStyles directly - they receive these via render props.
+ * Provides fieldMode context, design tokens (cx), and terminology (t) to child organisms.
+ * This template ensures that organisms don't need to call useAppSettings,
+ * useContextualStyles, or useTerminology directly - they receive these via render props.
  *
  * Philosophy:
  * - Organisms are context-agnostic. App provides context via templates.
  * - No fieldMode prop-drilling. Use render props instead.
  * - cx (contextual styles) is always available, never undefined.
+ * - Terminology is provided at template level to avoid hook calls in organisms.
  *
  * Usage:
  *   <FieldModeTemplate>
- *     {({ cx, fieldMode }) => (
- *       <ArchiveView cx={cx} />
+ *     {({ cx, fieldMode, t, isAdvanced }) => (
+ *       <ArchiveView cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />
  *     )}
  *   </FieldModeTemplate>
  */
@@ -21,12 +22,17 @@
 import React, { ReactNode } from 'react';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useContextualStyles, ContextualClassNames } from '@/hooks/useContextualStyles';
+import { useTerminology } from '@/hooks/useTerminology';
 
 export interface FieldModeTemplateRenderProps {
   /** Contextual class names for current fieldMode (light/dark) */
   cx: ContextualClassNames;
   /** Current field mode state (true = high-contrast dark mode) */
   fieldMode: boolean;
+  /** Terminology function for IIIF resource labels */
+  t: (key: string) => string;
+  /** Whether user is in advanced mode (shows technical details) */
+  isAdvanced: boolean;
 }
 
 export interface FieldModeTemplateProps {
@@ -41,18 +47,23 @@ export interface FieldModeTemplateProps {
  * Organisms wrapped in this template don't need to know about useAppSettings.
  */
 export const FieldModeTemplate: React.FC<FieldModeTemplateProps> = ({ children }) => {
-  // Get current app settings (fieldMode, etc.)
+  // Get current app settings (fieldMode, abstractionLevel, etc.)
   const { settings } = useAppSettings();
 
   // Get contextual styles based on current fieldMode
   const cx = useContextualStyles(settings.fieldMode);
 
-  // Pass both to children via render prop
+  // Get terminology based on abstraction level
+  const { t, isAdvanced } = useTerminology({ level: settings.abstractionLevel });
+
+  // Pass all context to children via render prop
   return (
     <>
       {children({
         cx,
-        fieldMode: settings.fieldMode
+        fieldMode: settings.fieldMode,
+        t,
+        isAdvanced,
       })}
     </>
   );

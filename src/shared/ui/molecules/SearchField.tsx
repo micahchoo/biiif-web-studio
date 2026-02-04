@@ -13,9 +13,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Icon, Input } from '../atoms';
 import { INPUT_CONSTRAINTS } from '../../config/tokens';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
-import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface SearchFieldProps {
   /** Current search value */
@@ -34,6 +33,10 @@ export interface SearchFieldProps {
   showClear?: boolean;
   /** Additional CSS classes */
   className?: string;
+  /** Contextual styles from template */
+  cx?: ContextualClassNames;
+  /** Current field mode */
+  fieldMode?: boolean;
 }
 
 /**
@@ -57,10 +60,10 @@ export const SearchField: React.FC<SearchFieldProps> = ({
   autoFocus = false,
   showClear = true,
   className = '',
+  cx = {},
+  fieldMode = false,
 }) => {
-  // Theme via context (no fieldMode prop)
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
+  // Context is provided via props (no hook calls)
 
   // Local state
   const [text, setText] = useState(value);
@@ -90,7 +93,7 @@ export const SearchField: React.FC<SearchFieldProps> = ({
         name="search"
         className={`
           absolute left-3 top-2.5 text-lg pointer-events-none
-          ${settings.fieldMode ? 'text-slate-500' : 'text-slate-400'}
+          ${cx.label}
         `}
         aria-hidden="true"
       />
@@ -106,11 +109,7 @@ export const SearchField: React.FC<SearchFieldProps> = ({
           w-full pl-10 pr-8 py-2 border rounded-md text-sm
           outline-none transition-all
           focus:ring-2 focus:ring-offset-2
-          ${
-            settings.fieldMode
-              ? 'bg-slate-800 border-slate-600 text-white focus:border-yellow-400 focus:ring-yellow-400 focus:ring-offset-slate-900'
-              : 'bg-slate-100 border-transparent focus:bg-white focus:border-iiif-blue focus:ring-blue-600 focus:ring-offset-white'
-          }
+          ${cx.searchInput}
         `}
         aria-label="Search"
       />
@@ -122,11 +121,7 @@ export const SearchField: React.FC<SearchFieldProps> = ({
           className={`
             absolute right-2 top-2 p-0.5 rounded-full
             transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1
-            ${
-              settings.fieldMode
-                ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700 focus:ring-yellow-400 focus:ring-offset-slate-900'
-                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200 focus:ring-blue-600 focus:ring-offset-white'
-            }
+            ${cx.iconButton}
           `}
           type="button"
           title="Clear search"

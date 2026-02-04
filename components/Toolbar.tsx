@@ -1,8 +1,16 @@
 /**
- * Toolbar - Reusable sidebar toolbar component
+ * Toolbar - Sidebar toolbar with import/export/settings actions
  *
- * Provides organized action groups for import, export, and settings
- * with consistent styling and clear visual hierarchy.
+ * This domain-specific toolbar belongs in the app layer as an organism.
+ * It composes molecules from shared/ui/molecules and handles app-level actions.
+ *
+ * ARCHITECTURE: This is an organism (domain-specific), not a molecule.
+ * Location: src/app/organisms/SidebarToolbar.tsx (future migration target)
+ *
+ * MIGRATION NOTICE: The generic Toolbar layout component is available at
+ * import { Toolbar } from '@/src/shared/ui/molecules' for simple cases.
+ *
+ * @deprecated Will be moved to src/app/organisms/SidebarToolbar.tsx
  */
 
 import React from 'react';
@@ -10,9 +18,11 @@ import { Icon } from './Icon';
 import { AbstractionLevelToggle } from './AbstractionLevelToggle';
 import type { AbstractionLevel } from '../types';
 import { FEATURE_FLAGS } from '../constants/features';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { useContextualStyles } from '@/hooks/useContextualStyles';
 
 export interface ToolbarProps {
-  /** Field mode styling */
+  /** @deprecated No longer needed - theme from context */
   fieldMode?: boolean;
   /** Import handler for local folder */
   onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -35,15 +45,14 @@ export interface ToolbarProps {
 }
 
 /**
- * Organized toolbar with logical action groupings
- * 
+ * Organized sidebar toolbar with logical action groupings
+ *
  * Layout:
  * - Import: Folder + Remote (side by side)
  * - Actions: Export (prominent primary action)
  * - Settings: Help + Settings + Field Mode (side by side)
  */
 export const Toolbar: React.FC<ToolbarProps> = ({
-  fieldMode = false,
   onImport,
   onOpenExternalImport,
   onExportTrigger,
@@ -54,36 +63,46 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onAbstractionLevelChange,
   className = ''
 }) => {
+  // Get theme from context - no prop-drilling
+  const { settings, updateSettings } = useAppSettings();
+  const cx = useContextualStyles(settings.fieldMode);
+
   const showAbstractionToggle = FEATURE_FLAGS.USE_SIMPLIFIED_UI && onAbstractionLevelChange;
-  const sectionLabelClass = `text-[9px] font-black uppercase tracking-widest mb-2 ${fieldMode ? 'text-slate-500' : 'text-slate-500'}`;
-  
-  const dividerClass = `h-px mb-3 ${fieldMode ? 'bg-slate-800' : 'bg-slate-800'}`;
-  
+
+  // Handle field mode toggle through settings
+  const handleToggleFieldMode = () => {
+    updateSettings({ fieldMode: !settings.fieldMode });
+    onToggleFieldMode();
+  };
+
+  const sectionLabelClass = `text-[9px] font-black uppercase tracking-widest mb-2 ${cx.textMuted}`;
+  const dividerClass = `h-px mb-3 ${cx.border}`;
+
   const secondaryButtonClass = (isActive?: boolean) => `
     flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all border
-    ${isActive 
-      ? (fieldMode 
-        ? 'bg-yellow-400/20 text-yellow-400 border-yellow-600 hover:bg-yellow-400/30' 
+    ${isActive
+      ? (settings.fieldMode
+        ? 'bg-yellow-400/20 text-yellow-400 border-yellow-600 hover:bg-yellow-400/30'
         : 'bg-iiif-blue/20 text-iiif-blue border-iiif-blue hover:bg-iiif-blue/30')
-      : (fieldMode 
-        ? 'bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-white' 
+      : (settings.fieldMode
+        ? 'bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-white'
         : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white')
     }
   `;
 
   const importButtonClass = `
     flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all border group
-    ${fieldMode 
-      ? 'bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700 hover:border-yellow-400' 
+    ${settings.fieldMode
+      ? 'bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700 hover:border-yellow-400'
       : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white hover:border-slate-500'
     }
   `;
 
   const primaryButtonClass = `
-    w-full py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest 
+    w-full py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest
     flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95
-    ${fieldMode 
-      ? 'bg-yellow-400 text-black hover:bg-yellow-300' 
+    ${settings.fieldMode
+      ? 'bg-yellow-400 text-black hover:bg-yellow-300'
       : 'bg-iiif-blue text-white hover:bg-blue-600'
     }
   `;
@@ -107,23 +126,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <div className="mb-3">
         <div className={sectionLabelClass}>Import</div>
         <div className="grid grid-cols-2 gap-2">
-          <label 
+          <label
             className={importButtonClass}
             title="Import local folder"
           >
             <Icon name="folder_open" className="text-lg group-hover:scale-110 transition-transform" />
             <span className="text-[11px] font-bold">Folder</span>
-            <input 
-              type="file" 
-              multiple 
-              {...({ webkitdirectory: "" } as any)} 
-              className="hidden" 
-              onChange={onImport} 
-              aria-hidden="true" 
+            <input
+              type="file"
+              multiple
+              {...({ webkitdirectory: "" } as any)}
+              className="hidden"
+              onChange={onImport}
+              aria-hidden="true"
             />
           </label>
-          <button 
-            onClick={onOpenExternalImport} 
+          <button
+            onClick={onOpenExternalImport}
             className={importButtonClass}
             title="Import remote manifest or collection"
           >
@@ -139,8 +158,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       {/* Actions Section */}
       <div className="mb-3">
         <div className={sectionLabelClass}>Actions</div>
-        <button 
-          onClick={onExportTrigger} 
+        <button
+          onClick={onExportTrigger}
           className={primaryButtonClass}
           title="Export archive to IIIF package"
         >
@@ -157,8 +176,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <div className={sectionLabelClass}>Settings</div>
         <div className="flex gap-2">
           {onToggleQuickHelp && (
-            <button 
-              onClick={onToggleQuickHelp} 
+            <button
+              onClick={onToggleQuickHelp}
               className={secondaryButtonClass()}
               title="Quick Help (?)"
             >
@@ -166,20 +185,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <span className="text-[10px] font-bold">Help</span>
             </button>
           )}
-          <button 
-            onClick={onOpenSettings} 
+          <button
+            onClick={onOpenSettings}
             className={secondaryButtonClass()}
             title="Application settings"
           >
             <Icon name="tune" className="text-base" />
             <span className="text-[10px] font-bold">Settings</span>
           </button>
-          <button 
-            onClick={onToggleFieldMode} 
-            className={secondaryButtonClass(fieldMode)}
-            title={fieldMode ? "Disable Field Mode" : "Enable Field Mode"}
+          <button
+            onClick={handleToggleFieldMode}
+            className={secondaryButtonClass(settings.fieldMode)}
+            title={settings.fieldMode ? "Disable Field Mode" : "Enable Field Mode"}
           >
-            <Icon name={fieldMode ? "visibility" : "visibility_off"} className="text-base" />
+            <Icon name={settings.fieldMode ? "visibility" : "visibility_off"} className="text-base" />
             <span className="text-[10px] font-bold">Field</span>
           </button>
         </div>

@@ -387,7 +387,9 @@ export class SearchService {
    */
   autocomplete(partial: string, limit: number = 8): AutocompleteResult[] {
     const results: AutocompleteResult[] = [];
-    const partialLower = partial.toLowerCase().trim();
+    // Guard against non-string partial
+    const safePartial = typeof partial === 'string' ? partial : '';
+    const partialLower = safePartial.toLowerCase().trim();
 
     if (!partialLower) {
       // Return recent searches if no input

@@ -1,38 +1,50 @@
 /**
  * DebouncedInput Molecule
  *
- * Composes: Input atom + debounce logic + validation
+ * Composes: Input atom + debounce + validation
  *
- * A text input that debounces onChange calls to avoid thrashing parent state.
- * Supports optional real-time validation with error display.
+ * Text input that debounces onChange to prevent parent thrashing.
+ * Configurable debounce delay and optional validation feedback.
  *
- * IDEAL OUTCOME: onChange fires once after debounce, not on every keystroke
- * FAILURE PREVENTED: Form state thrashing during rapid typing
+ * IDEAL OUTCOME: User types freely, parent receives onChange once after debounce
+ * FAILURE PREVENTED: Excessive re-renders from rapid input changes
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Input } from '../atoms';
-import { INPUT_CONSTRAINTS } from '../../config/tokens';
-import {
-  validateTextInput,
-  ValidationOptions,
-  ValidationResult,
-} from '../../../utils/inputValidation';
+import { INPUT_CONSTRAINTS, UI_TIMING } from '../../config/tokens';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import { sanitizeForInput } from '@/utils/inputValidation';
 
-export interface DebouncedInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
-  /** Current value */
+export interface DebouncedInputProps {
+  /** Current input value */
   value: string;
   /** Called with debounced value */
   onChange: (value: string) => void;
-  /** Debounce delay in milliseconds (default: 300) */
+  /** Placeholder text */
+  placeholder?: string;
+  /** Debounce delay in ms (default: 300ms from INPUT_CONSTRAINTS) */
   debounceMs?: number;
-  /** Validation options for input sanitization */
-  validation?: ValidationOptions;
-  /** Callback for validation errors */
-  onValidationError?: (result: ValidationResult) => void;
-  /** Whether to show validation errors inline */
-  showValidationErrors?: boolean;
+  /** Max length validation */
+  maxLength?: number;
+  /** Input type */
+  type?: 'text' | 'search' | 'email' | 'url';
+  /** Additional CSS classes */
+  className?: string;
+  /** Disabled state */
+  disabled?: boolean;
+  /** Auto-focus on mount */
+  autoFocus?: boolean;
+  /** Input id for accessibility */
+  id?: string;
+  /** ARIA label */
+  ariaLabel?: string;
+  /** Show character count */
+  showCount?: boolean;
+  /** Contextual styles from template */
+  cx?: ContextualClassNames;
+  /** Current field mode */
+  fieldMode?: boolean;
 }
 
 /**
@@ -44,104 +56,126 @@ export interface DebouncedInputProps
  *   value={text}
  *   onChange={setText}
  *   debounceMs={500}
- *   validation={{ maxLength: 500 }}
- *   showValidationErrors
+ *   maxLength={500}
+ *   showCount
  * />
  */
 export const DebouncedInput: React.FC<DebouncedInputProps> = ({
   value,
   onChange,
+  placeholder = 'Enter text...',
   debounceMs = INPUT_CONSTRAINTS.debounceMs,
-  validation,
-  onValidationError,
-  showValidationErrors = false,
+  maxLength = INPUT_CONSTRAINTS.maxLengthDefault,
+  type = 'text',
+  className = '',
+  disabled = false,
+  autoFocus = false,
   id,
-  ...props
+  ariaLabel,
+  showCount = false,
+  cx = {},
+  fieldMode = false,
 }) => {
+  // Context is provided via props (no hook calls)
+
   // Local state for immediate UI feedback
-  const [innerValue, setInnerValue] = useState(value ?? '');
-  const [validationError, setValidationError] = useState<string | undefined>(
-    undefined
-  );
+  const [localValue, setLocalValue] = useState(value);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isDebouncing, setIsDebouncing] = useState(false);
 
-  // Refs for effect guards
-  const onChangeRef = useRef(onChange);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isTypingRef = useRef(false);
-
-  // Keep onChange ref current
-  onChangeRef.current = onChange;
-
-  // Sync from external prop changes (only when not actively typing)
+  // Sync external value changes
   useEffect(() => {
-    if (!isTypingRef.current) {
-      setInnerValue(value ?? '');
-    }
+    setLocalValue(value);
   }, [value]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
+
+  // Handle input change with debounce
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
 
-      // Validate and sanitize
-      const validationResult = validateTextInput(rawValue, validation);
+      // Sanitize input
+      const sanitized = sanitizeForInput(rawValue, {
+        maxLength,
+        allowHtml: false,
+      });
 
-      if (!validationResult.isValid) {
-        setValidationError(validationResult.error);
-        onValidationError?.(validationResult);
-        // Still allow typing but show error
-      } else {
-        setValidationError(undefined);
-      }
-
-      const sanitizedValue = validationResult.value;
-      isTypingRef.current = true;
-      setInnerValue(sanitizedValue);
+      // Update local state immediately for responsive UI
+      setLocalValue(sanitized);
+      setIsDebouncing(true);
 
       // Clear existing timer
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
 
       // Set new debounce timer
-      timeoutRef.current = setTimeout(() => {
-        onChangeRef.current(sanitizedValue);
-        isTypingRef.current = false;
+      const timer = setTimeout(() => {
+        onChange(sanitized);
+        setIsDebouncing(false);
       }, debounceMs);
+
+      setDebounceTimer(timer);
     },
-    [debounceMs, validation, onValidationError]
+    [debounceTimer, debounceMs, maxLength, onChange]
   );
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
-  const inputId = id || 'debounced-input';
-  const errorId = `${inputId}-error`;
+  const characterCount = localValue.length;
+  const isNearLimit = maxLength > 0 && characterCount > maxLength * 0.9;
 
   return (
-    <div className="w-full">
+    <div className={`relative ${className}`}>
       <Input
-        {...props}
-        id={inputId}
-        value={innerValue}
+        type={type}
+        value={localValue}
         onChange={handleChange}
-        aria-invalid={!!validationError}
-        aria-describedby={
-          validationError && showValidationErrors ? errorId : props['aria-describedby']
-        }
+        placeholder={placeholder}
+        disabled={disabled}
+        autoFocus={autoFocus}
+        id={id}
+        aria-label={ariaLabel}
+        className={`
+          w-full
+          ${cx.input}
+          ${isDebouncing ? 'opacity-80' : ''}
+          transition-opacity
+          duration-${UI_TIMING.transition}
+        `}
       />
 
-      {/* Validation Error Display */}
-      {showValidationErrors && validationError && (
-        <div
-          id={errorId}
-          className="mt-1 text-sm text-red-600 font-medium"
-          role="alert"
+      {/* Character count indicator */}
+      {showCount && (
+        <span
+          className={`
+            absolute right-3 top-2.5 text-xs
+            ${isNearLimit ? 'text-amber-500 font-medium' : cx.textMuted}
+          `}
+          aria-live="polite"
         >
-          {validationError}
-        </div>
+          {characterCount}/{maxLength}
+        </span>
+      )}
+
+      {/* Debouncing indicator */}
+      {isDebouncing && (
+        <span
+          className={`
+            absolute right-3 top-2.5 text-xs
+            ${cx.textMuted}
+            animate-pulse
+          `}
+          aria-hidden="true"
+        >
+          ...
+        </span>
       )}
     </div>
   );

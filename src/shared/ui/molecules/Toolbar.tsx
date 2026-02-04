@@ -1,67 +1,75 @@
 /**
  * Toolbar Molecule
  *
- * Composes: Button atoms in a horizontal group
+ * Composes: Button atoms + container layout
  *
- * Standardized action toolbar for any collection of buttons.
- * Groups related actions and applies consistent spacing/styling.
+ * A horizontal action bar for organizing related actions.
+ * Fieldmode-aware styling with consistent spacing.
  *
- * IDEAL OUTCOME: Actions grouped visually with consistent spacing
- * FAILURE PREVENTED: Inconsistent button layout across views
+ * IDEAL OUTCOME: Actions are clearly grouped and accessible
+ * FAILURE PREVENTED: Scattered buttons without visual grouping
  */
 
 import React from 'react';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface ToolbarProps {
-  /** Action buttons */
+  /** Button/action elements */
   children: React.ReactNode;
-  /** Toolbar position (default: default spacing) */
-  position?: 'left' | 'center' | 'right' | 'between';
   /** Additional CSS classes */
   className?: string;
-  /** Optional aria-label for accessibility */
+  /** Alignment of items */
+  align?: 'left' | 'center' | 'right' | 'space-between';
+  /** Show divider line above toolbar */
+  showDivider?: boolean;
+  /** Compact mode (smaller padding) */
+  compact?: boolean;
+  /** ARIA label for the toolbar */
   ariaLabel?: string;
-  /** Show separator between button groups */
-  showDividers?: boolean;
+  /** Contextual styles from template */
+  cx?: ContextualClassNames;
+  /** Current field mode */
+  fieldMode?: boolean;
 }
+
+const alignClasses = {
+  left: 'justify-start',
+  center: 'justify-center',
+  right: 'justify-end',
+  'space-between': 'justify-between',
+};
 
 /**
  * Toolbar Molecule
  *
  * @example
- * <Toolbar ariaLabel="Archive actions">
+ * <Toolbar align="space-between">
  *   <Button onClick={onCreate}>Create</Button>
- *   <Button onClick={onEdit}>Edit</Button>
- *   <Button variant="danger" onClick={onDelete}>Delete</Button>
+ *   <Button onClick={onDelete} variant="danger">Delete</Button>
  * </Toolbar>
  */
 export const Toolbar: React.FC<ToolbarProps> = ({
   children,
-  position = 'left',
   className = '',
-  ariaLabel,
-  showDividers = false,
+  align = 'left',
+  showDivider = false,
+  compact = false,
+  ariaLabel = 'Toolbar',
+  cx = {},
+  fieldMode = false,
 }) => {
-  // Theme via context
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
+  // Context is provided via props (no hook calls)
 
-  const positionClasses = {
-    left: 'justify-start',
-    center: 'justify-center',
-    right: 'justify-end',
-    between: 'justify-between',
-  };
+  const paddingClass = compact ? 'py-2 px-3' : 'py-3 px-4';
+  const gapClass = compact ? 'gap-2' : 'gap-3';
 
   return (
     <div
       className={`
-        flex items-center gap-2 p-2
-        ${settings.fieldMode ? 'bg-slate-800' : 'bg-slate-100'}
-        rounded-md
-        ${positionClasses[position]}
+        flex items-center ${alignClasses[align]}
+        ${paddingClass} ${gapClass}
+        ${showDivider ? `border-t ${cx.border}` : ''}
+        ${cx.surface}
         ${className}
       `}
       role="toolbar"

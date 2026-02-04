@@ -118,12 +118,22 @@ export const UserIntentProvider: React.FC<UserIntentProviderProps> = ({
     const contextKey = state.intent as keyof typeof CONTEXTUAL_TOKENS.contexts;
     const context = CONTEXTUAL_TOKENS.contexts[contextKey];
     if (!context) return {};
-    return {
-      borderColor: context.border,
-      backgroundColor: context.background,
-      opacity: context.opacity,
-      filter: context.filter,
-    };
+    
+    // Build styles based on available properties (contexts have different shapes)
+    const styles: React.CSSProperties = {};
+    if ('border' in context) {
+      styles.borderColor = context.border;
+    }
+    if ('background' in context) {
+      styles.backgroundColor = context.background;
+    }
+    if ('opacity' in context) {
+      styles.opacity = context.opacity;
+    }
+    if ('filter' in context) {
+      styles.filter = context.filter;
+    }
+    return styles;
   }, [state.intent]);
 
   const actions = useMemo<UserIntentActions>(() => ({

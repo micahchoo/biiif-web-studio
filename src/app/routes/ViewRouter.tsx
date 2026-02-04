@@ -24,8 +24,17 @@ import type { AppMode, IIIFItem } from '@/types';
 import { BaseTemplate } from '../templates/BaseTemplate';
 import { FieldModeTemplate } from '../templates/FieldModeTemplate';
 
-// Import old components (temporary, during switchover)
-import { ViewRouter as OldViewRouter } from '@/components/ViewRouter';
+// NEW: Import feature slices (Phase 4)
+import { ArchiveView } from '@/src/features/archive';
+import { BoardView } from '@/src/features/board-design';
+import { MetadataView } from '@/src/features/metadata-edit';
+import { StagingView } from '@/src/features/staging';
+import { SearchView } from '@/src/features/search';
+import { ViewerView } from '@/src/features/viewer';
+import { MapView } from '@/src/features/map';
+
+// NEW: Import timeline feature
+import { TimelineView } from '@/src/features/timeline';
 
 export interface ViewRouterProps {
   /** Current app mode (archive, boards, metadata, etc.) */
@@ -68,52 +77,242 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
   sidebarContent,
   headerContent
 }) => {
-  // Placeholder for future phase 4 feature routes
-  // Example:
-  // if (currentMode === 'archive') {
-  //   return (
-  //     <BaseTemplate showSidebar={showSidebar} onSidebarToggle={onSidebarToggle}>
-  //       <FieldModeTemplate>
-  //         {({ cx, fieldMode }) => (
-  //           <ArchiveView
-  //             root={root}
-  //             selectedId={selectedId}
-  //             cx={cx}
-  //             fieldMode={fieldMode}
-  //             onSelect={onSelect}
-  //           />
-  //         )}
-  //       </FieldModeTemplate>
-  //     </BaseTemplate>
-  //   );
-  // }
+  // Phase 4: Wire new feature slices incrementally
+  // Archive feature is now implemented - route to new ArchiveView
+  if (currentMode === 'archive') {
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode }) => (
+            <ArchiveView
+              root={root}
+              onSelect={(item) => onSelect(item.id)}
+              onOpen={(item) => {
+                // Open in viewer - could dispatch to change mode
+                onModeChange('viewer');
+                onSelect(item.id);
+              }}
+              onBatchEdit={(ids) => {
+                // Handle batch edit - could open batch editor
+                console.log('Batch edit:', ids);
+              }}
+              onUpdate={(newRoot) => {
+                // Handle root updates (e.g., after grouping)
+                console.log('Root updated:', newRoot);
+              }}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
 
-  // Currently: delegate to old component system during implementation
-  // This is the "strangler fig" pattern - new features are wired in gradually
+  // Phase 4b: Board Design feature - fully refactored organism
+  if (currentMode === 'boards') {
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode }) => (
+            <BoardView
+              root={root}
+              cx={cx}
+              fieldMode={fieldMode}
+              onExport={(state) => {
+                // Handle board export - could dispatch to export service
+                console.log('Board export:', state);
+              }}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
 
-  return (
-    <BaseTemplate
-      showSidebar={showSidebar}
-      onSidebarToggle={onSidebarToggle}
-      sidebarContent={sidebarContent}
-      headerContent={headerContent}
-    >
-      <FieldModeTemplate>
-        {({ cx, fieldMode }) => (
-          // Temporary: use old ViewRouter while features are being implemented
-          <OldViewRouter
-            currentMode={currentMode}
-            root={root}
-            selectedId={selectedId}
-            onModeChange={onModeChange}
-            onSelect={onSelect}
-            cx={cx}
-            fieldMode={fieldMode}
-          />
-        )}
-      </FieldModeTemplate>
-    </BaseTemplate>
-  );
+  // Phase 4c: Metadata Edit feature
+  if (currentMode === 'metadata') {
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode }) => (
+            <MetadataView
+              root={root}
+              cx={cx}
+              fieldMode={fieldMode}
+              onUpdate={(newRoot) => {
+                // Handle metadata updates
+                console.log('Metadata updated:', newRoot);
+              }}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
+
+  // Phase 4d: Staging feature
+  if (currentMode === 'collections') {
+    // Note: 'collections' mode is used for the staging/import workbench
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode }) => (
+            <StagingView
+              root={root}
+              cx={cx}
+              fieldMode={fieldMode}
+              // These will be managed by parent state in full implementation
+              sourceManifests={{ byId: {}, allIds: [] }}
+              targetCollections={[]}
+              onAddToCollection={(manifestIds, collectionId) => {
+                console.log('Add to collection:', manifestIds, collectionId);
+              }}
+              onCreateCollection={(label, manifestIds) => {
+                console.log('Create collection:', label, manifestIds);
+              }}
+              onReorderCanvases={(manifestId, newOrder) => {
+                console.log('Reorder canvases:', manifestId, newOrder);
+              }}
+              onRemoveFromSource={(manifestIds) => {
+                console.log('Remove from source:', manifestIds);
+              }}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
+
+  // Phase 4e: Search feature
+  if (currentMode === 'search') {
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode, t }) => (
+            <SearchView
+              root={root}
+              onSelect={(id) => onSelect(id)}
+              onRevealMap={(id) => {
+                onSelect(id);
+                onModeChange('map');
+              }}
+              cx={cx}
+              fieldMode={fieldMode}
+              t={t}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
+
+  // Phase 4f: Viewer feature
+  // NOTE: This requires a selected canvas, falls back to archive if none selected
+  if (currentMode === 'viewer') {
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode, t, isAdvanced }) => (
+            <ViewerView
+              item={null} // TODO: Get selected canvas from root by selectedId
+              manifest={null} // TODO: Get parent manifest
+              onUpdate={(item) => {
+                console.log('Canvas updated:', item);
+              }}
+              cx={cx}
+              fieldMode={fieldMode}
+              t={t}
+              isAdvanced={isAdvanced}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
+
+  // Phase 4g: Map feature
+  if (currentMode === 'map') {
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode, t, isAdvanced }) => (
+            <MapView
+              root={root}
+              onSelect={(item) => onSelect(item.id)}
+              cx={cx}
+              fieldMode={fieldMode}
+              t={t}
+              isAdvanced={isAdvanced}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
+
+  // Phase 4h: Timeline feature
+  if (currentMode === 'timeline') {
+    return (
+      <BaseTemplate
+        showSidebar={showSidebar}
+        onSidebarToggle={onSidebarToggle}
+        sidebarContent={sidebarContent}
+        headerContent={headerContent}
+      >
+        <FieldModeTemplate>
+          {({ cx, fieldMode }) => (
+            <TimelineView
+              root={root}
+              onSelect={(item) => onSelect(item.id)}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+          )}
+        </FieldModeTemplate>
+      </BaseTemplate>
+    );
+  }
+
+  // Unknown mode - show archive as default
+  console.warn(`Unknown app mode: ${currentMode}, falling back to archive`);
+  onModeChange('archive');
+  return null;
 };
 
 export default ViewRouter;

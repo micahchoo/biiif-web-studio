@@ -19,7 +19,7 @@
  *     showSidebar={true}
  *     onSidebarToggle={() => setShowSidebar(!show)}
  *   >
- *     {/* Main content goes here */}
+ *     [Main content goes here]
  *   </BaseTemplate>
  */
 

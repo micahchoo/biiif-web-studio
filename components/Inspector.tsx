@@ -196,7 +196,7 @@ const AnnotationItem = ({
 };
 
 const InspectorComponent: React.FC<InspectorProps> = ({
-  resource,
+  resource: resourceProp,
   onUpdateResource,
   settings,
   visible,
@@ -205,6 +205,11 @@ const InspectorComponent: React.FC<InspectorProps> = ({
   designTab,
   annotations = []
 }) => {
+  // Stabilize resource reference to prevent infinite re-renders
+  const resource = useMemo(() => resourceProp, [resourceProp?.id, resourceProp?.type]);
+  
+  const hasResource = !!resource;
+
   const { t } = useTerminology({ level: settings.abstractionLevel });
   const cx = useContextualStyles(settings.fieldMode);
 
@@ -239,6 +244,7 @@ const InspectorComponent: React.FC<InspectorProps> = ({
     resource, settings.language, onUpdateResource
   );
 
+  // Return null AFTER all hooks (React Rules of Hooks)
   if (!visible || !resource) return null;
 
   const config = RESOURCE_TYPE_CONFIG[resource.type] || RESOURCE_TYPE_CONFIG['Content'];

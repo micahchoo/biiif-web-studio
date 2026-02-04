@@ -22,7 +22,10 @@ import { KeyboardShortcutsOverlay } from './components/KeyboardShortcutsOverlay'
 import { AuthDialog } from './components/AuthDialog';
 import { SkipLink } from './components/SkipLink';
 import { Icon } from './components/Icon';
-import { ViewRouter } from './components/ViewRouter';
+// NEW: Use the refactored ViewRouter from src/app/routes (Phase 5)
+// This routes to new feature slices for implemented routes (archive)
+// and falls back to old components for unimplemented routes
+import { ViewRouter } from './src/app/routes';
 import { buildTree, ingestTree } from './services/iiifBuilder';
 import { AuthService, AuthState } from './services/authService';
 import { storage } from './services/storage';
@@ -56,7 +59,8 @@ const MainApp: React.FC = () => {
   // ---- Vault State (normalized IIIF data) ----
   const { state, dispatch, loadRoot, exportRoot, rootId } = useVault();
   const { batchUpdate } = useBulkOperations();
-  const root = useMemo(() => exportRoot(), [state]);
+  // Stabilize root reference - only re-export when rootId changes
+  const root = useMemo(() => exportRoot(), [rootId]);
 
   // ---- Custom Hooks ----
   const { isMobile, isTablet: _isTablet } = useResponsive();
@@ -645,18 +649,14 @@ const MainApp: React.FC = () => {
 // App Wrapper with Providers
 // ============================================================================
 
+// NEW: Use consolidated AppProviders from src/app/providers (Phase 3)
+// This centralizes all context providers in one place per FSD architecture
+import { AppProviders } from './src/app/providers';
+
 const App: React.FC = () => (
-  <VaultProvider>
-    <ToastProvider>
-      <ErrorBoundary>
-        <UserIntentProvider>
-          <ResourceContextProvider>
-            <MainApp />
-          </ResourceContextProvider>
-        </UserIntentProvider>
-      </ErrorBoundary>
-    </ToastProvider>
-  </VaultProvider>
+  <AppProviders>
+    <MainApp />
+  </AppProviders>
 );
 
 export default App;

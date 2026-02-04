@@ -9,7 +9,7 @@
  */
 
 // Design tokens (from existing designSystem.ts)
-export { COLORS, SPACING, LAYOUT, TOUCH_TARGETS, INTERACTION } from '../../designSystem';
+export { COLORS, SPACING, LAYOUT, TOUCH_TARGETS, INTERACTION } from '@/designSystem';
 
 // ============================================================================
 // INPUT & FORM CONSTRAINTS
@@ -168,6 +168,76 @@ export const VALIDATION_CONSTRAINTS = {
   /** Validation error message max length */
   errorMessageMaxLength: 200,
 } as const;
+
+// ============================================================================
+// SEMANTIC COLOR MAPS (data-driven, not fieldMode-driven)
+// ============================================================================
+
+/**
+ * Cluster badge intensity colors by size tier.
+ * Represents item density on maps/timelines — xl = highest density.
+ */
+export const CLUSTER_INTENSITY = {
+  xl:      'bg-red-600',
+  lg:      'bg-orange-500',
+  md:      'bg-yellow-500',
+  sm:      'bg-green-500',
+  default: 'bg-blue-500',
+} as const;
+
+/**
+ * Timeline tick density thresholds and their associated colors.
+ * Thresholds are checked in order (first match wins).
+ */
+export const TIMELINE_DENSITY = {
+  /** Ordered thresholds: [count, colorKey] — first match wins */
+  thresholds: [
+    { min: 10, color: 'bg-red-500'    as const },
+    { min: 5,  color: 'bg-orange-500' as const },
+    { min: 2,  color: 'bg-blue-500'   as const },
+  ] as const,
+  /** Fallback when count < 2 (single item) */
+  single: 'bg-green-500' as const,
+} as const;
+
+/**
+ * Map marker fill colors keyed by IIIF resource type.
+ */
+export const MAP_MARKER_COLORS: Record<string, string> = {
+  Canvas:     'bg-blue-500',
+  Manifest:   'bg-green-500',
+  Collection: 'bg-purple-500',
+};
+/** Fallback when type is not in MAP_MARKER_COLORS */
+export const MAP_MARKER_DEFAULT = 'bg-gray-500';
+
+/**
+ * MuseumLabel semantic surface styles per label type.
+ * Each type has a light-mode and dark-mode (fieldMode) variant.
+ */
+export const MUSEUM_LABEL_STYLES: Record<string, { light: string; dark: string }> = {
+  'field-note': {
+    light: 'bg-amber-50 border-amber-200 text-amber-900',
+    dark:  'bg-amber-900/20 border-amber-700/50 text-amber-200',
+  },
+  exhibit: {
+    light: 'bg-blue-50 border-blue-200 text-blue-900',
+    dark:  'bg-blue-900/20 border-blue-700/50 text-blue-200',
+  },
+  spec: {
+    light: 'bg-slate-100 border-slate-300 text-slate-900',
+    dark:  'bg-slate-800 border-slate-700 text-slate-200',
+  },
+};
+
+/**
+ * MuseumLabel icon mapping per label type.
+ */
+export const MUSEUM_LABEL_ICONS: Record<string, string> = {
+  'field-note': 'history_edu',
+  exhibit:      'account_balance',
+  spec:         'terminal',
+};
 
 // ============================================================================
 // TYPE GUARDS & EXPORTS

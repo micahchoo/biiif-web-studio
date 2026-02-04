@@ -1,113 +1,78 @@
 /**
  * LoadingState Molecule
  *
- * Composes: Spinner + loading message
+ * Composes: Spinner/skeleton + message
  *
- * Standardized loading placeholder while content loads.
- * Shows animated spinner and optional status message.
+ * Standardized loading indicator with fieldmode-aware styling.
+ * Provides visual feedback during async operations.
  *
- * IDEAL OUTCOME: Clear loading indicator with optional message
- * FAILURE PREVENTED: Stale content or unclear loading state
+ * IDEAL OUTCOME: Clear loading feedback prevents user confusion
+ * FAILURE PREVENTED: Unclear state — user doesn't know if app is working
  */
 
-import React, { useMemo } from 'react';
-import { useContextualStyles } from '../../../hooks/useContextualStyles';
-import { useAppSettings } from '../../../hooks/useAppSettings';
+import React from 'react';
+import { Icon } from '../atoms';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import { UI_TIMING } from '../../config/tokens';
 
 export interface LoadingStateProps {
-  /** Optional status/progress message */
+  /** Optional status message */
   message?: string;
-  /** Optional aria-label for accessibility */
-  ariaLabel?: string;
+  /** Size variant */
+  size?: 'sm' | 'md' | 'lg';
+  /** Full container height (centered) */
+  fullHeight?: boolean;
+  /** Show skeleton placeholder instead of spinner */
+  skeleton?: boolean;
   /** Additional CSS classes */
   className?: string;
-  /** Whether to show a large centered spinner (vs inline) */
-  centered?: boolean;
+  /** Contextual styles from template */
+  cx?: ContextualClassNames;
+  /** Current field mode */
+  fieldMode?: boolean;
 }
+
+const sizeClasses = {
+  sm: { icon: 'text-lg', spinner: 'w-5 h-5', text: 'text-sm' },
+  md: { icon: 'text-2xl', spinner: 'w-8 h-8', text: 'text-base' },
+  lg: { icon: 'text-4xl', spinner: 'w-12 h-12', text: 'text-lg' },
+};
 
 /**
  * LoadingState Molecule
  *
  * @example
  * {isLoading ? (
- *   <LoadingState message="Loading archive..." centered />
+ *   <LoadingState message="Loading archive..." size="lg" fullHeight />
  * ) : (
  *   <Content />
  * )}
- *
- * @example
- * <LoadingState message="Processing files..." />
  */
 export const LoadingState: React.FC<LoadingStateProps> = ({
   message = 'Loading...',
-  ariaLabel = message,
+  size = 'md',
+  fullHeight = false,
+  skeleton = false,
   className = '',
-  centered = true,
+  cx = {},
+  fieldMode = false,
 }) => {
-  // Theme via context
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
+  // Context is provided via props (no hook calls)
 
-  // Memoize spinner SVG
-  const spinnerSvg = useMemo(
-    () => (
-      <svg
-        className="w-8 h-8 animate-spin"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <circle
-          className="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-        <path
-          className="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        />
-      </svg>
-    ),
-    []
-  );
+  const sizeClass = sizeClasses[size];
 
-  if (centered) {
+  if (skeleton) {
     return (
       <div
         className={`
-          flex flex-col items-center justify-center
-          py-12 px-6 min-h-[300px]
+          animate-pulse
+          ${fullHeight ? 'h-full flex items-center justify-center' : ''}
           ${className}
         `}
         role="status"
-        aria-label={ariaLabel}
+        aria-label={message}
       >
-        {/* Spinner */}
-        <div
-          className={`
-            mb-4
-            ${settings.fieldMode ? 'text-yellow-400' : 'text-iiif-blue'}
-          `}
-        >
-          {spinnerSvg}
-        </div>
-
-        {/* Message */}
-        {message && (
-          <p
-            className={`
-              text-sm font-medium
-              ${settings.fieldMode ? 'text-slate-300' : 'text-slate-600'}
-            `}
-          >
-            {message}
-          </p>
-        )}
+        <div className={`${cx.subtleBg} rounded-md w-full h-24`} />
       </div>
     );
   }
@@ -115,33 +80,44 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   return (
     <div
       className={`
-        flex items-center gap-3 p-4
+        flex flex-col items-center justify-center gap-3
+        ${fullHeight ? 'h-full min-h-[200px]' : 'py-8'}
         ${className}
       `}
       role="status"
-      aria-label={ariaLabel}
+      aria-live="polite"
     >
-      {/* Inline Spinner */}
-      <div
-        className={`
-          flex-shrink-0
-          ${settings.fieldMode ? 'text-yellow-400' : 'text-iiif-blue'}
-        `}
-      >
-        {spinnerSvg}
+      {/* Spinner animation */}
+      <div className="relative">
+        {/* Outer ring */}
+        <div
+          className={`
+            ${sizeClass.spinner}
+            rounded-full
+            border-2 ${cx.border}
+            border-t-transparent
+            animate-spin
+          `}
+          style={{ animationDuration: `${UI_TIMING.animation * 2}ms` }}
+          aria-hidden="true"
+        />
+
+        {/* Center icon (optional visual enhancement) */}
+        <div
+          className={`
+            absolute inset-0
+            flex items-center justify-center
+            ${sizeClass.icon} ${cx.textMuted}
+          `}
+        >
+          <Icon name="refresh" className="animate-pulse" aria-hidden="true" />
+        </div>
       </div>
 
       {/* Message */}
-      {message && (
-        <p
-          className={`
-            text-sm font-medium
-            ${settings.fieldMode ? 'text-slate-300' : 'text-slate-600'}
-          `}
-        >
-          {message}
-        </p>
-      )}
+      <p className={`${sizeClass.text} ${cx.textMuted} text-center`}>
+        {message}
+      </p>
     </div>
   );
 };
