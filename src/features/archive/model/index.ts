@@ -5,10 +5,8 @@
  * Re-exports from entities and adds archive-specific logic.
  */
 
-import type { IIIFCanvas, IIIFItem } from '@/types';
-import { getIIIFValue } from '@/types';
+import { getIIIFValue, type IIIFCanvas, type IIIFItem } from '@/types';
 import { canvas, manifest } from '@/src/entities';
-import type { NormalizedState } from '@/services/vault';
 
 // Re-export entity models for convenience
 export { manifest, canvas };
@@ -158,8 +156,8 @@ export const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
 // ============================================================================
 
 export const STORAGE_KEYS = {
-  VIEW_MODE: 'field-studio:archive-view-mode',
-  SORT_MODE: 'field-studio:archive-sort-mode'
+  viewMode: 'field-studio:archive-view-mode',
+  sortMode: 'field-studio:archive-sort-mode'
 } as const;
 
 /**
@@ -167,7 +165,7 @@ export const STORAGE_KEYS = {
  */
 export const loadViewMode = (): ArchiveViewMode => {
   if (typeof window === 'undefined') return 'grid';
-  const saved = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
+  const saved = localStorage.getItem(STORAGE_KEYS.viewMode);
   if (saved && ['grid', 'list', 'map', 'timeline'].includes(saved)) {
     return saved as ArchiveViewMode;
   }
@@ -179,5 +177,5 @@ export const loadViewMode = (): ArchiveViewMode => {
  */
 export const saveViewMode = (mode: ArchiveViewMode): void => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEYS.VIEW_MODE, mode);
+  localStorage.setItem(STORAGE_KEYS.viewMode, mode);
 };

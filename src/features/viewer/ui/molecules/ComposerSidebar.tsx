@@ -10,7 +10,8 @@
  */
 
 import React from 'react';
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 import { getIIIFValue, type IIIFItem } from '@/types';
 import type { PlacedResource } from '@/hooks/useLayerHistory';
 
@@ -50,6 +51,7 @@ export interface ComposerSidebarProps {
     active: string;
     surface: string;
   };
+  fieldMode?: boolean;
 }
 
 /**
@@ -69,14 +71,17 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
   onLayerPropertyChange,
   onLayerAlign,
   onLibraryItemSelect,
-  cx,
+  cx: _cx,
 }) => {
   return (
     <div className="w-80 bg-slate-900 border-r border-white/10 flex flex-col">
       {/* Tabs */}
       <div className="flex border-b border-white/10">
-        <button
+        <Button
           onClick={() => onTabChange('layers')}
+          variant="ghost"
+          size="sm"
+          fullWidth
           className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${
             activeTab === 'layers'
               ? 'text-indigo-400 border-b-2 border-indigo-400'
@@ -84,9 +89,12 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
           }`}
         >
           Layers
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => onTabChange('library')}
+          variant="ghost"
+          size="sm"
+          fullWidth
           className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${
             activeTab === 'library'
               ? 'text-indigo-400 border-b-2 border-indigo-400'
@@ -94,7 +102,7 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
           }`}
         >
           Library
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -134,55 +142,54 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
                     {getIIIFValue(layer.resource.label, 'none') || 'Untitled'}
                   </span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLayerLockToggle(layer.id);
                       }}
-                      className={`p-1 rounded ${
-                        layer.locked ? 'text-indigo-400' : 'text-white/20'
-                      }`}
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name={layer.locked ? 'lock' : 'lock_open'} className="text-[14px]" />}
                       title="Lock Layer"
                       aria-label={layer.locked ? 'Unlock Layer' : 'Lock Layer'}
-                    >
-                      <Icon
-                        name={layer.locked ? 'lock' : 'lock_open'}
-                        className="text-[14px]"
-                      />
-                    </button>
-                    <button
+                      className={`p-1 rounded ${layer.locked ? 'text-indigo-400' : 'text-white/20'}`}
+                    />
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLayerMove(idx, 'down');
                       }}
-                      className="p-1 hover:bg-white/10 rounded"
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="arrow_downward" className="text-[14px]" />}
                       title="Move Back"
                       aria-label="Move Layer Back"
-                    >
-                      <Icon name="arrow_downward" className="text-[14px]" />
-                    </button>
-                    <button
+                      className="p-1"
+                    />
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLayerMove(idx, 'up');
                       }}
-                      className="p-1 hover:bg-white/10 rounded"
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="arrow_upward" className="text-[14px]" />}
                       title="Move Forward"
                       aria-label="Move Layer Forward"
-                    >
-                      <Icon name="arrow_upward" className="text-[14px]" />
-                    </button>
-                    <button
+                      className="p-1"
+                    />
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLayerRemove(layer.id);
                       }}
-                      className="p-1 hover:bg-red-500 text-white rounded"
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="delete" className="text-[14px]" />}
                       title="Remove Layer"
                       aria-label="Remove Layer"
-                    >
-                      <Icon name="delete" className="text-[14px]" />
-                    </button>
+                      className="p-1 hover:text-red-400"
+                    />
                   </div>
                 </div>
 
@@ -236,7 +243,7 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
                 {/* Alignment Actions (only for active layer) */}
                 {activeLayerId === layer.id && !layer.locked && (
                   <div className="mt-3 pt-3 border-t border-white/10 flex gap-2">
-                    <button
+                    <div
                       onClick={(e) => {
                         e.stopPropagation();
                         onLayerAlign('center');
@@ -244,8 +251,8 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
                       className="flex-1 bg-white/5 hover:bg-white/10 text-[8px] font-black uppercase py-1 rounded"
                     >
                       Center
-                    </button>
-                    <button
+                    </div>
+                    <div
                       onClick={(e) => {
                         e.stopPropagation();
                         onLayerAlign('fill');
@@ -253,7 +260,7 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
                       className="flex-1 bg-white/5 hover:bg-white/10 text-[8px] font-black uppercase py-1 rounded"
                     >
                       Fill
-                    </button>
+                    </div>
                   </div>
                 )}
               </div>

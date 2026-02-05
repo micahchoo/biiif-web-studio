@@ -24,12 +24,10 @@ import { ViewContainer } from '@/src/shared/ui/molecules/ViewContainer';
 import { FilterInput } from '@/src/shared/ui/molecules/FilterInput';
 import { Toolbar } from '@/src/shared/ui/molecules/Toolbar';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
-import { Button } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 import {
-  detectChanges,
   extractColumns,
   filterByTerm,
-  type FlatItem,
   flattenTree,
   itemsToCSV,
   type ResourceTab,
@@ -80,7 +78,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
   root,
   cx,
   fieldMode,
-  onUpdate,
+  onUpdate: _onUpdate,
   filterIds,
   onClearFilter,
 }) => {
@@ -180,17 +178,15 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
           {/* Resource type tabs */}
           <div className={`flex rounded-lg ${cx.headerBg} p-1`}>
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  activeTab === tab.value
-                    ? `${cx.active} shadow-sm`
-                    : cx.inactive
-                }`}
+                variant={activeTab === tab.value ? 'primary' : 'ghost'}
+                size="sm"
+                className="text-xs font-medium"
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -207,12 +203,12 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
           {filterIds && filterIds.length > 0 && onClearFilter && (
             <div className={`text-xs ${cx.textMuted}`}>
               Showing {filterIds.length} selected
-              <button
+              <div
                 onClick={onClearFilter}
                 className={`ml-2 ${cx.accent} hover:underline`}
               >
                 Clear
-              </button>
+              </div>
             </div>
           )}
 
@@ -222,7 +218,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
               variant="secondary"
               size="sm"
               onClick={handleExportCSV}
-              disabled={filteredItems.length === 0}
+              
             >
               Export CSV
             </Button>
@@ -308,7 +304,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                         <input
                           type="text"
                           value={item.label}
-                          onChange={(e) => {
+                          onChange={(_e) => {
                             // TODO: Implement edit tracking
                             setHasUnsavedChanges(true);
                           }}
@@ -319,7 +315,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                         <input
                           type="text"
                           value={item.summary}
-                          onChange={(e) => {
+                          onChange={(_e) => {
                             setHasUnsavedChanges(true);
                           }}
                           className={`w-full bg-transparent border-0 focus:ring-1 ${cx.input} rounded px-2 py-1`}
@@ -329,7 +325,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                         <input
                           type="text"
                           value={item.rights}
-                          onChange={(e) => {
+                          onChange={(_e) => {
                             setHasUnsavedChanges(true);
                           }}
                           className={`w-full bg-transparent border-0 focus:ring-1 ${cx.input} rounded px-2 py-1`}
@@ -339,7 +335,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                         <input
                           type="text"
                           value={item.navDate}
-                          onChange={(e) => {
+                          onChange={(_e) => {
                             setHasUnsavedChanges(true);
                           }}
                           className={`w-full bg-transparent border-0 focus:ring-1 ${cx.input} rounded px-2 py-1`}
@@ -350,7 +346,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                         <input
                           type="text"
                           value={item.metadata[col] || ''}
-                          onChange={(e) => {
+                          onChange={(_e) => {
                             setHasUnsavedChanges(true);
                           }}
                           className={`w-full bg-transparent border-0 focus:ring-1 ${cx.input} rounded px-2 py-1`}
@@ -374,7 +370,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
           }`}
         >
           <span className="text-sm font-medium">Unsaved changes</span>
-          <button
+          <div
             onClick={() => {
               // TODO: Implement save
               setHasUnsavedChanges(false);
@@ -382,7 +378,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
             className="ml-3 text-sm underline hover:no-underline"
           >
             Save
-          </button>
+          </div>
         </div>
       )}
     </ViewContainer>

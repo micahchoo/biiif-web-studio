@@ -24,6 +24,7 @@
  */
 
 import React, { ReactNode } from 'react';
+import { Button } from '@/ui/primitives/Button';
 
 export interface BaseTemplateProps {
   /** Main content */
@@ -58,26 +59,28 @@ export const BaseTemplate: React.FC<BaseTemplateProps> = ({
         role="banner"
       >
         {/* Sidebar toggle button */}
-        <button
+        <Button
           onClick={onSidebarToggle}
-          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+          variant="ghost"
+          size="sm"
           aria-label={showSidebar ? 'Hide sidebar' : 'Show sidebar'}
           title={showSidebar ? 'Hide sidebar (Cmd+\\)' : 'Show sidebar (Cmd+\\)'}
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
+          icon={
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          }
+        />
 
         {/* Custom header content */}
         <div className="flex-1 mx-4">

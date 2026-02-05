@@ -48,10 +48,8 @@ import { Toolbar } from '@/src/shared/ui/molecules/Toolbar';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { Button } from '@/src/shared/ui/atoms';
 import {
-  createCollectionFromManifests,
   selectAllSourceManifests,
   selectTotalCanvasCount,
-  type SourceManifest,
   type SourceManifests,
 } from '../../model';
 
@@ -110,16 +108,16 @@ export interface StagingViewProps {
  * </FieldModeTemplate>
  */
 export const StagingView: React.FC<StagingViewProps> = ({
-  root,
+  root: _root,
   sourceManifests: externalSourceManifests,
   targetCollections: externalTargetCollections = [],
   cx,
   fieldMode,
   onAddToCollection,
   onCreateCollection,
-  onReorderCanvases,
-  onRemoveFromSource,
-  onMergeManifests,
+  onReorderCanvases: _onReorderCanvases,
+  onRemoveFromSource: _onRemoveFromSource,
+  onMergeManifests: _onMergeManifests,
 }) => {
   // Use provided sourceManifests or create empty default
   const sourceManifests = externalSourceManifests ?? { byId: {}, allIds: [] };

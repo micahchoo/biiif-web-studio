@@ -24,9 +24,8 @@
  */
 
 import React from 'react';
-import type { IIIFCanvas, IIIFItem } from '@/types';
-import { getIIIFValue } from '@/types';
-import { Icon } from '@/components/Icon';
+import { getIIIFValue, type IIIFItem } from '@/types';
+import { Icon } from '@/src/shared/ui/atoms';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { MapMarker } from '@/src/shared/ui/molecules/MapMarker';
 import { ClusterBadge } from '@/src/shared/ui/molecules/ClusterBadge';
@@ -34,7 +33,6 @@ import { ZoomControl } from '@/src/shared/ui/molecules/ZoomControl';
 import {
   formatBounds,
   formatCoordinates,
-  type GeoItem,
   useMap,
 } from '../../model';
 
@@ -236,12 +234,12 @@ export const MapView: React.FC<MapViewProps> = ({
                 <h3 className={`font-bold ${cx.text}`}>
                   {selectedCluster.length} items at this location
                 </h3>
-                <button
+                <div
                   onClick={() => selectCluster(null)}
-                  className={`${fieldMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`cursor-pointer ${fieldMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   <Icon name="close" />
-                </button>
+                </div>
               </div>
               <div className="p-4 overflow-y-auto max-h-[60vh] grid grid-cols-3 gap-3">
                 {selectedCluster.map(item => (

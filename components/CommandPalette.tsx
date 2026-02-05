@@ -317,8 +317,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return parts;
   }, []);
 
-  if (!isOpen) return null;
-
   // Group matches by section when no query
   const groupedMatches = useMemo(() => {
     if (query.trim()) {
@@ -351,6 +349,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     return groups;
   }, [matches, query]);
+
+  if (!isOpen) return null;
 
   let globalIndex = 0;
 

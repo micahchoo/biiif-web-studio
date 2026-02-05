@@ -20,8 +20,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import type { IIIFItem } from '@/types';
-import { RESOURCE_TYPE_CONFIG } from '@/constants';
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/src/shared/ui/atoms';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { FacetPill } from '@/src/shared/ui/molecules/FacetPill';
 import { ResultCard } from '@/src/shared/ui/molecules/ResultCard';
@@ -82,7 +81,7 @@ const FILTER_OPTIONS: SearchFilter[] = ['All', 'Manifest', 'Canvas', 'Annotation
 export const SearchView: React.FC<SearchViewProps> = ({
   root,
   onSelect,
-  onRevealMap,
+  onRevealMap: _onRevealMap,
   cx,
   fieldMode,
   t,
@@ -198,7 +197,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 className={`absolute top-full left-0 right-0 mt-1 ${fieldMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} border rounded-xl shadow-lg z-20 overflow-hidden`}
               >
                 {autocompleteResults.map((result, idx) => (
-                  <button
+                  <div
                     key={`${result.type}-${result.value}`}
                     onClick={() => handleAutocompleteClick(result.value)}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
@@ -232,10 +231,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
                         {result.count}
                       </span>
                     )}
-                  </button>
+                  </div>
                 ))}
                 {recentSearches.length > 0 && (
-                  <button
+                  <div
                     onClick={clearRecentSearches}
                     className={`w-full px-4 py-2 text-[10px] uppercase font-bold border-t ${
                       fieldMode
@@ -244,7 +243,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                     }`}
                   >
                     Clear Recent Searches
-                  </button>
+                  </div>
                 )}
               </div>
             )}

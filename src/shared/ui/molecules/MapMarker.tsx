@@ -25,6 +25,7 @@
  */
 
 import React, { useState } from 'react';
+import { Button } from '../atoms';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 import { MAP_MARKER_COLORS, MAP_MARKER_DEFAULT } from '../../config/tokens';
 
@@ -53,6 +54,7 @@ export interface MapMarkerProps {
   disabled?: boolean;
   /** Contextual styles from template (required for theming) */
   cx: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**
@@ -62,8 +64,8 @@ export interface MapMarkerProps {
  */
 export const MapMarker: React.FC<MapMarkerProps> = ({
   id,
-  lat,
-  lng,
+  lat: _lat,
+  lng: _lng,
   title,
   type,
   thumbnail,
@@ -118,18 +120,19 @@ export const MapMarker: React.FC<MapMarkerProps> = ({
       )}
 
       {/* Marker */}
-      <button
+      <Button
         onClick={() => !disabled && onSelect(id)}
         disabled={disabled}
+        variant="ghost"
+        size="sm"
         className={`
           ${config.marker} rounded-full flex items-center justify-center
-          transition-all duration-200 cursor-pointer
+          transition-all duration-200 cursor-pointer p-0
           ${selected ? 'ring-2 ring-offset-2 ring-current scale-110' : 'hover:scale-105'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           ${markerColor} text-white shadow-lg
         `}
         aria-label={`${title} (${type})`}
-        aria-selected={selected}
       >
         {thumbnail && !imageError && count === 1 ? (
           <img
@@ -156,7 +159,7 @@ export const MapMarker: React.FC<MapMarkerProps> = ({
             {count}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Selection indicator pulse */}
       {selected && (
@@ -170,3 +173,5 @@ export const MapMarker: React.FC<MapMarkerProps> = ({
     </div>
   );
 };
+
+export default MapMarker;

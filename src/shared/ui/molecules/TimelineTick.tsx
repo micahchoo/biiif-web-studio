@@ -23,6 +23,8 @@
  */
 
 import React, { useState } from 'react';
+import { Button } from '../atoms';
+import { IconButton } from './IconButton';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 import { TIMELINE_DENSITY } from '../../config/tokens';
 
@@ -53,6 +55,7 @@ export interface TimelineTickProps {
   disabled?: boolean;
   /** Contextual styles from template (required for theming) */
   cx: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**
@@ -61,7 +64,7 @@ export interface TimelineTickProps {
  * Temporal marker with expandable item preview.
  */
 export const TimelineTick: React.FC<TimelineTickProps> = ({
-  timestamp,
+  timestamp: _timestamp,
   label,
   items,
   position,
@@ -109,7 +112,7 @@ export const TimelineTick: React.FC<TimelineTickProps> = ({
       </span>
 
       {/* Tick dot */}
-      <button
+      <Button
         onClick={() => {
           if (count === 1) {
             onSelectItem(items[0].id);
@@ -118,8 +121,10 @@ export const TimelineTick: React.FC<TimelineTickProps> = ({
           }
         }}
         disabled={disabled}
+        variant="ghost"
+        size="sm"
         className={`
-          ${config.dot} rounded-full transition-all duration-200
+          ${config.dot} rounded-full transition-all duration-200 p-0
           ${getIntensity()}
           ${selected ? 'ring-2 ring-offset-2 ring-current scale-150' : 'hover:scale-125'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
@@ -140,7 +145,7 @@ export const TimelineTick: React.FC<TimelineTickProps> = ({
             {count > 9 ? '9+' : count}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Expanded item popup */}
       {isExpanded && count > 1 && (
@@ -161,26 +166,32 @@ export const TimelineTick: React.FC<TimelineTickProps> = ({
             <span className={`text-sm font-medium ${cx.text}`}>
               {label} ({count} items)
             </span>
-            <button
+            <IconButton
+              icon="close"
+              ariaLabel="Close"
               onClick={() => setIsExpanded(false)}
-              className={`${cx.textMuted} hover:${cx.text}`}
-            >
-              <span className="material-icons text-sm">close</span>
-            </button>
+              variant="ghost"
+              size="sm"
+              className={cx.textMuted}
+              cx={cx}
+            />
           </div>
 
           {/* Item list */}
           <div className="p-2 space-y-1 max-h-48 overflow-auto">
             {items.map((item) => (
-              <button
+              <Button
                 key={item.id}
                 onClick={() => {
                   onSelectItem(item.id);
                   setIsExpanded(false);
                 }}
+                variant="ghost"
+                size="sm"
                 className={`
                   w-full flex items-center gap-2 p-2 rounded
                   text-left transition-colors hover:${cx.headerBg}
+                  justify-start
                 `}
               >
                 {item.thumbnail ? (
@@ -205,7 +216,7 @@ export const TimelineTick: React.FC<TimelineTickProps> = ({
                   <p className={`text-sm truncate ${cx.text}`}>{item.title}</p>
                   <p className={`text-xs ${cx.textMuted}`}>{item.type}</p>
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -213,3 +224,5 @@ export const TimelineTick: React.FC<TimelineTickProps> = ({
     </div>
   );
 };
+
+export default TimelineTick;

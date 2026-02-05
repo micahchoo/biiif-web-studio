@@ -23,14 +23,28 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import fieldStudioPlugin from './eslint-rules/index.js';
 
 export default [
+  // ============================================================================
+  // GLOBAL IGNORES
+  // ============================================================================
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      '_archived/**',
+      '.git/**',
+      'coverage/**',
+    ],
+  },
+
   // ============================================================================
   // GLOBAL RULES (all TypeScript/React files)
   // ============================================================================
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['node_modules/**', 'dist/**', 'build/**'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -151,8 +165,12 @@ export default [
         patterns: [
           // Block all custom hooks (any import starting with "use")
           { group: ['**/use*', '@/hooks/*', '@/src/shared/lib/use*'], message: 'Atoms cannot import hooks. They must be pure, props-driven components.' },
+          // Block domain imports — atoms are UI primitives only
+          { group: ['@/services/*', '@/services/**', '@/features/*', '@/features/**', '@/entities/*', '@/entities/**'], message: 'Atoms cannot import domain logic. They are UI primitives only — use props and design tokens.' },
         ],
       }],
+      // Ban hook-like variable names (catches destructured hooks)
+      'id-denylist': ['error', 'useState', 'useEffect', 'useCallback', 'useMemo', 'useRef', 'useContext'],
     },
   },
 
@@ -166,7 +184,13 @@ export default [
       'src/shared/ui/molecules/**/*.{ts,tsx}',
       'src/features/*/ui/molecules/**/*.{ts,tsx}',
     ],
+    plugins: {
+      '@field-studio': fieldStudioPlugin,
+    },
     rules: {
+      // P2/P3: Custom plugin rules for molecule validation
+      '@field-studio/molecule-props-validation': 'warn',
+      '@field-studio/useeffect-restrictions': 'error',
       'no-restricted-imports': ['error', {
         paths: [
           // Block context hooks — molecules receive these via props
@@ -180,117 +204,192 @@ export default [
           { group: ['@/src/features/*/model/*', '@/src/features/*/hooks/*', '@/services/*'], message: 'Molecules cannot import domain logic. They must be feature-agnostic and reusable.' },
           // Block imports from app layer
           { group: ['@/src/app/*'], message: 'Molecules cannot import from app layer. Context flows down via props.' },
+          // Block molecules importing other molecules (compose atoms only)
+          { group: ['@/src/shared/ui/molecules/*', '@/src/shared/ui/molecules', '../molecules/*', './[A-Z]*'], message: 'Molecules should compose atoms only. Import from ../atoms/ — organisms compose molecules.' },
+        ],
+      }],
+      // Detect useEffect with potentially external reach (API calls, etc.)
+      'no-restricted-syntax': [
+        'warn',
+        // Flag useEffect calling functions with suspicious names
+        {
+          selector: 'CallExpression[callee.name="useEffect"] BlockStatement CallExpression[callee.name=/^(fetch|loadData|getData|api|request)/]',
+          message: 'useEffect in molecules should not call external services. Move to organism or use props callback.',
+        },
+      ],
+    },
+  },
+
+  // ============================================================================
+  // FSD DEPENDENCY RULES - Consolidated to prevent rule overriding
+  // ============================================================================
+
+  // SHARED: No upward dependencies (foundation layer)
+  {
+    files: ['src/shared/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['@/src/features/*', '@/src/features/**'], message: '❌ SHARED: Cannot import from features. No upward dependencies.' },
+          { group: ['@/src/app/*', '@/src/app/**'], message: '❌ SHARED: Cannot import from app. No upward dependencies.' },
+          { group: ['@/src/widgets/*', '@/src/widgets/**'], message: '❌ SHARED: Cannot import from widgets. No upward dependencies.' },
+          { group: ['@/src/entities/*', '@/src/entities/**'], message: '❌ SHARED: Cannot import from entities. No upward dependencies.' },
         ],
       }],
     },
   },
 
-  // ============================================================================
-  // ORGANISM LAYER CONSTRAINTS (Architecture Section 5, Line 272)
-  // "Domain hooks allowed; no routing context"
-  // Organisms receive cx, fieldMode, t, isAdvanced from Template via props
-  // ============================================================================
+  // ENTITIES: Only shared (domain models, no feature logic)
   {
-    files: [
-      'src/features/*/ui/organisms/**/*.{ts,tsx}',
-    ],
+    files: ['src/entities/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['@/src/features/*', '@/src/features/**'], message: '❌ ENTITIES: Cannot import from features. Entities are used BY features.' },
+          { group: ['@/src/app/*', '@/src/app/**'], message: '❌ ENTITIES: Cannot import from app.' },
+          { group: ['@/src/widgets/*', '@/src/widgets/**'], message: '❌ ENTITIES: Cannot import from widgets.' },
+        ],
+      }],
+    },
+  },
+
+  // FEATURES: No app, no other features (isolated slices)
+  // Organisms also have Atomic constraints (no context hooks)
+  {
+    files: ['src/features/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', {
         paths: [
-          // Block context hooks — organisms receive these via props from FieldModeTemplate
-          { name: 'useAppSettings', message: 'Organisms must not import useAppSettings. Receive fieldMode via props from FieldModeTemplate.' },
-          { name: 'useContextualStyles', message: 'Organisms must not import useContextualStyles. Receive cx via props from FieldModeTemplate.' },
-          { name: 'useTerminology', message: 'Organisms must not import useTerminology. Receive t() via props from FieldModeTemplate.' },
-          { name: 'useAbstractionLevel', message: 'Organisms must not import useAbstractionLevel. Receive isAdvanced via props from FieldModeTemplate.' },
+          // Atomic: Organisms must not use context hooks (receive via props)
+          { name: 'useAppSettings', message: '❌ ATOMIC: Organisms must not import useAppSettings. Receive fieldMode via props from Template.' },
+          { name: 'useContextualStyles', message: '❌ ATOMIC: Organisms must not import useContextualStyles. Receive cx via props from Template.' },
+          { name: 'useTerminology', message: '❌ ATOMIC: Organisms must not import useTerminology. Receive t() via props from Template.' },
+          { name: 'useAbstractionLevel', message: '❌ ATOMIC: Organisms must not import useAbstractionLevel. Receive isAdvanced via props from Template.' },
         ],
         patterns: [
-          // Block imports from app layer (except types)
-          { group: ['@/src/app/routes/*', '@/src/app/providers/*'], message: 'Organisms cannot import from app layer. They receive context via props from Templates.' },
-          // Block cross-feature imports
-          { group: ['@/src/features/!(${PWD##*/})/*'], message: 'Organisms cannot import from other features. Use shared layer for cross-cutting concerns.' },
+          // FSD: No app imports
+          { group: ['@/src/app/*', '@/src/app/**'], message: '❌ FSD: Features cannot import from app layer. Receive context via props from Templates.' },
+          // FSD: No cross-feature imports (catches @/src/features/anything)
+          { group: ['@/src/features/*'], message: '❌ FSD: Features cannot import from other features. Use shared layer for cross-cutting concerns.' },
+        ],
+      }],
+    },
+  },
+
+  // WIDGETS: Composition layer (can import features, but not app)
+  {
+    files: ['src/widgets/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['@/src/app/*', '@/src/app/**'], message: '❌ WIDGETS: Cannot import from app layer. Widgets compose feature organisms.' },
         ],
       }],
     },
   },
 
   // ============================================================================
-  // SHARED LAYER CONSTRAINTS (FSD Dependency Rule)
-  // "shared/* cannot import from features/* or app/*"
-  // The shared layer is the foundation — no upward dependencies
+  // ATOMIC BUTTON ENFORCEMENT
+  // Zero tolerance for inline button elements outside of atomic Button component
+  // ============================================================================
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: [
+      'src/shared/ui/atoms/**/*.{ts,tsx}',
+      'ui/primitives/**/*.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXOpeningElement[name.name="button"]',
+          message: 'Inline <button> elements are not allowed. Use atomic Button component from @/src/shared/ui/atoms. Atoms are indivisible - zero inline button definitions tolerated.',
+        },
+      ],
+    },
+  },
+
+  // ============================================================================
+  // PAGE LAYER CONSTRAINTS (Architecture Section 5, Line 274)
+  // "Composition only; max 50 lines"
+  // Pages are route entry points — zero business logic
   // ============================================================================
   {
     files: [
-      'src/shared/**/*.{ts,tsx}',
+      'src/pages/**/*.{ts,tsx}',
+      'src/app/pages/**/*.{ts,tsx}',
+      'src/app/routes/**/*Page.{ts,tsx}',
+      'src/features/**/pages/**/*.{ts,tsx}',
+      '**/Page.tsx',
     ],
     rules: {
+      // P0: Page max-lines - Enforce a maximum line limit for page-level components
+      'max-lines': ['error', { max: 50, skipBlankLines: true, skipComments: true }],
       'no-restricted-imports': ['error', {
+        paths: [
+          // Block state hooks in pages
+          { name: 'react', importNames: ['useState', 'useReducer'], message: 'Pages must be composition-only. State belongs in Templates or Organisms (<50 lines, zero state).' },
+        ],
         patterns: [
-          // Block imports from features layer
-          { group: ['@/src/features/*', '@/src/features/**'], message: 'Shared layer cannot import from features. Shared is the foundation layer with no upward dependencies.' },
-          // Block imports from app layer
-          { group: ['@/src/app/*', '@/src/app/**'], message: 'Shared layer cannot import from app. Shared is the foundation layer with no upward dependencies.' },
-          // Block imports from widgets layer
-          { group: ['@/src/widgets/*', '@/src/widgets/**'], message: 'Shared layer cannot import from widgets. Shared is the foundation layer with no upward dependencies.' },
+          // Block data fetching services
+          { group: ['@/services/*', '@/services/**'], message: 'Pages must not call services directly. Data fetching belongs in Templates or Organisms.' },
         ],
       }],
     },
   },
 
   // ============================================================================
-  // FEATURES LAYER CONSTRAINTS (FSD Dependency Rule)
-  // "features/* cannot import from other features/* or app/*"
-  // Features are isolated vertical slices
+  // TEMPLATE LAYER CONSTRAINTS (Architecture Section 5)
+  // "Context providers only; no data fetching"
+  // Templates provide context to pages — no business logic or data fetching
   // ============================================================================
   {
     files: [
-      'src/features/**/*.{ts,tsx}',
+      'src/app/templates/**/*.{ts,tsx}',
     ],
+    plugins: {
+      '@field-studio': fieldStudioPlugin,
+    },
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          // Block imports from app layer (except templates for type imports)
-          { group: ['@/src/app/routes/*', '@/src/app/providers/*'], message: 'Features cannot import from app routes/providers. Features receive context via props from Templates.' },
-        ],
-      }],
+      // P2: Custom plugin rule for template validation
+      '@field-studio/template-constraints': 'error',
     },
   },
 
   // ============================================================================
-  // ENTITIES LAYER CONSTRAINTS (FSD Dependency Rule)
-  // Entities can only import from shared layer
+  // DESIGN TOKEN ENFORCEMENT
+  // "No magic numbers, no hardcoded values"
+  // Detect hardcoded colors, spacing, timing that should use tokens
   // ============================================================================
   {
-    files: [
-      'src/entities/**/*.{ts,tsx}',
-    ],
+    files: ['src/shared/ui/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          // Block imports from features layer
-          { group: ['@/src/features/*', '@/src/features/**'], message: 'Entities cannot import from features. Entities are domain models used BY features.' },
-          // Block imports from app layer
-          { group: ['@/src/app/*', '@/src/app/**'], message: 'Entities cannot import from app layer.' },
-          // Block imports from widgets layer
-          { group: ['@/src/widgets/*', '@/src/widgets/**'], message: 'Entities cannot import from widgets layer.' },
-        ],
-      }],
-    },
-  },
-
-  // ============================================================================
-  // WIDGETS LAYER CONSTRAINTS (FSD Dependency Rule)
-  // Widgets compose organisms from multiple features — no business logic
-  // ============================================================================
-  {
-    files: [
-      'src/widgets/**/*.{ts,tsx}',
-    ],
-    rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          // Block imports from app layer
-          { group: ['@/src/app/routes/*', '@/src/app/providers/*'], message: 'Widgets cannot import from app routes/providers. Widgets compose feature organisms.' },
-        ],
+      'no-restricted-syntax': [
+        'warn',
+        // Hardcoded Tailwind colors (should use cx.* tokens)
+        {
+          selector: 'Literal[value=/(bg|text|border|ring)-(slate|gray|blue|red|green|yellow|purple|pink|orange|teal|cyan|indigo)-[0-9]{2,3}/]',
+          message: 'Use design tokens (cx.*) from ContextualClassNames instead of hardcoded Tailwind colors.',
+        },
+        // Hardcoded hex colors
+        {
+          selector: 'Literal[value=/#([0-9A-Fa-f]{3}){1,2}/]',
+          message: 'Use COLORS from designSystem.ts instead of hardcoded hex colors.',
+        },
+        // Hardcoded pixel values (likely magic numbers)
+        {
+          selector: 'Literal[value=/^[0-9]+px$/]',
+          message: 'Use SPACING or LAYOUT tokens from designSystem.ts instead of hardcoded pixel values.',
+        },
+      ],
+      // Ban magic numbers for timing (debounce, animation)
+      'no-magic-numbers': ['warn', {
+        ignore: [-1, 0, 1, 2, 10, 100],
+        ignoreArrayIndexes: true,
+        enforceConst: true,
+        detectObjects: false,
       }],
     },
   },
@@ -298,10 +397,19 @@ export default [
   // ============================================================================
   // LEGACY COMPONENTS MIGRATION GUIDANCE
   // Warn about imports from legacy locations to encourage migration
+  // Must not override FSD rules — applied only to files not covered by stricter rules
   // ============================================================================
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/shared/ui/atoms/**', 'components/_archived/**'],
+    ignores: [
+      'src/shared/ui/atoms/**',
+      'src/shared/ui/molecules/**',
+      'src/features/**',
+      'src/entities/**',
+      'src/widgets/**',
+      'src/app/**',
+      'components/_archived/**',
+    ],
     rules: {
       'no-restricted-imports': ['warn', {
         patterns: [

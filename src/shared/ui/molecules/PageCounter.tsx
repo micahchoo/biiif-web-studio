@@ -41,6 +41,7 @@ export interface PageCounterProps {
   disabled?: boolean;
   /** Contextual styles from template (required for theming) */
   cx: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**
@@ -167,17 +168,20 @@ export const PageCounter: React.FC<PageCounterProps> = ({
             autoFocus
           />
         ) : (
-          <button
+          <Button
             onClick={() => allowDirectEntry && setIsEditing(true)}
+            disabled={disabled || !allowDirectEntry}
+            variant="ghost"
+            size="sm"
             className={`
               text-sm font-medium ${cx.text}
               ${allowDirectEntry ? `hover:${cx.accent} cursor-pointer` : ''}
+              !px-1
             `}
-            disabled={disabled || !allowDirectEntry}
             aria-label={allowDirectEntry ? 'Click to edit page number' : undefined}
           >
             {current}
-          </button>
+          </Button>
         )}
 
         <span className={`text-sm ${cx.textMuted}`}>/</span>
@@ -212,3 +216,5 @@ export const PageCounter: React.FC<PageCounterProps> = ({
     </div>
   );
 };
+
+export default PageCounter;

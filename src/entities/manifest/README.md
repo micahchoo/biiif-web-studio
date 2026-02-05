@@ -14,10 +14,24 @@ In IIIF Presentation API 3.0, a Manifest:
 
 ```
 src/entities/manifest/
-├── model.ts      ← Selectors: read manifest data from vault
-├── actions.ts    ← Action creators: modify manifest data
-├── index.ts      ← Public API export
-└── README.md     ← This file
+├── model.ts          ← Selectors: read manifest data from vault
+├── actions.ts        ← Action creators: modify manifest data
+├── index.ts          ← Public API export
+├── README.md         ← This file
+└── model/
+    └── vault/        ← Vault-specific implementations
+        ├── index.ts
+        ├── types.ts
+        ├── vault.ts
+        ├── normalization.ts
+        ├── denormalization.ts
+        ├── queries.ts
+        ├── updates.ts
+        ├── movement.ts
+        ├── cloning.ts
+        ├── extensions.ts
+        ├── trash.ts
+        └── collections.ts
 ```
 
 ## Usage in Features
@@ -32,6 +46,11 @@ const manifestData = manifest.model.selectById(state, manifestId);
 const canvasIds = manifest.model.selectCanvases(state, manifestId);
 const parentCollection = manifest.model.selectParentCollection(state, manifestId);
 const allManifests = manifest.model.selectAll(state);
+const orphaned = manifest.model.selectOrphaned(state); // Not in any collection
+const byLabel = manifest.model.selectByLabel(state, 'search term');
+const metadata = manifest.model.selectMetadata(state, manifestId);
+const rights = manifest.model.selectRights(state, manifestId);
+const navDate = manifest.model.selectNavDate(state, manifestId);
 ```
 
 ### Modifying Manifest Data (Actions)
@@ -50,8 +69,32 @@ vault.dispatch(action);
 const action = manifest.actions.addCanvas(manifestId, canvasId, 0); // at index 0
 vault.dispatch(action);
 
+// Remove canvas
+const action = manifest.actions.removeCanvas(manifestId, canvasId);
+vault.dispatch(action);
+
 // Reorder canvases
 const action = manifest.actions.reorderCanvases(manifestId, [canvas3, canvas1, canvas2]);
+vault.dispatch(action);
+
+// Move to different collection
+const action = manifest.actions.moveToCollection(manifestId, collectionId);
+vault.dispatch(action);
+
+// Update navDate (for timeline)
+const action = manifest.actions.updateNavDate(manifestId, '2024-01-15');
+vault.dispatch(action);
+
+// Update viewing direction
+const action = manifest.actions.updateViewingDirection(manifestId, 'right-to-left');
+vault.dispatch(action);
+
+// Update behavior
+const action = manifest.actions.updateBehavior(manifestId, ['paged']);
+vault.dispatch(action);
+
+// Batch update
+const action = manifest.actions.batchUpdate(manifestId, { label: { en: ['New'] } });
 vault.dispatch(action);
 ```
 
@@ -67,6 +110,10 @@ vault.dispatch(action);
 | `selectOrphaned(state)` | Get manifests not in any collection |
 | `selectByLabel(state, query)` | Search manifests by label |
 | `selectMetadata(state, manifestId)` | Get metadata array |
+| `selectRights(state, manifestId)` | Get rights statement |
+| `selectNavDate(state, manifestId)` | Get navigation date |
+| `selectAncestors(state, manifestId)` | Get path to root |
+| `selectDescendants(state, manifestId)` | Get all nested items |
 
 ## Available Actions
 
@@ -75,12 +122,33 @@ vault.dispatch(action);
 | `updateLabel(manifestId, label)` | Update manifest label |
 | `updateSummary(manifestId, summary)` | Update description |
 | `updateMetadata(manifestId, metadata)` | Update metadata array |
+| `updateRights(manifestId, rights)` | Update rights statement |
+| `updateNavDate(manifestId, navDate)` | Update navigation date |
+| `updateViewingDirection(manifestId, direction)` | Update viewing direction |
+| `updateBehavior(manifestId, behavior)` | Update viewing behaviors |
 | `addCanvas(manifestId, canvasId, index?)` | Add canvas at position |
 | `removeCanvas(manifestId, canvasId)` | Remove canvas |
 | `reorderCanvases(manifestId, canvasIds)` | Reorder canvas list |
-| `setThumbnail(manifestId, canvasId)` | Set thumbnail canvas |
-| `addToCollection(manifestId, collectionId)` | Add to collection |
-| `removeFromCollection(manifestId, collectionId)` | Remove from collection |
+| `moveToCollection(manifestId, collectionId, index?)` | Move to collection |
+| `batchUpdate(manifestId, changes)` | Update multiple properties |
+
+## Vault Model (`model/vault/`)
+
+The vault subdirectory contains the underlying vault implementation:
+
+| File | Purpose |
+|------|---------|
+| `types.ts` | Type definitions for vault state |
+| `vault.ts` | Core vault state management |
+| `normalization.ts` | IIIF to normalized state conversion |
+| `denormalization.ts` | Normalized state to IIIF conversion |
+| `queries.ts` | Query functions (getEntity, getChildren, etc.) |
+| `updates.ts` | Update functions (add, remove, update) |
+| `movement.ts` | Move/reorder operations |
+| `cloning.ts` | Deep clone operations |
+| `extensions.ts` | Vault extension points |
+| `trash.ts` | Soft delete / trash functionality |
+| `collections.ts` | Collection-specific operations |
 
 ## Relationships
 
@@ -93,29 +161,17 @@ Collection (parent)
             └── Thumbnail (reference to one Canvas)
 ```
 
+A manifest can belong to multiple collections (many-to-many via membership).
+
 ## Rules
 
 ✅ **Correct Usage:**
 - Import from `@/src/entities` not from `@/services`
 - Use selectors for reading, actions for writing
-- Compose with canvas selectors for full hierarchy
+- Dispatch actions through vault
+- Use entity operations, not raw vault calls
 
 ❌ **Incorrect Usage:**
-- Don't modify `items` array directly
-- Don't import from `services/vault` in features
-- Don't assume single parent (manifests can be in multiple collections)
-
-## Dependencies
-
-```
-manifest/entity
-  ├── imports: services/vault, services/actions
-  ├── used by: features/archive, features/board-design, features/export
-  └── depends on: types.ts (IIIFManifest), entities/canvas
-```
-
----
-
-See also:
-- [`src/entities/canvas/`](../canvas/) — Child entity
-- [`src/entities/collection/`](../collection/) — Parent entity
+- Don't import directly from `services/vault` in features
+- Don't mutate manifest data directly
+- Don't call vault methods directly from features

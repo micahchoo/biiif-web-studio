@@ -29,6 +29,7 @@ export interface SelectionToolbarProps {
   cx: ContextualClassNames;
   /** Terminology function for "selected" label */
   t: (key: string) => string;
+  fieldMode?: boolean;
 }
 
 /**

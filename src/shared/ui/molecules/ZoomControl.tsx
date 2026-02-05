@@ -47,6 +47,7 @@ export interface ZoomControlProps {
   disabled?: boolean;
   /** Contextual styles from template (required for theming) */
   cx: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**

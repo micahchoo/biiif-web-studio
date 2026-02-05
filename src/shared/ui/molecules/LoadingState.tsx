@@ -55,7 +55,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   skeleton = false,
   className = '',
   cx = {},
-  fieldMode = false,
+  fieldMode: _fieldMode = false,
 }) => {
   // Context is provided via props (no hook calls)
 

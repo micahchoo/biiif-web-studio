@@ -466,7 +466,7 @@ export {
 } from './inputValidation';
 export type {
   ValidationOptions,
-  ValidationResult,
+  ValidationResult as InputValidationResult,
 } from './inputValidation';
 
 // ============================================================================

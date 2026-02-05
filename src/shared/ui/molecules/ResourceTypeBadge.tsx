@@ -39,6 +39,7 @@ export interface ResourceTypeBadgeProps {
   cx: ContextualClassNames;
   /** Terminology function for localized labels */
   t: (key: string) => string;
+  fieldMode?: boolean;
 }
 
 /**

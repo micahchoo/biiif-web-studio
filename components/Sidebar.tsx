@@ -10,7 +10,7 @@ import {
   isValidChildType
 } from '../utils/iiifHierarchy';
 import { useResizablePanel } from '../hooks/useResizablePanel';
-import { useAppSettings } from '../hooks/useAppSettings';
+import { useAppSettings } from '@/src/app/providers/useAppSettings';
 
 interface SidebarProps {
   root: IIIFItem | null;

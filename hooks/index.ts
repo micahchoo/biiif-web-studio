@@ -57,7 +57,14 @@ export type {
 // ============================================================================
 // Application State
 // ============================================================================
-export { useAppSettings } from './useAppSettings';
+
+/**
+ * @deprecated Import from '@/src/app/providers' instead.
+ * This export is kept for backwards compatibility during migration.
+ * Organisms should receive settings via props from FieldModeTemplate, not import directly.
+ */
+export { useAppSettings } from '@/src/app/providers';
+
 export { useURLState } from './useURLState';
 
 // ============================================================================
@@ -146,18 +153,44 @@ export { useSharedSelection } from './useSharedSelection';
 export { useNavigationGuard } from './useNavigationGuard';
 
 // ============================================================================
+// List Filtering & Sorting
+// ============================================================================
+export { useListFilter } from './useListFilter';
+export type {
+  SortConfig,
+  SortDirection,
+  UseListFilterOptions,
+  UseListFilterReturn,
+} from './useListFilter';
+
+// ============================================================================
+// Selection Management
+// ============================================================================
+export { useSelection } from './useSelection';
+export type {
+  UseSelectionOptions,
+  UseSelectionReturn,
+} from './useSelection';
+
+// ============================================================================
 // Progressive Disclosure (Phase 3 UX Simplification)
 // ============================================================================
 export {
   useAbstractionLevel,
   type UseAbstractionLevelReturn
 } from './useAbstractionLevel';
+
+/**
+ * @deprecated Import from '@/src/app/providers' instead.
+ * This export is kept for backwards compatibility during migration.
+ * Organisms should receive terminology via props from FieldModeTemplate, not import directly.
+ */
 export {
   useTerminology,
   useTerminologyWithLevel,
   type UseTerminologyOptions,
   type UseTerminologyReturn
-} from './useTerminology';
+} from '@/src/app/providers';
 
 // ============================================================================
 // Virtualization

@@ -7,7 +7,7 @@ import { ShareButton } from './ShareButton';
 import { GeoEditor } from './GeoEditor';
 import { useResizablePanel } from '../hooks/useResizablePanel';
 import { RESOURCE_TYPE_CONFIG } from '../constants';
-import { useTerminology } from '../hooks/useTerminology';
+import { useTerminology } from '@/src/app/providers/useTerminology';
 import { isPropertyAllowed } from '../utils/iiifSchema';
 import { getValidationForField, ValidationIssue } from '../services';
 import { suggestBehaviors } from '../utils/iiifBehaviors';

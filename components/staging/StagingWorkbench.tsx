@@ -13,7 +13,7 @@ import { SourcePane } from './SourcePane';
 import { ArchivePane } from './ArchivePane';
 import { SendToCollectionModal } from './SendToCollectionModal';
 import { MetadataTemplateExport } from './MetadataTemplateExport';
-import { useTerminology } from '../../hooks/useTerminology';
+import { useTerminology } from '@/src/app/providers/useTerminology';
 
 interface StagingWorkbenchProps {
   initialTree: FileTree;

@@ -5,6 +5,8 @@
  */
 
 import React from 'react';
+import { Button } from '@/ui/primitives/Button';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface AnnotationFormProps {
   text: string;
@@ -16,6 +18,8 @@ export interface AnnotationFormProps {
   onSave: () => void;
   onUndo: () => void;
   onClear: () => void;
+  cx?: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 const MOTIVATIONS: { value: 'commenting' | 'tagging' | 'describing'; label: string }[] = [
@@ -46,17 +50,15 @@ export const AnnotationForm: React.FC<AnnotationFormProps> = ({
         </label>
         <div className="flex gap-2">
           {MOTIVATIONS.map((m) => (
-            <button
+            <Button
               key={m.value}
               onClick={() => onMotivationChange(m.value)}
-              className={`flex-1 py-2 text-[10px] font-bold uppercase rounded ${
-                motivation === m.value
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white/5 text-white/40 hover:text-white'
-              }`}
+              variant={motivation === m.value ? 'primary' : 'ghost'}
+              size="sm"
+              className="flex-1 text-[10px]"
             >
               {m.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -81,32 +83,35 @@ export const AnnotationForm: React.FC<AnnotationFormProps> = ({
 
       {/* Actions */}
       <div className="space-y-2">
-        <button
+        <Button
           onClick={onSave}
           disabled={!canSave}
-          className={`w-full py-3 rounded-lg font-black uppercase tracking-widest text-xs transition-all ${
-            canSave
-              ? 'bg-green-600 text-white hover:bg-green-500 shadow-xl'
-              : 'bg-white/5 text-white/20 cursor-not-allowed'
-          }`}
+          variant="success"
+          size="lg"
+          fullWidth
+          className="font-black uppercase tracking-widest text-xs"
         >
           Save Annotation
-        </button>
+        </Button>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={onUndo}
-            disabled={pointCount === 0}
-            className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold uppercase rounded"
+            variant="ghost"
+            size="sm"
+            fullWidth
+            className="text-[10px] font-bold uppercase"
           >
             Undo Point
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onClear}
-            disabled={pointCount === 0}
-            className="flex-1 py-2 bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-white/60 text-[10px] font-bold uppercase rounded"
+            variant="ghost"
+            size="sm"
+            fullWidth
+            className="text-[10px] font-bold uppercase hover:text-red-400"
           >
             Clear
-          </button>
+          </Button>
         </div>
       </div>
     </div>

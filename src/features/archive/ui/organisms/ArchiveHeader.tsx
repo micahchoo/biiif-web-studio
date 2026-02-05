@@ -15,8 +15,8 @@ import React from 'react';
 import { SearchField } from '@/src/shared/ui/molecules/SearchField';
 import { ViewToggle } from '@/src/shared/ui/molecules/ViewToggle';
 import { Icon } from '@/src/shared/ui/atoms';
-import type { ArchiveViewMode } from '../../model';
-import { VIEW_MODE_OPTIONS } from '../../model';
+import { Button } from '@/ui/primitives/Button';
+import { type ArchiveViewMode, VIEW_MODE_OPTIONS } from '../../model';
 
 export interface ArchiveHeaderProps {
   /** Current search/filter value */
@@ -196,24 +196,26 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {selectionActions.map((action) => (
-              <button
+              <Button
                 key={action.label}
                 onClick={action.onClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-700 rounded-lg transition-all text-white text-xs font-medium whitespace-nowrap"
+                variant="ghost"
+                size="sm"
+                icon={<Icon name={action.icon} className={`text-${action.color}-400 text-sm`} />}
               >
-                <Icon name={action.icon} className={`text-${action.color}-400 text-sm`} />
                 {action.label}
-              </button>
+              </Button>
             ))}
           </div>
           <div className="flex-1" />
-          <button
+          <Button
             onClick={onClearSelection}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-all"
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="close" className="text-sm" />}
             title="Clear selection"
-          >
-            <Icon name="close" className="text-sm" />
-          </button>
+            aria-label="Clear selection"
+          />
         </div>
       )}
 
@@ -223,24 +225,24 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
           <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 shadow-2xl rounded-2xl p-1 flex items-center gap-1 ring-4 ring-black/10 overflow-x-auto no-scrollbar max-w-full">
             <div className="flex p-1 gap-1 shrink-0">
               {mobileActions.map((action) => (
-                <button
+                <Button
                   key={action.label}
                   onClick={action.onClick}
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-slate-800 rounded-xl transition-all text-white group whitespace-nowrap"
+                  variant="ghost"
+                  size="sm"
+                  icon={<Icon name={action.icon} className={`text-${action.color}-400`} />}
                 >
-                  <Icon name={action.icon} className={`text-${action.color}-400`} />
-                  <div className="text-left">
-                    <div className="text-xs font-bold">{action.label}</div>
-                  </div>
-                </button>
+                  {action.label}
+                </Button>
               ))}
               <div className="w-px h-8 bg-slate-700 mx-1" />
-              <button
+              <Button
                 onClick={onClearSelection}
-                className="p-3 text-slate-500 hover:text-white hover:bg-red-500/20 rounded-xl transition-all"
-              >
-                <Icon name="close" />
-              </button>
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="close" />}
+                aria-label="Clear selection"
+              />
             </div>
           </div>
         </div>

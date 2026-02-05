@@ -1,0 +1,17 @@
+{
+  "name": "@field-studio/eslint-plugin",
+  "version": "1.0.0",
+  "description": "Custom ESLint rules for Atomic Design + FSD architecture enforcement",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "atomic-design",
+    "feature-sliced-design",
+    "fsd"
+  ],
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  }
+}

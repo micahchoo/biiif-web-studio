@@ -9,7 +9,6 @@
 
 import {
   getAncestors,
-  getChildIds,
   getCollectionMembers,
   getCollectionsContaining,
   getDescendants,

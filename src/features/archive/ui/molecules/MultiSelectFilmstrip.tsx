@@ -13,9 +13,10 @@
 
 import React, { useEffect, useRef } from 'react';
 import { getIIIFValue, IIIFCanvas } from '@/types';
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/src/shared/ui/atoms';
 import { StackedThumbnail } from '@/src/shared/ui/molecules';
 import { RESOURCE_TYPE_CONFIG } from '@/constants';
+import { Button } from '@/ui/primitives/Button';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface MultiSelectFilmstripProps {
@@ -48,7 +49,7 @@ export const MultiSelectFilmstrip: React.FC<MultiSelectFilmstripProps> = ({
   cx,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const focusedRef = useRef<HTMLButtonElement>(null);
+  const focusedRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to focused item
   useEffect(() => {
@@ -76,13 +77,14 @@ export const MultiSelectFilmstrip: React.FC<MultiSelectFilmstripProps> = ({
             selected
           </span>
         </div>
-        <button
+        <Button
           onClick={onClear}
-          className={`p-1 rounded transition-colors ${fieldMode ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}
+          variant="ghost"
+          size="sm"
+          icon={<Icon name="close" className="text-sm" />}
           title="Clear selection"
-        >
-          <Icon name="close" className="text-sm" />
-        </button>
+          aria-label="Clear selection"
+        />
       </div>
 
       {/* Thumbnail list */}
@@ -93,11 +95,11 @@ export const MultiSelectFilmstrip: React.FC<MultiSelectFilmstripProps> = ({
           const config = RESOURCE_TYPE_CONFIG['Canvas'];
 
           return (
-            <button
+            <div
               key={item.id}
               ref={isFocused ? focusedRef : undefined}
               onClick={() => onFocus(item)}
-              className={`shrink-0 flex items-center transition-all rounded-lg overflow-hidden ${
+              className={`shrink-0 flex items-center transition-all rounded-lg overflow-hidden cursor-pointer ${
                 isFocused
                   ? (fieldMode ? 'bg-yellow-400/10 ring-2 ring-yellow-400' : 'bg-iiif-blue/10 ring-2 ring-iiif-blue')
                   : 'hover:bg-black/5'
@@ -136,7 +138,7 @@ export const MultiSelectFilmstrip: React.FC<MultiSelectFilmstripProps> = ({
                   className={`text-xs shrink-0 ${fieldMode ? 'text-yellow-400' : 'text-iiif-blue'}`}
                 />
               )}
-            </button>
+            </div>
           );
         })}
       </div>

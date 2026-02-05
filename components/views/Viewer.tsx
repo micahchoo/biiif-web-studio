@@ -12,8 +12,8 @@ import { contentStateService } from '../../services/contentState';
 import { contentSearchService, SearchResult, SearchService } from '../../services/contentSearchService';
 import { createSpatialTarget, createSpecificResource, getSpatialRegion, parseTarget } from '../../services/selectors';
 import { VIEWPORT_DEFAULTS } from '../../constants/viewport';
-import { useAppSettings } from '../../hooks/useAppSettings';
-import { useTerminology } from '../../hooks/useTerminology';
+import { useAppSettings } from '@/src/app/providers/useAppSettings';
+import { useTerminology } from '@/src/app/providers/useTerminology';
 
 declare const OpenSeadragon: any;
 

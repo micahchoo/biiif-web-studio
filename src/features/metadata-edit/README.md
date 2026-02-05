@@ -16,18 +16,22 @@ This feature handles:
 ```
 metadata-edit/
 ├── ui/
-│   └── organisms/
-│       └── MetadataView.tsx      ← Main spreadsheet view (refactored from MetadataSpreadsheet)
+│   ├── organisms/
+│   │   ├── MetadataView.tsx        ← Main spreadsheet view
+│   │   └── MetadataEditorPanel.tsx ← Side panel for single-item editing
+│   └── molecules/
+│       └── CSVImportModal.tsx      ← CSV import wizard
 ├── model/
-│   └── index.ts                  ← Flattening, CSV, filtering, change detection
-├── index.ts                      ← Public API
-└── README.md                     ← This file
+│   └── index.ts                    ← Flattening, CSV, filtering, change detection
+├── index.ts                        ← Public API
+└── README.md                       ← This file
 ```
 
 ## Atomic Design Compliance
 
 ### Organisms (This Feature)
 - **MetadataView**: Composes ViewContainer, FilterInput, Toolbar, EmptyState molecules
+- **MetadataEditorPanel**: Side panel for editing single item metadata
 - Receives `cx` and `fieldMode` via props from FieldModeTemplate
 - No direct hook calls to useAppSettings or useContextualStyles
 
@@ -39,11 +43,12 @@ metadata-edit/
 
 ### Atoms Used (From Shared)
 - `Button`: Action buttons
+- `Input`: Form inputs
 
 ## Usage
 
 ```typescript
-import { MetadataView } from '@/src/features/metadata-edit';
+import { MetadataView, MetadataEditorPanel } from '@/src/features/metadata-edit';
 
 <FieldModeTemplate>
   {({ cx, fieldMode }) => (
@@ -61,22 +66,43 @@ import { MetadataView } from '@/src/features/metadata-edit';
 
 ## Model API
 
-### Flattening
-```typescript
-import { flattenTree, type FlatItem } from '@/src/features/metadata-edit';
+### Types
 
-const items: FlatItem[] = flattenTree(root, 'All'); // or 'Collection', 'Manifest', 'Canvas'
+```typescript
+interface FlatItem {
+  id: string;
+  type: string;
+  label: string;
+  summary: string;
+  metadata: Record<string, string>;
+  rights: string;
+  navDate: string;
+  viewingDirection: string;
+  _blobUrl?: string;
+}
+
+type ResourceTab = 'All' | 'Collection' | 'Manifest' | 'Canvas';
+```
+
+### Flattening
+
+```typescript
+import { flattenIIIFItem, type FlatItem } from '@/src/features/metadata-edit';
+
+const items: FlatItem[] = flattenIIIFItem(root, 'All'); // or 'Collection', 'Manifest', 'Canvas'
 ```
 
 ### Filtering
+
 ```typescript
-import { filterByTerm, filterByIds } from '@/src/features/metadata-edit';
+import { filterByTerm, filterByType } from '@/src/features/metadata-edit';
 
 const filtered = filterByTerm(items, 'search term');
-const selection = filterByIds(items, selectedIds);
+const byType = filterByType(items, 'Manifest');
 ```
 
 ### CSV Export
+
 ```typescript
 import { itemsToCSV, extractColumns } from '@/src/features/metadata-edit';
 
@@ -84,24 +110,83 @@ const columns = extractColumns(items);
 const csv = itemsToCSV(items, columns);
 ```
 
-### Change Detection
-```typescript
-import { detectChanges } from '@/src/features/metadata-edit';
+### CSV Import
 
-const changedIds = detectChanges(currentItems, originalItems);
+```typescript
+import { parseCSV, validateImport } from '@/src/features/metadata-edit';
+
+const result = parseCSV(csvText);
+const validation = validateImport(result.items, existingItems);
 ```
 
-## Refactor Status
+### Change Detection
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| MetadataView organism | ✅ New | Refactored from MetadataSpreadsheet |
-| Model layer | ✅ New | Extracted and centralized |
-| MetadataEditorPanel | ❌ Pending | Extract from MetadataEditor.tsx |
-| CSV import modal | ❌ Pending | Create as molecule |
-| Navigation guard | ❌ Pending | Integrate with app layer |
+```typescript
+import { detectChanges, hasUnsavedChanges } from '@/src/features/metadata-edit';
 
-## Legacy References
+const changedIds = detectChanges(currentItems, originalItems);
+const hasChanges = hasUnsavedChanges(currentItems, originalItems);
+```
 
-- `components/views/MetadataSpreadsheet.tsx` - Original 722-line component (reference only)
-- `components/MetadataEditor.tsx` - Original 395-line panel (reference only)
+## Public API
+
+```typescript
+// Components
+export { MetadataView } from './ui/organisms/MetadataView';
+export { MetadataEditorPanel } from './ui/organisms/MetadataEditorPanel';
+export { CSVImportModal } from './ui/molecules/CSVImportModal';
+
+// Types
+export type { MetadataViewProps } from './ui/organisms/MetadataView';
+export type { MetadataEditorPanelProps } from './ui/organisms/MetadataEditorPanel';
+export type { CSVImportModalProps, ImportStep, CSVImportResult } from './ui/molecules/CSVImportModal';
+
+// Model
+export {
+  manifest,
+  canvas,
+  collection,
+  flattenIIIFItem,
+  filterByTerm,
+  filterByType,
+  itemsToCSV,
+  parseCSV,
+  validateImport,
+  extractColumns,
+  detectChanges,
+  hasUnsavedChanges,
+  IIIF_PROPERTY_SUGGESTIONS,
+  type FlatItem,
+  type ResourceTab,
+} from './model';
+```
+
+## Suggested Properties
+
+The following Dublin Core properties are suggested for metadata editing:
+
+```typescript
+const IIIF_PROPERTY_SUGGESTIONS = [
+  'Title',
+  'Creator',
+  'Date',
+  'Description',
+  'Subject',
+  'Rights',
+  'Source',
+  'Type',
+  'Format',
+  'Identifier',
+  'Language',
+  'Coverage',
+  'Publisher',
+  'Contributor',
+  'Relation',
+];
+```
+
+## Molecules Used
+
+| Molecule | Purpose | Source |
+|----------|---------|--------|
+| `ViewContainer` | View wrapper with header | `src/shared/ui/molecules/` |

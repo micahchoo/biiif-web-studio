@@ -6,9 +6,17 @@ Layout wrappers that provide context to feature organisms. Templates are the bri
 
 **"Features are context-agnostic. Templates provide context."**
 
-- Features don't import useAppSettings or useContextualStyles
+- Features don't import `useAppSettings` or `useContextualStyles`
 - Features don't know about routing
-- Templates inject cx, fieldMode, and layout structure via props/render props
+- Templates inject `cx`, `fieldMode`, `t`, and `isAdvanced` via render props
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `FieldModeTemplate.tsx` | Injects fieldMode, cx, t, isAdvanced via render props |
+| `BaseTemplate.tsx` | Provides sidebar, header, main layout structure |
+| `index.ts` | Barrel export for all templates |
 
 ## Available Templates
 
@@ -16,24 +24,21 @@ Layout wrappers that provide context to feature organisms. Templates are the bri
 
 **Responsibility:** Inject fieldMode and design tokens (cx) context
 
-Wraps organisms with app settings context. Organisms receive `cx` and `fieldMode` via render props.
+Wraps organisms with app settings context. Organisms receive `cx`, `fieldMode`, `t`, and `isAdvanced` via render props.
 
 ```typescript
 import { FieldModeTemplate } from '@/src/app/templates';
 
-export const ArchiveRoute = () => (
-  <FieldModeTemplate>
-    {({ cx, fieldMode, t, isAdvanced }) => (
-      <ArchiveView
-        cx={cx}
-        fieldMode={fieldMode}
-        t={t}
-        isAdvanced={isAdvanced}
-        // ... other props
-      />
-    )}
-  </FieldModeTemplate>
-);
+<FieldModeTemplate>
+  {({ cx, fieldMode, t, isAdvanced }) => (
+    <ArchiveView
+      cx={cx}
+      fieldMode={fieldMode}
+      t={t}
+      isAdvanced={isAdvanced}
+    />
+  )}
+</FieldModeTemplate>
 ```
 
 **Provides:**
@@ -45,12 +50,11 @@ export const ArchiveRoute = () => (
   - `cx.button` — Button styles
   - Plus 7+ more tokens
 - `fieldMode: boolean` — Is high-contrast field mode active?
-- `t: (key: string) => string` — Terminology function (maps IIIF types to user-facing labels based on abstraction level)
+- `t: (key: string) => string` — Terminology function (maps IIIF types to user-facing labels)
 - `isAdvanced: boolean` — Progressive disclosure gate (show advanced UI when true)
 
-**No Props:**
-- FieldModeTemplate reads settings internally via `useAppSettings()`
-- No props to pass — it's a context provider
+**Props:**
+- `children: (props: FieldModeTemplateRenderProps) => ReactNode` — Render function receiving context
 
 **When to use:**
 - Wrapping any view that needs theme-aware styling
@@ -66,16 +70,14 @@ Wraps the entire app or major sections with consistent layout.
 ```typescript
 import { BaseTemplate } from '@/src/app/templates';
 
-export const MainApp = () => (
-  <BaseTemplate
-    showSidebar={showSidebar}
-    onSidebarToggle={() => setShowSidebar(!showSidebar)}
-    headerContent={<AppHeader />}
-    sidebarContent={<Sidebar />}
-  >
-    {/* Main content routed here */}
-  </BaseTemplate>
-);
+<BaseTemplate
+  showSidebar={showSidebar}
+  onSidebarToggle={() => setShowSidebar(!showSidebar)}
+  headerContent={<AppHeader />}
+  sidebarContent={<Sidebar />}
+>
+  {/* Main content goes here */}
+</BaseTemplate>
 ```
 
 **Props:**
@@ -98,142 +100,75 @@ export const MainApp = () => (
 ```
 
 **When to use:**
-- Wrapping the root app or major sections
-- When you need sidebar + header layout
-- For multi-pane views
+- Root app layout
+- Major section layouts
+- Any view needing consistent sidebar/header structure
 
-## Composition Pattern
+## Combining Templates
 
-Templates are often composed together:
-
-```typescript
-export const ArchiveRoute = () => (
-  <BaseTemplate
-    showSidebar={showSidebar}
-    onSidebarToggle={handleToggleSidebar}
-    sidebarContent={<Sidebar />}
-  >
-    {/* BaseTemplate provides layout; FieldModeTemplate provides context */}
-    <FieldModeTemplate>
-      {({ cx, fieldMode, t, isAdvanced }) => (
-        <ArchiveView cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />
-      )}
-    </FieldModeTemplate>
-  </BaseTemplate>
-);
-```
-
-## Usage Guide
-
-### For Organisms
-
-**Organisms receive context via props, not via hooks:**
+Templates are designed to be nested:
 
 ```typescript
-// ✅ CORRECT - Organism receives context as props
-export const ArchiveView = ({ cx, fieldMode, t, isAdvanced, root }) => {
-  return (
-    <div className={cx.surface}>
-      {/* Use cx for styling */}
-      {/* Use fieldMode for conditional logic */}
-      {/* Use t for terminology, isAdvanced for progressive disclosure */}
-    </div>
-  );
-};
-
-interface ArchiveViewProps {
-  cx: ContextualClassNames;
-  fieldMode: boolean;
-  t: (key: string) => string;
-  isAdvanced: boolean;
-  root: IIIFItem;
-}
+<BaseTemplate
+  showSidebar={showSidebar}
+  onSidebarToggle={toggleSidebar}
+  headerContent={<Header />}
+  sidebarContent={<Sidebar />}
+>
+  <FieldModeTemplate>
+    {({ cx, fieldMode, t, isAdvanced }) => (
+      <ArchiveView
+        root={root}
+        cx={cx}
+        fieldMode={fieldMode}
+        t={t}
+        isAdvanced={isAdvanced}
+      />
+    )}
+  </FieldModeTemplate>
+</BaseTemplate>
 ```
 
-**Organisms do NOT call context hooks:**
+## Memoization
+
+`FieldModeTemplate` is memoized to prevent unnecessary re-renders when settings haven't changed. This is critical for maintaining <50ms paint time after context changes.
+
+## Migration from Prop-Drilling
+
+Before templates, fieldMode was prop-drilled through many layers:
 
 ```typescript
-// ❌ WRONG - Organism shouldn't call hooks
-export const ArchiveView = ({ root }) => {
-  const cx = useContextualStyles(); // WRONG!
-  const { settings } = useAppSettings(); // WRONG!
-
-  return (
-    <div className={cx.surface}>
-      {/* ... */}
-    </div>
-  );
-};
+// ❌ OLD: Prop-drilling
+<App fieldMode={fieldMode}>
+  <Page fieldMode={fieldMode}>
+    <View fieldMode={fieldMode}>
+      <Component fieldMode={fieldMode}>
+        <Atom fieldMode={fieldMode} /> {/* Finally used here */}
+      </Component>
+    </View>
+  </Page>
+</App>
 ```
 
-### For Routes/Views
-
-**Routes compose templates and organisms:**
+With templates, context is injected at the boundary:
 
 ```typescript
-export const ArchivePage = () => {
-  const [showSidebar, setShowSidebar] = useState(true);
-
-  return (
-    <BaseTemplate
-      showSidebar={showSidebar}
-      onSidebarToggle={() => setShowSidebar(!showSidebar)}
-      sidebarContent={<Sidebar />}
-    >
-      <FieldModeTemplate>
-        {({ cx, fieldMode, t, isAdvanced }) => (
-          <ArchiveView
-            cx={cx}
-            fieldMode={fieldMode}
-            t={t}
-            isAdvanced={isAdvanced}
-            // ... entity data
-          />
-        )}
-      </FieldModeTemplate>
-    </BaseTemplate>
-  );
-};
+// ✅ NEW: Template injection
+<FieldModeTemplate>
+  {({ cx, fieldMode }) => (
+    <View cx={cx} fieldMode={fieldMode} /> {/* Receive at view boundary */}
+  )}
+</FieldModeTemplate>
 ```
 
-## Rules
+## Type Exports
 
-✅ **Templates CAN:**
-- Provide context via props or render props
-- Manage layout structure
-- Call context hooks (useAppSettings, useContextualStyles, etc.)
-- Compose other templates
-
-❌ **Templates CANNOT:**
-- Contain UI business logic
-- Know about feature-specific state
-- Import from features
-- Manage global app state
-
-## Template Hierarchy
-
+```typescript
+import {
+  FieldModeTemplate,
+  type FieldModeTemplateProps,
+  type FieldModeTemplateRenderProps,
+  BaseTemplate,
+  type BaseTemplateProps,
+} from '@/src/app/templates';
 ```
-App (with AppProviders)
-  └── BaseTemplate (layout)
-      └── FieldModeTemplate (context)
-          └── Organisms (ArchiveView, etc.)
-              └── Molecules (SearchField, etc.)
-                  └── Atoms (Button, etc.)
-```
-
-## Reviewer Checklist
-
-Before merging changes to templates:
-
-- [ ] Render-prop callback destructures all four context values: `{ cx, fieldMode, t, isAdvanced }`
-- [ ] All four values are forwarded to the organism as props
-- [ ] Template does not import from `features/` — organisms are passed in by routes
-- [ ] No feature-specific state or logic lives inside the template
-- [ ] Hook calls (`useAppSettings`, `useContextualStyles`, `useTerminology`, `useAbstractionLevel`) exist only here — never in organisms or molecules below
-
-## See Also
-
-- `../providers/` — Context provider setup
-- `../routes/` — Route dispatcher
-- `../README.md` — App layer overview
-- `../../features/archive/` — Feature example

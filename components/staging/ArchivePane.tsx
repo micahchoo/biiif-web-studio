@@ -4,7 +4,7 @@ import { ArchiveCollection, ArchiveLayout, SourceManifest, SourceManifests } fro
 import { Icon } from '../Icon';
 import { CollectionCard } from './CollectionCard';
 import { findManifest } from '../../services/stagingService';
-import { useTerminology } from '../../hooks/useTerminology';
+import { useTerminology } from '@/src/app/providers/useTerminology';
 import { useKeyboardDragDrop } from '../../hooks/useKeyboardDragDrop';
 import { FEATURE_FLAGS } from '../../constants';
 

@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 
 export interface BoardToolbarProps {
   /** Currently active tool */
@@ -62,7 +63,7 @@ export const BoardToolbar: React.FC<BoardToolbarProps> = ({
   onToolChange,
   selectedItemId,
   onDelete,
-  cx,
+  cx: _cx,
   fieldMode,
 }) => {
   return (
@@ -74,60 +75,33 @@ export const BoardToolbar: React.FC<BoardToolbarProps> = ({
     >
       {/* Tools */}
       {tools.map((tool) => (
-        <button
+        <Button
           key={tool.id}
           onClick={() => onToolChange(tool.id)}
-          className={`
-            w-10 h-10 rounded flex items-center justify-center
-            transition-all relative group
-            ${activeTool === tool.id
-              ? fieldMode
-                ? 'bg-yellow-400 text-slate-900'
-                : 'bg-iiif-blue text-white'
-              : fieldMode
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}
-          `}
+          variant={activeTool === tool.id ? 'primary' : 'ghost'}
+          size="sm"
+          icon={<Icon name={tool.icon} />}
           title={`${tool.label} (${tool.shortcut})`}
           aria-label={tool.label}
           aria-pressed={activeTool === tool.id}
-        >
-          <Icon name={tool.icon} />
-
-          {/* Tooltip */}
-          <span
-            className={`
-              absolute left-full ml-2 px-2 py-1 rounded text-xs whitespace-nowrap
-              opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50
-              ${fieldMode ? 'bg-slate-800 text-white' : 'bg-slate-800 text-white'}
-            `}
-          >
-            {tool.description}
-          </span>
-        </button>
+          className="w-10 h-10"
+        />
       ))}
 
       {/* Divider */}
       <div className={`w-8 h-px my-2 ${fieldMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
       {/* Selected Item Actions */}
-      <button
-        onClick={onDelete}
+      <Button
+        onClick={selectedItemId ? onDelete : undefined}
+        variant="ghost"
+        size="sm"
         disabled={!selectedItemId}
-        className={`
-          w-10 h-10 rounded flex items-center justify-center
-          transition-all
-          ${selectedItemId
-            ? fieldMode
-              ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20'
-              : 'text-red-500 hover:text-red-600 hover:bg-red-50'
-            : 'text-slate-400 cursor-not-allowed'}
-        `}
+        icon={<Icon name="delete" />}
         title={selectedItemId ? 'Delete selected (Delete)' : 'No item selected'}
         aria-label="Delete selected"
-      >
-        <Icon name="delete" />
-      </button>
+        className="w-10 h-10"
+      />
     </div>
   );
 };

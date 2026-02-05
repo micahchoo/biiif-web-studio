@@ -20,34 +20,30 @@ The **app layer** is the root of the application. It handles:
 ```
 src/app/
 ├── templates/
-│   ├── FieldModeTemplate.tsx  ← Provides cx, fieldMode to child organisms
-│   ├── BaseTemplate.tsx       ← Base layout (header, sidebar, main)
+│   ├── FieldModeTemplate.tsx   ← Provides cx, fieldMode, t, isAdvanced via render props
+│   ├── BaseTemplate.tsx        ← Base layout (header, sidebar, main)
+│   ├── index.ts                ← Barrel export
 │   └── README.md
 ├── providers/
-│   ├── index.ts               ← Consolidate all context providers
+│   ├── index.tsx               ← AppProviders component with all contexts
+│   ├── useAppSettings.ts       ← Settings hook (template-level only)
+│   ├── useTerminology.ts       ← Terminology hook (template-level only)
 │   └── README.md
 ├── routes/
-│   ├── ViewRouter.tsx         ← Main view dispatcher
+│   ├── ViewRouter.tsx          ← Main view dispatcher
+│   ├── index.ts                ← Barrel export
 │   └── README.md
-└── README.md                  (this file)
+└── README.md                   (this file)
 ```
 
 ## Templates
 
 ### FieldModeTemplate
-Injects fieldMode context and design tokens into child organisms:
+Injects fieldMode context and design tokens into child organisms via render props pattern:
 
 ```typescript
-export const FieldModeTemplate = ({ children }) => {
-  const { settings } = useAppSettings();
-  const cx = useContextualStyles(settings.fieldMode);
-  const t = useTerminology();
-  const isAdvanced = useAbstractionLevel() === 'advanced';
+import { FieldModeTemplate } from '@/src/app/templates';
 
-  return children({ cx, fieldMode: settings.fieldMode, t, isAdvanced });
-};
-
-// Usage:
 <FieldModeTemplate>
   {({ cx, fieldMode, t, isAdvanced }) => (
     <ArchiveView
@@ -61,21 +57,30 @@ export const FieldModeTemplate = ({ children }) => {
 </FieldModeTemplate>
 ```
 
+**Provides:**
+- `cx: ContextualClassNames` — CSS class names for current theme
+- `fieldMode: boolean` — Is high-contrast field mode active?
+- `t: (key: string) => string` — Terminology function
+- `isAdvanced: boolean` — Progressive disclosure gate
+
 ### BaseTemplate
 Provides global layout (sidebar, header, main area):
 
 ```typescript
-export const BaseTemplate = ({ children }) => (
-  <div className="flex h-screen">
-    <Sidebar />
-    <div className="flex flex-col flex-1">
-      <Header />
-      <main className="flex-1 overflow-hidden">
-        {children}
-      </main>
-    </div>
-  </div>
-);
+import { BaseTemplate } from '@/src/app/templates';
+
+<BaseTemplate
+  showSidebar={showSidebar}
+  onSidebarToggle={toggleSidebar}
+  headerContent={<Header />}
+  sidebarContent={<Sidebar />}
+>
+  <FieldModeTemplate>
+    {({ cx, fieldMode, t, isAdvanced }) => (
+      <FeatureView cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />
+    )}
+  </FieldModeTemplate>
+</BaseTemplate>
 ```
 
 ## Providers
@@ -83,90 +88,66 @@ export const BaseTemplate = ({ children }) => (
 Consolidate all context providers in one place:
 
 ```typescript
-// src/app/providers/index.ts
-export const AppProviders = ({ children }) => (
-  <VaultProvider>
-    <UserIntentProvider>
-      <ResourceContextProvider>
-        <ToastProvider>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </ToastProvider>
-      </ResourceContextProvider>
-    </UserIntentProvider>
-  </VaultProvider>
-);
+import { AppProviders } from '@/src/app/providers';
+
+<AppProviders>
+  <MainApp />
+</AppProviders>
 ```
 
-## Routing
+**Provider hierarchy:**
+1. `VaultProvider` — IIIF state management
+2. `ToastProvider` — Notifications
+3. `ErrorBoundary` — Error handling
+4. `UserIntentProvider` — User intent tracking
+5. `ResourceContextProvider` — Current resource state
 
-The main view dispatcher:
+## Routes
+
+The `ViewRouter` maps app modes to feature views:
 
 ```typescript
-export const ViewRouter = ({ currentMode, selectedId }) => {
-  switch (currentMode) {
-    case 'archive':
-      return (
-        <FieldModeTemplate>
-          {({ cx, fieldMode, t, isAdvanced }) => (
-            <ArchiveView cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />
-          )}
-        </FieldModeTemplate>
-      );
-    case 'board':
-      return (
-        <FieldModeTemplate>
-          {({ cx, fieldMode, t, isAdvanced }) => (
-            <BoardView cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />
-          )}
-        </FieldModeTemplate>
-      );
-    case 'metadata':
-      return (
-        <FieldModeTemplate>
-          {({ cx, fieldMode, t, isAdvanced }) => (
-            <MetadataView cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />
-          )}
-        </FieldModeTemplate>
-      );
-    // ...
-  }
+import { ViewRouter } from '@/src/app/routes';
+
+<ViewRouter
+  currentMode="archive"
+  selectedId={selectedId}
+  root={root}
+  showSidebar={showSidebar}
+  onModeChange={setMode}
+  onSelect={setSelectedId}
+  onSidebarToggle={toggleSidebar}
+/>
+```
+
+**Supported modes:** `archive`, `boards`, `metadata`, `staging`, `search`, `viewer`, `collections`, `trash`
+
+## Dependency Rules
+
+```
+app/* ← features/*     (app composes features)
+app/* ← entities/*     (app can use entities directly)
+app/* ← shared/*       (app uses shared UI)
+features/* ← NOT app   (features don't import app)
+```
+
+## Key Principle
+
+**Only templates call context hooks.** Features receive context via props.
+
+```typescript
+// ❌ WRONG: Feature calling hook directly
+const ArchiveView = () => {
+  const { settings } = useAppSettings(); // Don't do this
+  return <div className={settings.fieldMode ? 'dark' : 'light'}>...</div>;
+};
+
+// ✅ CORRECT: Receive via props from template
+interface ArchiveViewProps {
+  cx: ContextualClassNames;
+  fieldMode: boolean;
+}
+const ArchiveView = ({ cx, fieldMode }: ArchiveViewProps) => {
+  return <div className={cx.surface}>...</div>;
 };
 ```
-
-## Rules
-
-✅ **App layer DOES:**
-- Provide context (fieldMode, settings, auth)
-- Handle routing
-- Consolidate providers
-- Manage global UI state (current view, selected id)
-
-❌ **App layer does NOT:**
-- Contain UI components (that's features)
-- Contain business logic (that's entities/services)
-- Import from features directly (use ViewRouter)
-- Manage data (that's vault)
-
-## Dependency Flow
-
-```
-App.tsx
-  ├── <AppProviders>             (VaultProvider, UserIntentProvider, etc)
-  │   ├── <BaseTemplate>         (sidebar, header, main)
-  │   │   └── <ViewRouter>       (dispatches to features)
-  │   │       └── <FieldModeTemplate>
-  │   │           └── <ArchiveView /> (organism)
-  │   │               ├── <SearchField /> (molecule)
-  │   │               └── <ArchiveGrid /> (sub-organism)
-```
-
-**Unidirectional:** App → Templates → Features → Molecules → Atoms
-
-## Next Steps
-
-See individual README files:
-- `templates/README.md` — Template specifications
-- `providers/README.md` — Provider consolidation
-- `routes/README.md` — Router implementation

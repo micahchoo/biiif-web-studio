@@ -46,7 +46,7 @@ export const StackedThumbnail: React.FC<StackedThumbnailProps> = ({
   icon = 'image',
   placeholderBg,
   cx,
-  fieldMode,
+  fieldMode: _fieldMode,
 }) => {
   const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
 
@@ -92,7 +92,7 @@ export const StackedThumbnail: React.FC<StackedThumbnailProps> = ({
   // Grid layout for 2-4 images
   return (
     <div
-      className={`${containerSizes[size]} bg-slate-200 shrink-0 overflow-hidden ${cx?.border || 'border-slate-200/50'} grid grid-cols-2 grid-rows-2 gap-0.5 ${className}`}
+      className={`${containerSizes[size]} ${cx?.separator || 'bg-slate-200'} shrink-0 overflow-hidden ${cx?.border || 'border-slate-200/50'} grid grid-cols-2 grid-rows-2 gap-0.5 ${className}`}
     >
       {validUrls.slice(0, 4).map((url, i) => (
         <div
@@ -114,8 +114,8 @@ export const StackedThumbnail: React.FC<StackedThumbnailProps> = ({
       ))}
       {/* Fill empty cells if we have 3 images */}
       {urlCount === 3 && (
-        <div className="bg-slate-800 flex items-center justify-center">
-          <Icon name={icon} className="text-[10px] text-slate-600" />
+        <div className={`${cx?.subtleBg || 'bg-slate-800'} flex items-center justify-center`}>
+          <Icon name={icon} className={`text-[10px] ${cx?.textMuted || 'text-slate-500'}`} />
         </div>
       )}
     </div>

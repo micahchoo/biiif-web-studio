@@ -18,7 +18,7 @@ import { Icon } from './Icon';
 import { AbstractionLevelToggle } from './AbstractionLevelToggle';
 import type { AbstractionLevel } from '../types';
 import { FEATURE_FLAGS } from '../constants/features';
-import { useAppSettings } from '@/hooks/useAppSettings';
+import { useAppSettings } from '@/src/app/providers/useAppSettings';
 import { useContextualStyles } from '@/hooks/useContextualStyles';
 
 export interface ToolbarProps {

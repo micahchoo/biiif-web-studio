@@ -28,7 +28,6 @@ export {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { IIIFAnnotation, IIIFCanvas, IIIFManifest } from '@/types';
 import { contentSearchService } from '@/services/contentSearchService';
-import { UI_TIMING } from '@/src/shared/config/tokens';
 
 declare const OpenSeadragon: any;
 
@@ -112,7 +111,7 @@ const extractAnnotations = (item: IIIFCanvas | null): IIIFAnnotation[] => {
   return annotations;
 };
 
-const resolveImageUrl = (item: IIIFCanvas | null): string | null => {
+const _resolveImageUrl = (item: IIIFCanvas | null): string | null => {
   if (!item) return null;
   
   if (item._blobUrl) return item._blobUrl;
@@ -155,7 +154,7 @@ export const useViewer = (
   const [showAnnotationTool, setShowAnnotationTool] = useState(false);
   const [showFilmstrip, setShowFilmstrip] = useState(true);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const [isOcring, setIsOcring] = useState(false);
+  const [isOcring, _setIsOcring] = useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -166,7 +165,7 @@ export const useViewer = (
         try {
           viewerRef.current.removeAllHandlers();
           viewerRef.current.destroy();
-        } catch (e) {
+        } catch {
           // Ignore cleanup errors
         }
         viewerRef.current = null;

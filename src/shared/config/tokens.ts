@@ -216,6 +216,7 @@ export const MAP_MARKER_DEFAULT = 'bg-gray-500';
  * Each type has a light-mode and dark-mode (fieldMode) variant.
  */
 export const MUSEUM_LABEL_STYLES: Record<string, { light: string; dark: string }> = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention -- label-type key matches data model
   'field-note': {
     light: 'bg-amber-50 border-amber-200 text-amber-900',
     dark:  'bg-amber-900/20 border-amber-700/50 text-amber-200',
@@ -234,6 +235,7 @@ export const MUSEUM_LABEL_STYLES: Record<string, { light: string; dark: string }
  * MuseumLabel icon mapping per label type.
  */
 export const MUSEUM_LABEL_ICONS: Record<string, string> = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention -- label-type key matches data model
   'field-note': 'history_edu',
   exhibit:      'account_balance',
   spec:         'terminal',

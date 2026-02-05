@@ -8,6 +8,7 @@ import React from 'react';
 import type { IIIFAnnotation, IIIFCanvas } from '@/types';
 import type { Point } from '@/constants/viewport';
 import { parseSvgSelector, pointsToSvgPath } from '../../model/annotation';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface AnnotationCanvasProps {
   canvas: IIIFCanvas;
@@ -26,6 +27,8 @@ export interface AnnotationCanvasProps {
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
   onMouseLeave: () => void;
+  cx?: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({

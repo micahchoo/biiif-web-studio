@@ -33,8 +33,8 @@ export type { InputProps, InputSize } from '@/ui/primitives/Input';
 // ============================================================================
 // Icon Atom - Visual indicator using Material Icons
 // ============================================================================
-export { Icon } from '@/ui/primitives/Icon';
-export type { IconProps, IconSize } from '@/ui/primitives/Icon';
+export { Icon } from './Icon';
+export type { IconProps } from './Icon';
 
 // ============================================================================
 // Card Atom - Elevated surface container

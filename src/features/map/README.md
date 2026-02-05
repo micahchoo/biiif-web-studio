@@ -1,4 +1,4 @@
-# Map Feature
+# Map Feature (`src/features/map/`)
 
 Geographic visualization of IIIF items with GPS coordinates.
 
@@ -9,11 +9,11 @@ This feature follows Atomic Design + Feature-Sliced Design principles:
 ```
 src/features/map/
 ├── ui/organisms/
-│   └── MapView.tsx           # Main organism (composes molecules)
+│   └── MapView.tsx           ← Main organism (composes molecules)
 ├── model/
-│   └── index.ts              # useMap hook + domain logic
-├── index.ts                  # Public API
-└── README.md                 # This file
+│   └── index.ts              ← useMap hook + domain logic
+├── index.ts                  ← Public API
+└── README.md                 ← This file
 ```
 
 ## Organism: MapView
@@ -52,10 +52,13 @@ const {
   clusters,
   zoom,
   hoveredItem,
+  selectedCluster,
   containerRef,
   geoToPixel,
   zoomIn,
   zoomOut,
+  resetView,
+  hasGeotaggedItems,
   // ...more
 } = useMap(root);
 ```
@@ -86,6 +89,38 @@ Coordinates are extracted from metadata fields with labels:
 - "GPS"
 - "Coordinates"
 
+## Types
+
+```typescript
+interface GeoItem {
+  canvas: IIIFCanvas;
+  lat: number;
+  lng: number;
+}
+
+interface MapBounds {
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+}
+
+interface Cluster {
+  lat: number;
+  lng: number;
+  items: GeoItem[];
+}
+
+interface UseMapReturn extends MapState {
+  containerRef: React.RefObject<HTMLDivElement>;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetView: () => void;
+  geoToPixel: (lat: number, lng: number) => { x: number; y: number };
+  hasGeotaggedItems: boolean;
+}
+```
+
 ## Molecules Used
 
 | Molecule | Purpose |
@@ -99,51 +134,46 @@ Coordinates are extracted from metadata fields with labels:
 
 Items are clustered based on pixel distance (40px radius):
 
-```
-For each item:
-  1. Calculate pixel position
-  2. Find nearby cluster (within 40px)
-  3. If found: add to cluster, update center
-  4. If not: create new cluster
-```
+1. Convert lat/lng to pixel coordinates
+2. Group items within cluster radius
+3. Display cluster badge with count
+4. Click to expand and see individual items
 
-Cluster centers are dynamically recalculated as items are added.
-
-## Legacy Migration
-
-This replaces `components/views/MapView.tsx`:
-
-| Aspect | Legacy | New |
-|--------|--------|-----|
-| Lines of code | 379 | ~200 (organism) + 200 (model) |
-| fieldMode access | `useAppSettings()` | Via props from template |
-| Styling | Inline classes | Via `cx` prop |
-| Coordinate parsing | Inline function | `parseCoordinates()` utility |
-| Clustering | Inline function | `clusterItems()` utility |
-
-## Decomposition Notes
-
-### Future Molecules
-
-1. **MapToolbar** - Zoom controls + view options
-2. **ClusterPopup** - Item selector for clusters
-3. **MapTooltip** - Hover info card
-4. **CoordinateInput** - Lat/lng editor for metadata
-
-### Integration with navPlace
-
-Future enhancement: Support IIIF navPlace for geographic features:
+## Public API
 
 ```typescript
-// navPlace extraction (TODO)
-const navPlaceFeatures = extractNavPlace(canvas);
+// Component
+export { MapView } from './ui/organisms/MapView';
+export type { MapViewProps } from './ui/organisms/MapView';
+
+// Model
+export {
+  useMap,
+  parseCoordinates,
+  formatCoordinates,
+  formatBounds,
+  type GeoItem,
+  type MapBounds,
+  type Cluster,
+  type UseMapReturn,
+} from './model';
 ```
 
-This would enable displaying geographic features beyond simple points.
+## Usage
 
-## Performance Considerations
+```typescript
+import { MapView } from '@/src/features/map';
 
-- Clusters recalculated on zoom change (useMemo)
-- Coordinate parsing cached per item
-- Container dimensions tracked via resize observer
-- Bounds calculated once per geoItems change
+<FieldModeTemplate>
+  {({ cx, fieldMode, t, isAdvanced }) => (
+    <MapView
+      root={root}
+      onSelect={handleSelect}
+      cx={cx}
+      fieldMode={fieldMode}
+      t={t}
+      isAdvanced={isAdvanced}
+    />
+  )}
+</FieldModeTemplate>
+```

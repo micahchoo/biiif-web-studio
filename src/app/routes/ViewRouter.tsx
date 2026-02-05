@@ -68,7 +68,7 @@ export interface ViewRouterProps {
  */
 export const ViewRouter: React.FC<ViewRouterProps> = ({
   currentMode,
-  selectedId,
+  selectedId: _selectedId,
   root,
   showSidebar,
   onModeChange,
@@ -117,6 +117,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
               fieldMode={fieldMode}
               t={t}
               isAdvanced={isAdvanced}
+              onSwitchView={onModeChange}
             />
           )}
         </FieldModeTemplate>

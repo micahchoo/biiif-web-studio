@@ -53,6 +53,7 @@ export interface RangeSelectorProps {
   disabled?: boolean;
   /** Contextual styles from template (required for theming) */
   cx: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**
@@ -229,16 +230,19 @@ export const RangeSelector: React.FC<RangeSelectorProps> = ({
                 `}
               >
                 {presets.map((preset) => (
-                  <button
+                  <Button
                     key={preset.label}
                     onClick={() => handlePreset(preset)}
+                    variant="ghost"
+                    size="sm"
                     className={`
                       w-full px-3 py-2 text-left text-sm
                       hover:${cx.headerBg} ${cx.text}
+                      justify-start
                     `}
                   >
                     {preset.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -248,3 +252,5 @@ export const RangeSelector: React.FC<RangeSelectorProps> = ({
     </div>
   );
 };
+
+export default RangeSelector;

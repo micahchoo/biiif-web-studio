@@ -5,8 +5,10 @@
  */
 
 import React from 'react';
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 import type { DrawingMode } from '../../model/annotation';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface AnnotationToolbarProps {
   currentMode: DrawingMode;
@@ -15,6 +17,8 @@ export interface AnnotationToolbarProps {
   onModeChange: (mode: DrawingMode) => void;
   onToggleExisting: () => void;
   onClose: () => void;
+  cx?: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 const MODES: { mode: DrawingMode; icon: string; label: string }[] = [
@@ -42,36 +46,37 @@ export const AnnotationToolbar: React.FC<AnnotationToolbarProps> = ({
 
         <div className="flex bg-white/5 border border-white/10 rounded p-0.5">
           {MODES.map((m) => (
-            <button
+            <Button
               key={m.mode}
               onClick={() => onModeChange(m.mode)}
-              className={`px-2 py-1 text-[10px] font-bold uppercase rounded flex items-center gap-1 ${
-                currentMode === m.mode
-                  ? 'bg-green-600 text-white'
-                  : 'text-slate-500 hover:text-white'
-              }`}
+              variant={currentMode === m.mode ? 'primary' : 'ghost'}
+              size="sm"
+              icon={<Icon name={m.icon} className="text-xs" />}
+              className="text-[10px] font-bold uppercase"
             >
-              <Icon name={m.icon} className="text-xs" /> {m.label}
-            </button>
+              {m.label}
+            </Button>
           ))}
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={onToggleExisting}
-          className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-            showExisting ? 'bg-blue-600 text-white' : 'bg-white/5 text-white/40'
-          }`}
+          variant={showExisting ? 'primary' : 'ghost'}
+          size="sm"
+          className="text-[10px] font-bold uppercase"
         >
           {existingCount} Existing
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onClose}
-          className="px-3 py-1 text-white/40 hover:text-white font-bold text-sm hover:bg-white/10 rounded"
+          variant="ghost"
+          size="sm"
+          className="font-bold text-sm"
         >
           Done
-        </button>
+        </Button>
       </div>
     </div>
   );

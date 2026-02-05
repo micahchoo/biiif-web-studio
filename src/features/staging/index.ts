@@ -44,4 +44,7 @@
 export { StagingView } from './ui/organisms/StagingView';
 export type { StagingViewProps } from './ui/organisms/StagingView';
 
+export { SourcePane } from './ui/molecules/SourcePane';
+export type { SourcePaneProps } from './ui/molecules/SourcePane';
+
 export * from './model';

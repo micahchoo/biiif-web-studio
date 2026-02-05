@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { Button } from '../atoms';
+import { Button } from '@/ui/primitives/Button';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface FacetPillProps {
@@ -42,6 +42,7 @@ export interface FacetPillProps {
   size?: 'sm' | 'md';
   /** Contextual styles from template (required for theming) */
   cx: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**
@@ -60,48 +61,61 @@ export const FacetPill: React.FC<FacetPillProps> = ({
   size = 'md',
   cx,
 }) => {
-
-  // Size classes
-  const sizeClasses = {
-    sm: 'px-2 py-1 text-xs',
-    md: 'px-3 py-1.5 text-sm',
+  // Size padding styles
+  const sizePadding = {
+    sm: { padding: '4px 8px', fontSize: '12px' },
+    md: { padding: '6px 12px', fontSize: '14px' },
   };
 
-  return (
-    <button
-      onClick={onToggle}
-      disabled={disabled}
-      className={`
-        inline-flex items-center gap-2 rounded-full font-medium
-        transition-all duration-200 ease-in-out
-        ${sizeClasses[size]}
-        ${active
-          ? `${cx.accent} text-white shadow-md`
-          : `${cx.surface} ${cx.border} ${cx.text} hover:${cx.headerBg}`
-        }
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        border
-      `}
-      aria-pressed={active}
-      role="switch"
-    >
+  const padding = sizePadding[size];
+
+  // Build content with optional count badge
+  const content = (
+    <>
       {icon && (
-        <span className="material-icons text-[1em]">{icon}</span>
+        <span className="material-icons" style={{ fontSize: '1em' }}>{icon}</span>
       )}
       <span>{label}</span>
       {count !== undefined && (
         <span
-          className={`
-            px-1.5 py-0.5 rounded-full text-xs font-semibold
-            ${active
-              ? 'bg-white/20 text-white'
-              : `${cx.headerBg} ${cx.textMuted}`
-            }
-          `}
+          style={{
+            padding: '2px 6px',
+            borderRadius: '9999px',
+            fontSize: '12px',
+            fontWeight: 600,
+            backgroundColor: active ? 'rgba(255,255,255,0.2)' : cx.headerBg,
+            color: active ? '#ffffff' : cx.textMuted,
+          }}
         >
           {count}
         </span>
       )}
-    </button>
+    </>
+  );
+
+  return (
+    <Button
+      onClick={onToggle}
+      disabled={disabled}
+      variant={active ? 'primary' : 'secondary'}
+      size="sm"
+      style={{
+        padding: padding.padding,
+        fontSize: padding.fontSize,
+        borderRadius: '9999px',
+        gap: '8px',
+        minWidth: 'auto',
+        backgroundColor: active ? undefined : cx.surface,
+        borderColor: active ? undefined : cx.border,
+        color: active ? '#ffffff' : cx.text,
+      }}
+      aria-pressed={active}
+      // @ts-ignore
+      role="switch"
+    >
+      {content}
+    </Button>
   );
 };
+
+export default FacetPill;

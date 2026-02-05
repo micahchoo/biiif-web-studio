@@ -16,11 +16,14 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import type { IIIFItem, IIIFAnnotation, IIIFCanvas } from '@/types';
-import { getIIIFValue, isCollection, isManifest } from '@/types';
-import { Icon } from '@/components/Icon';
+import { getIIIFValue, type IIIFItem } from '@/types';
+import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
+
+// Type guards for IIIF resources
+const isCollection = (item: IIIFItem): boolean => item.type === 'Collection';
+const isManifest = (item: IIIFItem): boolean => item.type === 'Manifest';
 import {
-  BEHAVIOR_CONFLICTS,
   BEHAVIOR_DEFINITIONS,
   BEHAVIOR_OPTIONS,
   DEFAULT_MAP_CONFIG,
@@ -82,7 +85,7 @@ export const MetadataEditorPanel: React.FC<MetadataEditorPanelProps> = ({
   language,
   cx,
   fieldMode,
-  onClose,
+  onClose: _onClose,
 }) => {
   const [tab, setTab] = useState<'metadata' | 'technical' | 'annotations'>('metadata');
   const [showLocationPicker, setShowLocationPicker] = useState<{ index: number; value: string } | null>(null);
@@ -212,18 +215,21 @@ interface TabButtonProps {
 }
 
 const TabButton: React.FC<TabButtonProps> = ({ active, onClick, label, cx, fieldMode }) => (
-  <button
-    className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+  <Button
+    onClick={onClick}
+    variant={active ? 'primary' : 'ghost'}
+    size="sm"
+    fullWidth
+    className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-wider ${
       active
         ? `text-${cx.accent} border-b-2 border-${cx.accent}`
         : fieldMode
           ? 'text-slate-500 hover:text-slate-300'
           : 'text-slate-500 hover:text-slate-800'
     }`}
-    onClick={onClick}
   >
     {label}
-  </button>
+  </Button>
 );
 
 interface MetadataTabProps {
@@ -245,7 +251,7 @@ const MetadataTab: React.FC<MetadataTabProps> = ({
   label,
   summary,
   language,
-  cx,
+  cx: _cx,
   fieldMode,
   inputClass,
   onUpdateResource,
@@ -333,15 +339,17 @@ const MetadataTab: React.FC<MetadataTabProps> = ({
                     </span>
                   )}
                 </div>
-                <button
+                <Button
                   onClick={() => {
                     const newMeta = resource.metadata?.filter((_, i) => i !== idx);
                     onUpdateResource({ metadata: newMeta });
                   }}
-                  className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Icon name="close" className="text-xs" />
-                </button>
+                  variant="ghost"
+                  size="sm"
+                  icon={<Icon name="close" className="text-xs" />}
+                  aria-label="Remove metadata field"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </div>
               <div className="flex gap-1">
                 <input
@@ -358,19 +366,19 @@ const MetadataTab: React.FC<MetadataTabProps> = ({
                   }}
                 />
                 {isLoc && (
-                  <button
+                  <div
                     onClick={() => onShowLocationPicker({ index: idx, value: val })}
                     className="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 rounded border border-green-200"
                     title="Pick Location on Map"
                   >
                     <Icon name="location_on" className="text-sm" />
-                  </button>
+                  </div>
                 )}
               </div>
             </div>
           );
         })}
-        <button
+        <div
           onClick={() => {
             onUpdateResource({
               metadata: [
@@ -386,7 +394,7 @@ const MetadataTab: React.FC<MetadataTabProps> = ({
           }`}
         >
           <Icon name="add" className="text-sm" /> Add Field
-        </button>
+        </div>
       </div>
     </div>
   </>
@@ -403,8 +411,8 @@ interface TechnicalTabProps {
 
 const TechnicalTab: React.FC<TechnicalTabProps> = ({
   resource,
-  language,
-  cx,
+  language: _language,
+  cx: _cx,
   fieldMode,
   inputClass,
   onUpdateResource,
@@ -596,11 +604,11 @@ interface AnnotationsTabProps {
   fieldMode: boolean;
 }
 
-const AnnotationsTab: React.FC<AnnotationsTabProps> = ({ cx, fieldMode }) => (
+const AnnotationsTab: React.FC<AnnotationsTabProps> = ({ cx: _cx, fieldMode }) => (
   <div className="text-center py-10">
     <Icon name="comments_disabled" className={`text-4xl mb-2 ${fieldMode ? 'text-slate-600' : 'text-slate-300'}`} />
     <p className={`text-xs ${fieldMode ? 'text-slate-500' : 'text-slate-500'}`}>No annotations yet.</p>
-    <button
+    <div
       className={`mt-4 px-4 py-2 rounded text-xs font-bold ${
         fieldMode
           ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -608,7 +616,7 @@ const AnnotationsTab: React.FC<AnnotationsTabProps> = ({ cx, fieldMode }) => (
       }`}
     >
       Add Annotation
-    </button>
+    </div>
   </div>
 );
 
@@ -651,7 +659,7 @@ const LocationModal: React.FC<LocationModalProps> = ({ initialValue, onSave, onC
         setCoords(e.latlng);
       });
 
-      marker.on('dragend', (e: any) => {
+      marker.on('dragend', (_e: any) => {
         setCoords(marker.getLatLng());
       });
 
@@ -672,9 +680,9 @@ const LocationModal: React.FC<LocationModalProps> = ({ initialValue, onSave, onC
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <Icon name="location_on" className="text-green-600" /> Pick Location
           </h3>
-          <button onClick={onClose}>
+          <div onClick={onClose}>
             <Icon name="close" className="text-slate-400" />
-          </button>
+          </div>
         </div>
         <div className="flex-1 relative bg-slate-100">
           <div ref={mapRef} className="absolute inset-0" />
@@ -683,13 +691,13 @@ const LocationModal: React.FC<LocationModalProps> = ({ initialValue, onSave, onC
           <div className="text-xs font-mono bg-slate-100 px-3 py-1.5 rounded border">
             {coords ? `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}` : 'Click map to select'}
           </div>
-          <button
-            disabled={!coords}
+          <div
+            
             onClick={() => coords && onSave(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`)}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold text-xs disabled:opacity-50 hover:bg-green-700"
+            className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold text-xs:opacity-50 hover:bg-green-700"
           >
             Confirm Location
-          </button>
+          </div>
         </div>
       </div>
     </div>

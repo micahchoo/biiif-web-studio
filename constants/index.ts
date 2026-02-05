@@ -1,48 +1,14 @@
 /**
- * Constants Index
- * 
- * Centralized export point for all constants.
- * Split into logical modules for better maintainability.
+ * Constants
+ *
+ * ⚠️ RE-EXPORT SHIM - This file re-exports from the FSD location.
+ * Direct imports from here are deprecated. Prefer importing from:
+ *   @/src/shared/constants
+ *
+ * This shim maintains backward compatibility during the FSD migration.
+ *
+ * @see src/shared/constants/ for the actual implementation
  */
 
-// Core application constants
-export * from './core';
-
-// IIIF specification constants
-export * from './iiif';
-
-// UI and design constants
-export * from './ui';
-
-// Feature flags
-export * from './features';
-
-// CSV import/export configuration
-export * from './csv';
-
-// Metadata templates and field definitions
-export * from './metadata';
-
-// Resource type configuration
-export * from './resources';
-
-// Image processing constants
-export * from './image';
-
-// Accessibility and interaction constants
-export * from './accessibility';
-
-// Error handling constants
-export * from './errors';
-
-// Viewport and navigation constants
-export * from './viewport';
-
-// Canopy template definitions
-export * from './canopyTemplates';
-
-// Help content and documentation
-export * from './helpContent';
-
-// Keyboard shortcuts
-export * from './shortcuts';
+// Re-export everything from the FSD location
+export * from '@/src/shared/constants';

@@ -11,7 +11,8 @@
  */
 
 import React from 'react';
-import { Button, Icon } from '../atoms';
+import { Button } from '@/ui/primitives/Button';
+import { Icon } from '../atoms';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface ActionButtonProps {
@@ -40,6 +41,13 @@ export interface ActionButtonProps {
   /** Current field mode */
   fieldMode?: boolean;
 }
+
+// Map size to Button atom size
+const sizeMap: Record<string, 'sm' | 'base' | 'lg' | 'xl'> = {
+  sm: 'sm',
+  md: 'base',
+  lg: 'lg',
+};
 
 /**
  * ActionButton Molecule
@@ -72,61 +80,54 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   fullWidth = false,
   className = '',
   type = 'button',
-  cx = {},
+  cx: _cx = {},
   fieldMode = false,
 }) => {
-  // Context is provided via props (no hook calls)
-
-  const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
+  // Map variant to Button atom variant
+  const variantMap: Record<string, 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'> = {
+    primary: 'primary',
+    secondary: 'secondary',
+    danger: 'danger',
+    success: 'success',
+    ghost: 'ghost',
   };
 
-  const variantClasses = {
-    primary: fieldMode
-      ? 'bg-yellow-400 text-black hover:bg-yellow-300'
-      : 'bg-iiif-blue text-white hover:bg-blue-600',
-    secondary: fieldMode
-      ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-      : 'bg-slate-200 text-slate-700 hover:bg-slate-300',
-    danger: fieldMode
-      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50'
-      : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200',
-    success: fieldMode
-      ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/50'
-      : 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200',
-    ghost: fieldMode
-      ? 'text-slate-300 hover:bg-slate-800'
-      : 'text-slate-600 hover:bg-slate-100',
-  };
+  // Field mode variant classes (dark-UI overrides for Button atom)
+  const fieldModeClasses = fieldMode
+    ? variant === 'primary'
+      ? 'bg-yellow-400 text-black border-yellow-500'
+      : variant === 'secondary'
+        ? 'bg-slate-700 text-slate-100 border-slate-600'
+        : variant === 'danger'
+          ? 'bg-red-500/20 text-red-400 border-red-500/50'
+          : variant === 'success'
+            ? 'bg-green-500/20 text-green-400 border-green-500/50'
+            : 'bg-transparent text-slate-200 border-transparent'
+    : '';
+
+  // Create icon element for Button atom
+  const iconElement = loading ? (
+    <Icon name="sync" className="text-sm animate-spin" aria-hidden="true" />
+  ) : icon ? (
+    <Icon name={icon} className="text-sm" aria-hidden="true" />
+  ) : undefined;
 
   return (
-    <button
-      type={type}
+    <Button
       onClick={onClick}
-      disabled={disabled || loading}
-      className={`
-        inline-flex items-center justify-center gap-2
-        font-medium rounded-lg transition-all
-        focus:outline-none focus:ring-2 focus:ring-offset-1
-        ${cx.focusRing}
-        ${sizeClasses[size]}
-        ${variantClasses[variant]}
-        ${fullWidth ? 'w-full' : ''}
-        disabled:opacity-50 disabled:cursor-not-allowed
-        ${className}
-      `}
+      disabled={disabled}
+      loading={loading}
+      variant={variantMap[variant]}
+      size={sizeMap[size]}
+      fullWidth={fullWidth}
+      minimal={variant === 'ghost'}
+      className={`${fieldModeClasses} ${className}`}
+      icon={iconElement}
+      // @ts-ignore - Button atom supports type prop via spread
+      type={type}
     >
-      {loading ? (
-        <span className="animate-spin">
-          <Icon name="sync" className="text-sm" aria-hidden="true" />
-        </span>
-      ) : icon ? (
-        <Icon name={icon} className="text-sm" aria-hidden="true" />
-      ) : null}
-      <span>{label}</span>
-    </button>
+      {label}
+    </Button>
   );
 };
 

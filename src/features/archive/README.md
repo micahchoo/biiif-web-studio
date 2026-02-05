@@ -1,46 +1,34 @@
 # Archive Feature (`src/features/archive/`)
 
-The **Archive feature** is the primary view for browsing, organizing, and managing field research media collections. It demonstrates the atomic design pattern in action: organisms compose molecules, organisms use domain hooks.
+The **Archive feature** is the primary view for browsing, organizing, and managing field research media collections.
 
 ## Structure
 
 ```
 archive/
 ├── ui/
-│   └── organisms/
-│       ├── ArchiveView.tsx         ← Main view (1,200 → 600 lines after refactor)
-│       ├── ArchiveGrid.tsx         ← Grid rendering with virtualization
-│       ├── ArchiveHeader.tsx       ← Header with search + view toggle
-│       └── README.md               (this file)
+│   ├── organisms/
+│   │   ├── ArchiveView.tsx         ← Main view (orchestrates archive UI)
+│   │   ├── ArchiveGrid.tsx         ← Grid rendering with virtualization
+│   │   ├── ArchiveHeader.tsx       ← Header with search + view toggle
+│   │   └── README.md               (this file)
+│   └── molecules/
+│       └── MultiSelectFilmstrip.tsx  ← Filmstrip for multi-selection
 ├── model/
-│   └── index.ts                    ← Selectors and actions (thin wrapper)
-└── index.ts                        ← Public API
+│   └── index.ts                    ← Selectors, filtering, sorting, FileDNA
+├── index.ts                        ← Public API
+└── README.md                       ← This file
 ```
 
-## What Each Organism Does
+## What Each Component Does
 
 ### ArchiveView
 **Responsibility:** Orchestrate the archive view
 - Receives `root` (IIIF tree) via props
 - Manages view state (filter, sort, view mode)
-- Composes ArchiveHeader + ArchiveGrid molecules
-- **NOT responsible for:** Data fetching (that's the page's job)
-
-```typescript
-export const ArchiveView = ({ root, onSelect, onUpdate }) => {
-  const [filter, setFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
-
-  const filtered = useArchiveFilter(root, filter); // Domain hook
-
-  return (
-    <>
-      <ArchiveHeader filter={filter} onFilterChange={setFilter} mode={viewMode} onModeChange={setViewMode} />
-      <ArchiveGrid items={filtered} viewMode={viewMode} onSelect={onSelect} />
-    </>
-  );
-};
-```
+- Composes ArchiveHeader + ArchiveGrid organisms
+- Receives `cx`, `fieldMode`, `t`, `isAdvanced` via props from FieldModeTemplate
+- **NOT responsible for:** Data fetching (that's handled by vault)
 
 ### ArchiveHeader
 **Responsibility:** Header + filtering + view toggle
@@ -50,71 +38,77 @@ export const ArchiveView = ({ root, onSelect, onUpdate }) => {
 - Passes `cx` and `fieldMode` to molecule children
 - **NOT responsible for:** What happens when user searches (that's ArchiveView's job)
 
-```typescript
-export const ArchiveHeader = ({ filter, onFilterChange, mode, onModeChange, cx, fieldMode }) => (
-  <div className={`flex items-center gap-4 p-4 ${cx?.surface}`}>
-    <SearchField value={filter} onChange={onFilterChange} cx={cx} fieldMode={fieldMode} />
-    <ViewToggle
-      value={mode}
-      onChange={onModeChange}
-      cx={cx}
-      fieldMode={fieldMode}
-      options={[
-        { value: 'grid', icon: 'grid_view' },
-        { value: 'list', icon: 'list' },
-        { value: 'map', icon: 'map' },
-      ]}
-    />
-  </div>
-);
-```
-
 ### ArchiveGrid
 **Responsibility:** Render archive items in chosen view mode
 - Virtualized grid for performance
 - Supports grid, list, map views
-- Uses `useVirtualization` hook for large collections
+- Uses virtualization for large collections
 - **NOT responsible for:** Data selection, filtering (that's ArchiveView's job)
 
-```typescript
-export const ArchiveGrid = ({ items, viewMode, onSelect }) => (
-  <VirtualizedGrid items={items} viewMode={viewMode}>
-    {item => (
-      <ManifestCard
-        manifest={item}
-        onClick={() => onSelect(item)}
-      />
-    )}
-  </VirtualizedGrid>
-);
-```
+### MultiSelectFilmstrip
+**Responsibility:** Filmstrip for multi-selected items
+- Shows thumbnails of selected canvases
+- Allows quick navigation between selections
+- Uses shared molecules for rendering
 
 ## Key Patterns
 
-### 1. **Organisms Compose Molecules**
+### 1. Organisms Compose Molecules
 ```typescript
-<ArchiveHeader>
-  └─ <SearchField />      ← Molecule (no props about domain)
-  └─ <ViewToggle />       ← Molecule (generic option switcher)
-</ArchiveHeader>
+<ArchiveView>
+  └─ <ArchiveHeader>
+        └─ <SearchField />      ← Molecule
+        └─ <ViewToggle />       ← Molecule
+  └─ <ArchiveGrid>
+        └─ <CollectionCard />   ← Shared molecule
 ```
 
-### 2. **Organisms Use Domain Hooks**
+### 2. Domain Logic in Model
 ```typescript
-const { manifests, canvases } = useArchiveSelectors(root);
-const filtered = useArchiveFilter(root, filterText);
-dispatch(actions.updateManifest(id, newData));
+// model/index.ts - Archive-specific selectors
+export const selectAllCanvases = (root) => { ... };
+export const filterByTerm = (canvases, term) => { ... };
+export const sortCanvases = (canvases, sortBy) => { ... };
+export const getFileDNA = (item) => { ... }; // Metadata presence indicators
 ```
 
-### 3. **Organisms Receive Context via Props**
+### 3. Context via Props (No Hooks in Organisms)
 ```typescript
-// WRONG — organisms should not call context hooks
-const ArchiveView = ({ root }) => {
-  const cx = useContextualStyles();  // ❌ Should receive via props!
-  const { settings } = useAppSettings();  // ❌ Should receive via props!
+interface ArchiveViewProps {
+  root: IIIFItem | null;
+  cx: ContextualClassNames;     // From FieldModeTemplate
+  fieldMode: boolean;           // From FieldModeTemplate
+  t: (key: string) => string;   // From FieldModeTemplate
+  isAdvanced: boolean;          // From FieldModeTemplate
+  onSelect?: (id: string) => void;
 }
+```
 
-// CORRECT — organisms receive context from FieldModeTemplate
+## Model API
+
+### Selectors
+
+```typescript
+import { selectAllCanvases, filterByTerm, sortCanvases, getFileDNA } from '@/src/features/archive';
+
+// Get all canvases flattened from tree
+const canvases = selectAllCanvases(root);
+
+// Filter by search term
+const filtered = filterByTerm(canvases, 'search term');
+
+// Sort by name or date
+const sorted = sortCanvases(filtered, 'date');
+
+// Get metadata presence indicators
+const dna = getFileDNA(item); // { hasTime: true, hasLocation: false, hasDevice: true }
+```
+
+## Usage
+
+```typescript
+import { ArchiveView } from '@/src/features/archive';
+
 <FieldModeTemplate>
   {({ cx, fieldMode, t, isAdvanced }) => (
     <ArchiveView
@@ -123,154 +117,46 @@ const ArchiveView = ({ root }) => {
       fieldMode={fieldMode}
       t={t}
       isAdvanced={isAdvanced}
-      onSelect={onSelect}
+      onSelect={handleSelect}
     />
   )}
 </FieldModeTemplate>
 ```
 
-### 4. **Props Include Data AND Context**
-```typescript
-// Props tell organism: "here's your data AND your context"
-interface ArchiveViewProps {
-  // Data props
-  root: IIIFItem | null;
-  onSelect: (item: IIIFItem) => void;
-  onUpdate?: (newRoot: IIIFItem) => void;
-  // Context props (from FieldModeTemplate)
-  cx: ContextualClassNames;
-  fieldMode: boolean;
-  t: (key: string) => string;
-  isAdvanced: boolean;
-}
-
-// Organism passes cx to molecules:
-<SearchField cx={cx} fieldMode={fieldMode} onChange={setFilter} />
-```
-
-## Testing Strategy
-
-Each organism is tested with:
-- ✅ Real data from `.Images iiif test/` (Karwaan sequence)
-- ✅ IDEAL OUTCOME / FAILURE PREVENTED pattern
-- ✅ User interaction focus (type, click, navigate)
-- ✅ Complete workflows (not isolated functions)
-
-### Example Tests
+## Public API
 
 ```typescript
-describe('ArchiveView Organism', () => {
-  describe('USER INTERACTION: Type in search filter', () => {
-    it('IDEAL OUTCOME: Grid filters manifests in real time', async () => {
-      const realData = await loadRealArchiveFixture('Karwaan');
-      const { getByRole } = render(<ArchiveView root={realData} onSelect={vi.fn()} />);
+// Components
+export { ArchiveView } from './ui/organisms/ArchiveView';
+export { ArchiveHeader } from './ui/organisms/ArchiveHeader';
+export { ArchiveGrid } from './ui/organisms/ArchiveGrid';
+export { MultiSelectFilmstrip } from './ui/molecules/MultiSelectFilmstrip';
 
-      // User types in search
-      fireEvent.change(getByRole('textbox'), { target: { value: '110' } });
+// Types
+export type { ArchiveViewProps } from './ui/organisms/ArchiveView';
+export type { ArchiveHeaderProps } from './ui/organisms/ArchiveHeader';
+export type { ArchiveGridProps } from './ui/organisms/ArchiveGrid';
+export type { MultiSelectFilmstripProps } from './ui/molecules/MultiSelectFilmstrip';
 
-      // Assert: Grid updated
-      await waitFor(() => {
-        const items = getByRole('grid').querySelectorAll('[data-testid="archive-item"]');
-        expect(items).toHaveLength(1);
-      });
-
-      console.log('✓ IDEAL OUTCOME: Search filters grid correctly');
-    });
-
-    it('FAILURE PREVENTED: Search doesn\'t crash with special characters', async () => {
-      const realData = await loadRealArchiveFixture('Karwaan');
-      const { getByRole } = render(<ArchiveView root={realData} onSelect={vi.fn()} />);
-
-      // User types dangerous input
-      fireEvent.change(getByRole('textbox'), { target: { value: '<script>alert("xss")</script>' } });
-
-      // Assert: Grid still renders (no crash)
-      expect(getByRole('grid')).toBeInTheDocument();
-
-      console.log('✓ FAILURE PREVENTED: Search sanitizes input safely');
-    });
-  });
-
-  describe('USER INTERACTION: Toggle view mode', () => {
-    it('IDEAL OUTCOME: View switches between grid/list/map', async () => {
-      const realData = await loadRealArchiveFixture('Karwaan');
-      const { rerender, getByRole } = render(<ArchiveView root={realData} onSelect={vi.fn()} />);
-
-      // Initial: grid view
-      expect(getByRole('grid')).toBeInTheDocument();
-
-      // User clicks list button
-      fireEvent.click(screen.getByLabelText('List'));
-      rerender(<ArchiveView root={realData} onSelect={vi.fn()} viewMode="list" />);
-
-      // Assert: List view rendered
-      expect(getByRole('grid')).not.toBeInTheDocument(); // Grid gone
-      expect(getByRole('list')).toBeInTheDocument();      // List present
-
-      console.log('✓ IDEAL OUTCOME: View modes toggle correctly');
-    });
-  });
-
-  describe('USER INTERACTION: Toggle fieldMode context', () => {
-    it('IDEAL OUTCOME: Archive theme switches with fieldMode prop', async () => {
-      const realData = await loadRealArchiveFixture('Karwaan');
-      const cxLight = { surface: 'bg-slate-50', text: 'text-slate-900' };
-      const cxDark = { surface: 'bg-black', text: 'text-white' };
-
-      // Light mode — pass cx directly via props
-      const { rerender, container } = render(
-        <ArchiveView root={realData} onSelect={vi.fn()} cx={cxLight} fieldMode={false} />
-      );
-
-      expect(container.querySelector('[role="main"]')).toHaveClass('bg-slate-50');
-
-      // Toggle fieldMode — pass different cx via props
-      rerender(
-        <ArchiveView root={realData} onSelect={vi.fn()} cx={cxDark} fieldMode={true} />
-      );
-
-      // Dark mode
-      expect(container.querySelector('[role="main"]')).toHaveClass('bg-black');
-
-      console.log('✓ IDEAL OUTCOME: Archive theme switches with fieldMode prop');
-    });
-  });
-});
+// Model
+export {
+  manifest,
+  canvas,
+  selectAllCanvases,
+  filterByTerm,
+  sortCanvases,
+  getFileDNA,
+  type FileDNA,
+} from './model';
 ```
 
-## Dependency Flow
+## Molecules Used
 
-```
-ArchiveView (organism, 300 lines)
-├── Depends on: SearchField + ViewToggle (molecules)
-├── Uses: useArchiveSelectors, useArchiveFilter (domain hooks)
-├── Calls: actions.updateManifest, actions.deleteManifest (domain actions)
-└── Composes: ArchiveHeader + ArchiveGrid (child organisms)
-    ├── ArchiveHeader
-    │   └── Composes: SearchField + ViewToggle (molecules)
-    └── ArchiveGrid
-        └── Renders: ManifestCard for each item
-```
-
-**Rules:**
-- ✅ Can use domain hooks (useArchiveSelectors, useArchiveFilter)
-- ✅ Can dispatch actions (actions.updateManifest)
-- ✅ Can compose molecules (SearchField, ViewToggle)
-- ❌ Cannot import from `app/` or `features/board`
-- ❌ Cannot have routing logic
-- ❌ Cannot fetch data (that's page's job)
-
-## File Sizes (Target)
-
-| File | Current | Target |
-|------|---------|--------|
-| ArchiveView.tsx | 1,244 lines (old) | 300 lines (new) |
-| ArchiveGrid.tsx | (new) | 200 lines |
-| ArchiveHeader.tsx | (new) | 80 lines |
-| **Total** | | **580 lines** |
-
-**Why smaller:** Old monolithic view split into focused organisms that each compose molecules.
-
----
-
-**See tests in** `src/test/__tests__/features/archive-view.test.tsx` (pattern file available).
+| Molecule | Purpose | Source |
+|----------|---------|--------|
+| `SearchField` | Main search input | `src/shared/ui/molecules/` |
+| `ViewToggle` | Grid/list/map toggle | `src/shared/ui/molecules/` |
+| `CollectionCard` | Item card display | `src/shared/ui/molecules/` |
+| `EmptyState` | Empty collections | `src/shared/ui/molecules/` |
+| `LoadingState` | Loading indicator | `src/shared/ui/molecules/` |
+| `ZoomControl` | Zoom in/out | `src/shared/ui/molecules/` |

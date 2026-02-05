@@ -48,7 +48,7 @@ export const AnnotationToolPanel: React.FC<AnnotationToolPanelProps> = ({
   existingAnnotations = [],
   onCreateAnnotation,
   onClose,
-  cx,
+  cx: _cx,
 }) => {
   const {
     mode,

@@ -10,7 +10,8 @@
  */
 
 import React from 'react';
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 
 export type BackgroundMode = 'grid' | 'dark' | 'light';
 
@@ -54,6 +55,7 @@ export interface ComposerToolbarProps {
     active: string;
     surface: string;
   };
+  fieldMode?: boolean;
 }
 
 const BG_MODES: BackgroundMode[] = ['grid', 'dark', 'light'];
@@ -99,7 +101,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
   onAddText,
   onSave,
   onCancel,
-  cx,
+  cx: _cx,
 }) => {
   return (
     <div className="h-14 bg-slate-900 border-b border-white/10 flex items-center justify-between px-6 shrink-0 shadow-2xl">
@@ -137,24 +139,26 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
           aria-label="Background Mode"
         >
           {BG_MODES.map((m) => (
-            <button
+            <Button
               key={m}
               onClick={() => onBgModeChange(m)}
-              aria-pressed={bgMode === m}
-              className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${
-                bgMode === m ? 'bg-indigo-600 text-white' : 'text-slate-500'
-              }`}
+              variant={bgMode === m ? 'primary' : 'ghost'}
+              size="sm"
+              className="text-[9px] font-black uppercase"
             >
               {m}
-            </button>
+            </Button>
           ))}
         </div>
-        <button
+        <Button
           onClick={onAddText}
-          className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-[10px] font-black uppercase flex items-center gap-1"
+          variant="secondary"
+          size="sm"
+          icon={<Icon name="title" className="text-xs" />}
+          className="text-[10px] font-black uppercase"
         >
-          <Icon name="title" className="text-xs" /> Add Text
-        </button>
+          Add Text
+        </Button>
       </div>
 
       {/* Right: Actions */}
@@ -165,69 +169,73 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
           role="group"
           aria-label="Undo/Redo"
         >
-          <button
+          <Button
             onClick={onUndo}
             disabled={!canUndo}
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="undo" />}
             aria-label="Undo (Ctrl+Z)"
             title="Undo (Ctrl+Z)"
-            className={`p-1 ${
-              canUndo ? 'text-white/40 hover:text-white' : 'text-white/10 cursor-not-allowed'
-            }`}
-          >
-            <Icon name="undo" />
-          </button>
-          <button
+            className="p-1"
+          />
+          <Button
             onClick={onRedo}
             disabled={!canRedo}
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="redo" />}
             aria-label="Redo (Ctrl+Shift+Z)"
             title="Redo (Ctrl+Shift+Z)"
-            className={`p-1 ${
-              canRedo ? 'text-white/40 hover:text-white' : 'text-white/10 cursor-not-allowed'
-            }`}
-          >
-            <Icon name="redo" />
-          </button>
+            className="p-1"
+          />
         </div>
 
         {/* Zoom */}
         <div className="flex bg-white/5 border border-white/10 rounded p-1">
-          <button
+          <Button
             onClick={onZoomOut}
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="remove" />}
             aria-label="Zoom Out"
-            className="p-1 text-white/40 hover:text-white"
-          >
-            <Icon name="remove" />
-          </button>
+            className="p-1"
+          />
           <span
             className="px-3 py-1 text-[10px] font-bold text-white/60 min-w-[60px] text-center"
             aria-live="polite"
           >
             {zoomPercent}%
           </span>
-          <button
+          <Button
             onClick={onZoomIn}
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="add" />}
             aria-label="Zoom In"
-            className="p-1 text-white/40 hover:text-white"
-          >
-            <Icon name="add" />
-          </button>
+            className="p-1"
+          />
         </div>
 
         {/* Cancel/Save */}
-        <button
+        <Button
           onClick={onCancel}
+          variant="ghost"
+          size="sm"
           aria-label="Cancel and close workspace"
-          className="px-4 py-2 text-white/40 hover:text-white font-bold text-sm"
+          className="font-bold text-sm"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onSave}
+          variant="primary"
+          size="sm"
           aria-label="Apply composition to canvas"
-          className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-indigo-500 shadow-xl transition-all"
+          className="font-black uppercase tracking-widest text-xs"
         >
           Apply Composition
-        </button>
+        </Button>
       </div>
     </div>
   );

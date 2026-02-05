@@ -4,7 +4,7 @@ import { Icon } from './Icon';
 import { buildReferenceMap, getRelationshipType } from '../utils/iiifHierarchy';
 import { resolveHierarchicalThumbs } from '../utils/imageSourceResolver';
 import { StackedThumbnail } from './StackedThumbnail';
-import { useTerminology } from '../hooks/useTerminology';
+import { useTerminology } from '@/src/app/providers/useTerminology';
 
 interface ManifestTreeProps {
   root: IIIFItem | null;

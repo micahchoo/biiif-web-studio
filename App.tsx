@@ -38,7 +38,7 @@ import { ResourceContextProvider } from './hooks/useResourceContext';
 
 // Custom hooks for cleaner state management
 import { useResponsive } from './hooks/useResponsive';
-import { useAppSettings } from './hooks/useAppSettings';
+import { useAppSettings } from '@/src/app/providers/useAppSettings';
 import { useDialogState } from './hooks/useDialogState';
 
 // ============================================================================
@@ -651,7 +651,7 @@ const MainApp: React.FC = () => {
 
 // NEW: Use consolidated AppProviders from src/app/providers (Phase 3)
 // This centralizes all context providers in one place per FSD architecture
-import { AppProviders } from './src/app/providers';
+import { AppProviders } from '@/src/app/providers';
 
 const App: React.FC = () => (
   <AppProviders>

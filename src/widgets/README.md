@@ -15,9 +15,15 @@ Widgets are pure composition layers that sit between **features** and **app/page
 ```
 src/widgets/
 ├── README.md              # This file
-├── AnnotationToolbar/     # Composes whiteboard + metadata-edit molecules
+├── AnnotationToolbar/     # Composes whiteboard + metadata-edit organisms
+│   ├── AnnotationToolbar.tsx
+│   └── index.ts
 ├── FilterPanel/           # Composes archive + search organisms
+│   ├── FilterPanel.tsx
+│   └── index.ts
 ├── NavigationHeader/      # Composes navigation + user context
+│   ├── NavigationHeader.tsx
+│   └── index.ts
 └── ...
 ```
 

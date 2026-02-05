@@ -17,197 +17,174 @@ Each feature:
 
 ```
 src/features/
-├── archive/                     ← Browse and organize collections
+├── archive/              ← Browse and organize collections
 │   ├── ui/
-│   │   └── organisms/
-│   │       ├── ArchiveView.tsx       (300 lines)
-│   │       ├── ArchiveGrid.tsx       (200 lines)
-│   │       ├── ArchiveHeader.tsx     (80 lines)
-│   │       └── README.md
+│   │   ├── organisms/    ← ArchiveView, ArchiveGrid, ArchiveHeader
+│   │   └── molecules/    ← MultiSelectFilmstrip
 │   ├── model/
-│   │   └── index.ts            ← Re-exports from entities, domain logic
-│   └── index.ts                ← Public API
-│
-├── board-design/                ← Edit board layouts
-│   ├── ui/organisms/
+│   │   └── index.ts      ← Selectors, filtering, sorting
+│   ├── index.ts          ← Public API
+│   └── README.md
+├── board-design/         ← Board layout design
+│   ├── ui/organisms/     ← BoardView, BoardHeader, BoardToolbar, BoardCanvas
 │   ├── model/
+│   │   └── index.ts      ← Board state, items, connections
 │   └── index.ts
-│
-├── metadata-edit/               ← Edit metadata fields
-│   ├── ui/organisms/
+├── metadata-edit/        ← Edit metadata fields
+│   ├── ui/
+│   │   ├── organisms/    ← MetadataView, MetadataEditorPanel
+│   │   └── molecules/    ← CSVImportModal
 │   ├── model/
+│   │   └── index.ts      ← Flattening, CSV, filtering, change detection
 │   └── index.ts
-│
-├── staging/                     ← Two-pane import workbench
-│   ├── ui/organisms/
+├── staging/              ← Two-pane import workbench
+│   ├── ui/
+│   │   ├── organisms/    ← StagingView
+│   │   └── molecules/    ← SourcePane
 │   ├── model/
+│   │   └── index.ts      ← Source manifest operations
 │   └── index.ts
-│
-├── search/                      ← Full-text search
-├── viewer/                      ← IIIF viewer
-├── map/                         ← Geographic map
-└── timeline/                    ← Temporal timeline
+├── search/               ← Full-text search
+│   ├── ui/organisms/     ← SearchView
+│   ├── model/
+│   │   └── index.ts      ← useSearch hook + domain logic
+│   └── index.ts
+├── viewer/               ← IIIF viewer with annotations
+│   ├── ui/
+│   │   ├── organisms/    ← ViewerView, CanvasComposerPanel, AnnotationToolPanel
+│   │   └── molecules/    ← ComposerToolbar, ComposerSidebar, ComposerCanvas, AnnotationToolbar, etc.
+│   ├── model/
+│   │   ├── index.ts      ← useViewer hook
+│   │   ├── composer.ts   ← Composer state
+│   │   └── annotation.ts ← Annotation state
+│   └── index.ts
+├── map/                  ← Geographic map
+│   ├── ui/organisms/     ← MapView
+│   ├── model/
+│   │   └── index.ts      ← useMap hook + coordinate logic
+│   └── index.ts
+└── timeline/             ← Temporal timeline
+    ├── ui/organisms/     ← TimelineView
+    ├── model/
+    │   └── index.ts      ← useTimeline hook + date logic
+    └── index.ts
 ```
 
-## Feature: Archive
+## Feature Anatomy
 
-### ArchiveView (Organism)
-**Responsibility:** Orchestrate archive feature
-- Manage filter, sort, view mode
-- Compose ArchiveHeader + ArchiveGrid
-- Handle selection and actions
+Each feature follows a consistent structure:
+
+### 1. Public API (`index.ts`)
+
+Exports the main view component and model utilities:
 
 ```typescript
-export const ArchiveView = ({ root, onSelect, onUpdate }) => {
+// src/features/archive/index.ts
+export { ArchiveView } from './ui/organisms/ArchiveView';
+export { ArchiveHeader } from './ui/organisms/ArchiveHeader';
+export { ArchiveGrid } from './ui/organisms/ArchiveGrid';
+export { MultiSelectFilmstrip } from './ui/molecules/MultiSelectFilmstrip';
+export type { ArchiveViewProps, ArchiveHeaderProps, ArchiveGridProps } from './ui/organisms';
+export * from './model';
+```
+
+### 2. Organisms (`ui/organisms/`)
+
+Organisms are domain-specific components that:
+- Receive context via props from `FieldModeTemplate`
+- Compose molecules from `src/shared/ui/molecules/`
+- Contain feature-specific logic
+- DON'T call `useAppSettings()` or `useContextualStyles()`
+
+```typescript
+// ArchiveView organism
+export const ArchiveView = ({ root, cx, fieldMode, t, isAdvanced }) => {
   const [filter, setFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  // Domain selectors
   const manifests = archive.model.selectAll(root);
-  const filtered = manifests.filter(m => m.label?.en?.[0]?.includes(filter));
-
+  
   return (
-    <>
-      <ArchiveHeader
-        filter={filter}
-        onFilterChange={setFilter}
-        mode={viewMode}
-        onModeChange={setViewMode}
-      />
-      <ArchiveGrid items={filtered} viewMode={viewMode} onSelect={onSelect} />
-    </>
+    <ViewContainer title="Archive" icon="inventory_2">
+      <ArchiveHeader filter={filter} onFilterChange={setFilter} />
+      <ArchiveGrid items={manifests} onSelect={onSelect} />
+    </ViewContainer>
   );
 };
 ```
 
-### ArchiveGrid (Organism)
-**Responsibility:** Render archive items
-- Virtualized grid/list view
-- Item cards with interactions
-- Doesn't manage data (receives it from parent)
+### 3. Model (`model/`)
 
-### ArchiveHeader (Organism)
-**Responsibility:** Header UI
-- Composes SearchField + ViewToggle molecules
-- No domain logic
-
-### model/index.ts
-Domain-specific selectors and helpers:
+Domain-specific selectors and state management:
 
 ```typescript
-// Import from entities
-export { manifest, canvas, collection } from '@/src/entities';
+// src/features/archive/model/index.ts
+import { canvas, manifest } from '@/src/entities';
 
-// Domain-specific helpers
-export const selectAll = (root: IIIFItem) =>
-  manifest.model.selectByRoot(root);
+export { manifest, canvas };
 
-export const filterByTerm = (manifests: Manifest[], term: string) =>
-  manifests.filter(m =>
-    m.label?.en?.[0]?.toLowerCase().includes(term.toLowerCase())
-  );
-
-export const sortBy = (manifests: Manifest[], key: 'date' | 'name') =>
-  key === 'date'
-    ? manifests.sort((a, b) => (a.navDate || '').localeCompare(b.navDate || ''))
-    : manifests.sort((a, b) =>
-        (a.label?.en?.[0] || '').localeCompare(b.label?.en?.[0] || '')
-      );
+// Archive-specific selectors
+export const selectAllCanvases = (root: IIIFItem) => { ... };
+export const filterByTerm = (canvases: IIIFCanvas[], term: string) => { ... };
+export const sortCanvases = (canvases: IIIFCanvas[], sortBy: 'name' | 'date') => { ... };
+export const getFileDNA = (item: IIIFItem): FileDNA => { ... };
 ```
 
-### index.ts (Public API)
-What the outside world imports:
+## Usage in App
+
+Features are consumed by the app layer:
 
 ```typescript
-export { ArchiveView } from './ui/organisms/ArchiveView';
-export * as archive from './model';
+import { ArchiveView } from '@/src/features/archive';
+import { BoardView } from '@/src/features/board-design';
+import { MetadataView } from '@/src/features/metadata-edit';
+import { StagingView } from '@/src/features/staging';
+import { SearchView } from '@/src/features/search';
+import { ViewerView } from '@/src/features/viewer';
+import { MapView } from '@/src/features/map';
+import { TimelineView } from '@/src/features/timeline';
+
+// In ViewRouter
+<FieldModeTemplate>
+  {({ cx, fieldMode, t, isAdvanced }) => {
+    switch (currentMode) {
+      case 'archive':
+        return <ArchiveView root={root} cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />;
+      case 'boards':
+        return <BoardView root={root} cx={cx} fieldMode={fieldMode} t={t} isAdvanced={isAdvanced} />;
+      // ... other cases
+    }
+  }}
+</FieldModeTemplate>
 ```
 
-## Testing Strategy
-
-Each feature is tested with IDEAL/FAILURE patterns and real data:
-
-```typescript
-describe('Archive Feature', () => {
-  describe('USER SCENARIO: Browse, filter, and view archive', () => {
-    it('IDEAL OUTCOME: User can filter manifests and switch view modes', async () => {
-      const realData = await loadRealArchiveFixture('Karwaan');
-
-      const { getByRole } = render(
-        <ArchiveView root={realData} onSelect={vi.fn()} />
-      );
-
-      // 1. User searches
-      fireEvent.change(getByRole('textbox'), { target: { value: '110' } });
-
-      // 2. Grid updates
-      await waitFor(() => {
-        expect(getByRole('grid').querySelectorAll('[data-testid="item"]'))
-          .toHaveLength(1);
-      });
-
-      // 3. User toggles to list view
-      fireEvent.click(screen.getByLabelText('List'));
-
-      // 4. List renders
-      expect(getByRole('list')).toBeInTheDocument();
-
-      console.log('✓ IDEAL OUTCOME: Browse, filter, and view modes work');
-    });
-  });
-});
-```
-
-## Rules
-
-✅ **Features CAN:**
-- Use domain hooks (`useArchiveFilter`, `useManifestSelectors`)
-- Dispatch domain actions (`manifest.actions.update`)
-- Compose molecules (SearchField, ViewToggle, Toolbar)
-- Import from entities layer
-- Have complex state and logic
-
-❌ **Features CANNOT:**
-- Import from other features
-- Import from app layer
-- Know about routing
-- Access global state directly (must go through entities)
-- Have hardcoded values (use constants)
-
-## Dependency Flow
+## Dependency Rules
 
 ```
-Archive Feature
-  ├── Organisms: ArchiveView, ArchiveGrid, ArchiveHeader
-  │   └── Compose molecules: SearchField, ViewToggle, Toolbar
-  │
-  └── Model: domain selectors and actions
-      └── Import from: entities/manifest, entities/canvas
-          └── Which re-export from: services
+features/* ← entities/*     (features use entity models)
+features/* ← shared/*       (features use shared molecules)
+features/* ← NOT features/* (features don't import each other)
+app/* ← features/*          (app composes features)
 ```
 
-**Unidirectional:** Features → Entities → Services → Vault
+## Adding a New Feature
+
+1. Create directory: `src/features/<name>/`
+2. Add structure:
+   - `ui/organisms/` for main view components
+   - `ui/molecules/` for feature-specific molecules (optional)
+   - `model/` for domain logic and hooks
+   - `index.ts` for public API
+   - `README.md` for documentation
+3. Export from `index.ts`
+4. Wire into `ViewRouter`
 
 ## Feature Checklist
 
-When building a new feature:
+When implementing a feature, ensure:
 
-- [ ] Create `ui/organisms/` directory with 2-3 focused organisms
-- [ ] Create `model/index.ts` with domain selectors and helpers
-- [ ] Create `index.ts` with public API
-- [ ] Write tests using IDEAL/FAILURE pattern
-- [ ] Use real data from `.Images iiif test/`
-- [ ] No hardcoded values (use constants)
-- [ ] No other feature imports
-- [ ] No app layer imports
-- [ ] Organisms receive `cx`, `fieldMode`, `t`, `isAdvanced` as props — never call `useContextualStyles`, `useAppSettings`, or `useTerminology` directly
-- [ ] Organisms pass `cx` and `fieldMode` down to every molecule child
-- [ ] Domain hooks (e.g., `useMap`, `useViewer`, `useHistory`) are allowed inside organisms; context hooks are not
-
-## Next Steps
-
-See individual feature READMEs:
-- `archive/README.md` — Archive feature specification
-- `board-design/README.md` — Board editor specification
-- `metadata-edit/README.md` — Metadata editor specification
-- `staging/README.md` — Staging workbench specification
+- [ ] Organisms receive `cx`, `fieldMode`, `t`, `isAdvanced` via props
+- [ ] No `useAppSettings()` or `useContextualStyles()` in organisms
+- [ ] Molecules composed from `src/shared/ui/molecules/`
+- [ ] Domain logic in `model/` directory
+- [ ] Entity models used via `@/src/entities`
+- [ ] Public API exported from `index.ts`
+- [ ] README.md documents the feature

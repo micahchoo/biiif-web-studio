@@ -11,9 +11,9 @@
 import React, { forwardRef, useCallback, useRef, useState } from 'react';
 import type { IIIFItem } from '@/types';
 import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 import {
   type BoardItem,
-  calculateAnchorPoints,
   type Connection,
   type ConnectionType,
 } from '../../model';
@@ -72,7 +72,7 @@ export const BoardCanvas = forwardRef<HTMLDivElement, BoardCanvasProps>(
       onMoveItem,
       onStartConnection,
       onCompleteConnection,
-      onAddItem,
+      onAddItem: _onAddItem,
       cx,
       fieldMode,
     },
@@ -281,33 +281,28 @@ export const BoardCanvas = forwardRef<HTMLDivElement, BoardCanvasProps>(
 
         {/* Viewport controls */}
         <div className="absolute bottom-4 right-4 flex gap-2">
-          <button
+          <Button
             onClick={() => onViewportChange({ ...viewport, zoom: Math.min(viewport.zoom * 1.2, 3) })}
-            className={`
-              p-2 rounded shadow-lg
-              ${cx.buttonSurface}
-            `}
-          >
-            <Icon name="add" />
-          </button>
-          <button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="add" />}
+            aria-label="Zoom in"
+          />
+          <Button
             onClick={() => onViewportChange({ ...viewport, zoom: Math.max(viewport.zoom / 1.2, 0.3) })}
-            className={`
-              p-2 rounded shadow-lg
-              ${cx.buttonSurface}
-            `}
-          >
-            <Icon name="remove" />
-          </button>
-          <button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="remove" />}
+            aria-label="Zoom out"
+          />
+          <Button
             onClick={() => onViewportChange({ x: 0, y: 0, zoom: 1 })}
-            className={`
-              px-3 py-2 rounded shadow-lg text-sm font-medium
-              ${cx.buttonSurface}
-            `}
+            variant="secondary"
+            size="sm"
+            aria-label="Fit to view"
           >
             Fit
-          </button>
+          </Button>
         </div>
       </div>
     );

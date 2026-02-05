@@ -4,7 +4,7 @@ import { SourceManifest, SourceManifests } from '../../types';
 import { Icon } from '../Icon';
 import { SourceManifestItem } from './SourceManifestItem';
 import { findSimilarFiles } from '../../utils/filenameUtils';
-import { useTerminology } from '../../hooks/useTerminology';
+import { useTerminology } from '@/src/app/providers/useTerminology';
 import { KeyboardDragDropReturn } from '../../hooks/useKeyboardDragDrop';
 import {
   formatCheckpointAge,

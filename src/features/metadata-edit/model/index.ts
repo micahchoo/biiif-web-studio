@@ -23,8 +23,7 @@
  * @module features/metadata-edit/model
  */
 
-import type { IIIFItem } from '@/types';
-import { getIIIFValue } from '@/types';
+import { getIIIFValue, type IIIFItem } from '@/types';
 
 /**
  * IIIF metadata pair structure

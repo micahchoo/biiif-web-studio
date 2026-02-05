@@ -74,7 +74,7 @@ export const DebouncedInput: React.FC<DebouncedInputProps> = ({
   ariaLabel,
   showCount = false,
   cx = {},
-  fieldMode = false,
+  fieldMode: _fieldMode = false,
 }) => {
   // Context is provided via props (no hook calls)
 

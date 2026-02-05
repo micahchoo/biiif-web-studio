@@ -102,7 +102,7 @@ export const CanvasComposerPanel: React.FC<CanvasComposerPanelProps> = ({
   );
 
   const handleLayerPropertyChange = useCallback(
-    (id: string, prop: string, value: number) => {
+    (_id: string, _prop: string, _value: number) => {
       // Update layer property
       // This would need to be added to useComposer
     },
@@ -110,7 +110,7 @@ export const CanvasComposerPanel: React.FC<CanvasComposerPanelProps> = ({
   );
 
   const handleTextChange = useCallback(
-    (id: string, text: string) => {
+    (_id: string, _text: string) => {
       // Update text layer
       // This would need to be added to useComposer
     },

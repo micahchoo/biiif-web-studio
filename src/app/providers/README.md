@@ -18,6 +18,14 @@ export default function App() {
 }
 ```
 
+## Files
+
+| File | Purpose |
+|------|---------|
+| `index.tsx` | `AppProviders` component - consolidates all providers |
+| `useAppSettings.ts` | Hook for accessing app settings (template-level only) |
+| `useTerminology.ts` | Hook for IIIF terminology based on abstraction level |
+
 ## Provider Hierarchy
 
 Providers are nested in order of dependency. Inner providers can use outer providers; the reverse is not possible.
@@ -62,11 +70,6 @@ showToast('Success!', 'success');
 
 Catches React errors and displays fallback UI.
 
-```typescript
-// Automatically catches errors from children
-// No hook needed - just renders error UI
-```
-
 ### UserIntentProvider
 
 **Location:** `hooks/useUserIntent.tsx`
@@ -100,39 +103,63 @@ setIntent('editing', { resourceId: 'manifest-1' });
 Tracks current resource state (type, validation, edit history, collaboration).
 
 ```typescript
-const { resource, type, editHistory, recordEdit } = useResourceContext();
-recordEdit();
+const { resourceType, isValid, validationErrors, editHistory } = useResourceContext();
 ```
 
-## Rules
+## Template-Level Hooks
 
-✅ **AppProviders CAN:**
-- Consolidate multiple providers
-- Control provider nesting order
-- Re-export for app-wide access
+### useAppSettings
 
-❌ **AppProviders CANNOT:**
-- Contain business logic
-- Access feature-specific state
-- Perform UI operations
-- Know about routes or features
+**ONLY use in templates, not in organisms.**
 
-## Adding New Providers
+Returns app settings including fieldMode and abstractionLevel.
 
-To add a new global context provider:
+```typescript
+import { useAppSettings } from '@/src/app/providers';
 
-1. Create/import the provider component
-2. Add it to `AppProviders` in the correct nesting order
-3. Document its purpose and usage in this README
-4. Update the "Provider Hierarchy" diagram
+// Use in templates only
+const { settings } = useAppSettings();
+const { fieldMode, abstractionLevel } = settings;
+```
 
-**Nesting order considerations:**
-- Providers that others depend on go first (outermost)
-- Independent providers can go anywhere
-- Providers that many components use should be early (to minimize re-renders lower in tree)
+### useTerminology
 
-## See Also
+**ONLY use in templates, not in organisms.**
 
-- `../templates/` — Layouts that receive app context
-- `../routes/` — Route dispatcher
-- `../README.md` — App layer overview
+Returns terminology function based on abstraction level.
+
+```typescript
+import { useTerminology } from '@/src/app/providers';
+
+// Use in templates only
+const { t, isAdvanced } = useTerminology({ level: 'advanced' });
+const label = t('manifest'); // Returns "Collection" or "Manifest" based on level
+```
+
+## Important: Hook Usage Restrictions
+
+**Template hooks should ONLY be used by:**
+- Templates (`FieldModeTemplate`, `BaseTemplate`)
+- Pages/App root
+
+**Organisms should NOT import these directly.** Instead, receive context via props from templates using the render props pattern.
+
+```typescript
+// ❌ WRONG: Organism importing hook
+import { useAppSettings } from '@/src/app/providers';
+const ArchiveView = () => {
+  const { settings } = useAppSettings(); // ❌ Don't do this
+  return <div>...</div>;
+};
+
+// ✅ CORRECT: Receive via props
+interface ArchiveViewProps {
+  cx: ContextualClassNames;
+  fieldMode: boolean;
+  t: (key: string) => string;
+  isAdvanced: boolean;
+}
+const ArchiveView = ({ cx, fieldMode, t, isAdvanced }: ArchiveViewProps) => {
+  return <div className={cx.surface}>...</div>;
+};
+```

@@ -6,7 +6,7 @@
  * Sized and styled entirely via design tokens.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { COLORS, INTERACTION, LAYOUT, PATTERNS, SPACING, TOUCH_TARGETS, TYPOGRAPHY } from '../../designSystem';
 
 export type InputSize = 'sm' | 'base' | 'lg';
@@ -53,14 +53,6 @@ export const Input: React.FC<InputProps> = ({
   id,
   ...props
 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (autoFocusOnMount && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [autoFocusOnMount]);
-
   const inputStyle: React.CSSProperties = {
     display: 'block',
     width: '100%',
@@ -104,10 +96,10 @@ export const Input: React.FC<InputProps> = ({
         </label>
       )}
       <input
-        ref={inputRef}
         id={id}
         style={inputStyle}
         disabled={disabled}
+        autoFocus={autoFocusOnMount}
         aria-invalid={!!error}
         aria-required={required}
         aria-describedby={error ? `${id}-error` : helpText ? `${id}-help` : undefined}

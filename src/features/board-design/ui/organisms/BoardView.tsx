@@ -14,10 +14,8 @@ import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { useHistory } from '@/hooks/useHistory';
 import { useToast } from '@/components/Toast';
 import {
-  type BoardItem,
   type BoardState,
   calculateAnchorPoints,
-  type Connection,
   type ConnectionType,
   createBoardItem,
   createConnection,

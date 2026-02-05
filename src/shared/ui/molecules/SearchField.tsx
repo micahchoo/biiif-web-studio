@@ -1,32 +1,32 @@
 /**
  * SearchField Molecule
  *
- * Composes: Icon + Input atoms + debounce
+ * Composes: Icon + Input atoms
  *
  * A standalone search input extracted from ViewContainer.
  * Single source of truth for search patterns across the app.
  *
- * IDEAL OUTCOME: Typing triggers onChange after debounce, independent of parent
- * FAILURE PREVENTED: User input loss or thrashing parent component state
+ * NOTE: This is a pure presentational component - no hooks.
+ * All state and debounce logic is handled by parent organism.
+ *
+ * IDEAL OUTCOME: Pure controlled input, parent handles all logic
+ * FAILURE PREVENTED: Hook usage in molecules violates atomic design rules
  */
 
-import React, { useCallback } from 'react';
-import { Icon, Input } from '../atoms';
+import React from 'react';
+import { Button, Icon, Input } from '../atoms';
 import { INPUT_CONSTRAINTS } from '../../config/tokens';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface SearchFieldProps {
-  /** Current search value */
-  value?: string;
-  /** Called with debounced search value */
-  onChange?: (value: string) => void;
+  /** Current search value (controlled) */
+  value: string;
+  /** Called when value changes (parent handles debounce if needed) */
+  onChange: (value: string) => void;
   /** Placeholder text */
   placeholder?: string;
   /** Width variant */
   width?: string;
-  /** Optional: execute search when value changes */
-  onSearch?: (value: string) => void;
   /** Auto-focus on mount */
   autoFocus?: boolean;
   /** Show clear button */
@@ -42,43 +42,38 @@ export interface SearchFieldProps {
 /**
  * SearchField Molecule
  *
+ * Pure presentational component - no hooks.
+ * Must be fully controlled by parent organism.
+ *
  * @example
+ * // Parent organism handles state and debounce
  * const [query, setQuery] = useState('');
+ * const debouncedQuery = useDebouncedValue(query, 300);
+ *
  * <SearchField
  *   value={query}
  *   onChange={setQuery}
  *   placeholder="Search archive..."
- *   onSearch={executeSearch}
  * />
  */
 export const SearchField: React.FC<SearchFieldProps> = ({
-  value = '',
+  value,
   onChange,
   placeholder = 'Search...',
   width = INPUT_CONSTRAINTS.width.search,
-  onSearch,
   autoFocus = false,
   showClear = true,
   className = '',
   cx = {},
-  fieldMode = false,
+  fieldMode: _fieldMode = false,
 }) => {
-  // Context is provided via props (no hook calls)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
 
-  // Debounce text for onChange - hook manages local state and calls onChange after delay
-  const { localValue: text, handleChange, flush } = useDebouncedValue(
-    value,
-    (newValue) => {
-      onChange?.(newValue);
-      onSearch?.(newValue);
-    },
-    INPUT_CONSTRAINTS.debounceMs
-  );
-
-  const handleClear = useCallback(() => {
-    handleChange('');
-    flush(); // Flush immediately on clear
-  }, [handleChange, flush]);
+  const handleClear = () => {
+    onChange('');
+  };
 
   return (
     <div className={`relative ${width} ${className}`}>
@@ -96,8 +91,8 @@ export const SearchField: React.FC<SearchFieldProps> = ({
       <Input
         type="text"
         placeholder={placeholder}
-        value={text}
-        onChange={(e) => handleChange(e.target.value)}
+        value={value}
+        onChange={handleChange}
         autoFocus={autoFocus}
         className={`
           w-full pl-10 pr-8 py-2 border rounded-md text-sm
@@ -109,20 +104,21 @@ export const SearchField: React.FC<SearchFieldProps> = ({
       />
 
       {/* Clear Button */}
-      {showClear && text && (
-        <button
+      {showClear && value && (
+        <Button
           onClick={handleClear}
+          variant="ghost"
+          size="sm"
           className={`
             absolute right-2 top-2 p-0.5 rounded-full
             transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1
             ${cx.iconButton}
           `}
-          type="button"
           title="Clear search"
           aria-label="Clear search"
         >
           <Icon name="close" className="text-sm" aria-hidden="true" />
-        </button>
+        </Button>
       )}
     </div>
   );

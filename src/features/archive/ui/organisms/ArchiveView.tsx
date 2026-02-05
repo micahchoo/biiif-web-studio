@@ -9,28 +9,18 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { IIIFCanvas, IIIFCollection, IIIFItem } from '@/types';
-import { getIIIFValue, isCanvas } from '@/types';
+import { type IIIFCanvas, type IIIFCollection, type IIIFItem, isCanvas } from '@/types';
 import { ValidationIssue } from '@/services/validator';
 // LEGACY: Toast hook - will move to shared/hooks or app/providers
 import { useToast } from '@/components/Toast';
-import { useGridVirtualization, useIIIFTraversal, useResponsive, useSharedSelection, useVirtualization } from '@/hooks';
-import { useDebouncedValue, useURLState } from '@/src/shared/lib';
-import { ARIA_LABELS, IIIF_CONFIG, IIIF_SPEC, KEYBOARD, REDUCED_MOTION, RESOURCE_TYPE_CONFIG } from '@/constants';
-import { getRelationshipType, isValidChildType } from '@/utils/iiifHierarchy';
-import { resolveHierarchicalThumbs } from '@/utils/imageSourceResolver';
-// NEW: StackedThumbnail molecule
-import { ContextMenu, MuseumLabel, StackedThumbnail } from '@/src/shared/ui/molecules';
-import type { ContextMenuSection } from '@/src/shared/ui/molecules';
-// NEW: MultiSelectFilmstrip feature molecule
-import { MultiSelectFilmstrip } from '../molecules/MultiSelectFilmstrip';
+import { useGridVirtualization, useIIIFTraversal, useResponsive, useSharedSelection } from '@/hooks';
+import { IIIF_CONFIG, IIIF_SPEC } from '@/constants';
+import { isValidChildType } from '@/utils/iiifHierarchy';
+import { ContextMenu, type ContextMenuSection } from '@/src/shared/ui/molecules';
 import { createLanguageMap, generateUUID } from '@/utils/iiifTypes';
-// NEW: Feature slices for alternate views - these replace the legacy components/views/ imports
-import { MapView } from '@/src/features/map';
-import { TimelineView } from '@/src/features/timeline';
 import { ArchiveHeader } from './ArchiveHeader';
 import { ArchiveGrid } from './ArchiveGrid';
-import { type ArchiveViewMode, filterByTerm, getFileDNA, getSelectionDNA, loadViewMode, saveViewMode, selectAllCanvases, sortCanvases, type SortMode } from '../../model';
+import { type ArchiveViewMode, filterByTerm, getSelectionDNA, loadViewMode, saveViewMode, sortCanvases, type SortMode } from '../../model';
 
 export interface ArchiveViewProps {
   /** Root IIIF item (Collection or Manifest) */
@@ -49,6 +39,8 @@ export interface ArchiveViewProps {
   onReveal?: (id: string, mode: 'collections' | 'viewer' | 'archive') => void;
   /** Called when selection should be sent to catalog */
   onCatalogSelection?: (ids: string[]) => void;
+  /** Delegate view-mode switch to router (map, timeline, etc.) */
+  onSwitchView?: (mode: string) => void;
   /** Contextual styles from template */
   cx: {
     surface: string;
@@ -99,13 +91,14 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   onOpen,
   onBatchEdit,
   onUpdate,
-  validationIssues = {},
-  onReveal,
+  validationIssues: _validationIssues = {},
+  onReveal: _onReveal,
   onCatalogSelection,
+  onSwitchView,
   cx,
   fieldMode,
-  t,
-  isAdvanced,
+  t: _t,
+  isAdvanced: _isAdvanced,
 }) => {
   const { showToast } = useToast();
   const { isMobile } = useResponsive();
@@ -119,7 +112,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
 
   // Filter and sort state
   const [filter, setFilter] = useState('');
-  const [sortBy, setSortBy] = useState<SortMode>('name');
+  const [sortBy] = useState<SortMode>('name');
 
   // Active item (for detail panel)
   const [activeItem, setActiveItem] = useState<IIIFCanvas | null>(null);
@@ -135,12 +128,8 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   // Use shared selection hook for cross-view persistence
   const {
     selectedIds,
-    lastClickedId,
     handleSelectWithModifier,
-    selectRange,
-    toggle,
     select,
-    selectAll: selectAllItems,
     clear: clearSelection,
     isSelected,
   } = useSharedSelection();
@@ -180,16 +169,6 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
     }
   }, [selectedIds, allCanvases, activeItem]);
 
-  // Rubber-band selection state (simplified for now)
-  const [rubberBand, setRubberBand] = useState({
-    isSelecting: false,
-    startX: 0,
-    startY: 0,
-    currentX: 0,
-    currentY: 0,
-    containerRect: null as DOMRect | null,
-  });
-  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Virtualization for grid view
@@ -206,24 +185,6 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
     overscan: 3,
   });
 
-  // Virtualization for list view
-  const { visibleRange: listVisibleRange } = useVirtualization({
-    totalItems: filteredCanvases.length,
-    itemHeight: 56,
-    containerRef: scrollContainerRef,
-    overscan: 10,
-  });
-
-  // Visible items based on view mode
-  const visibleItems = useMemo(() => {
-    if (view === 'grid') {
-      return filteredCanvases.slice(gridVisibleRange.start, gridVisibleRange.end);
-    }
-    if (view === 'list') {
-      return filteredCanvases.slice(listVisibleRange.start, listVisibleRange.end);
-    }
-    return filteredCanvases;
-  }, [view, filteredCanvases, gridVisibleRange, listVisibleRange]);
 
   // Handlers
   const handleFilterChange = useCallback((value: string) => {
@@ -231,8 +192,13 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   }, []);
 
   const handleViewChange = useCallback((newView: ArchiveViewMode) => {
+    // map/timeline are sibling features — delegate to router
+    if (newView === 'map' || newView === 'timeline') {
+      onSwitchView?.(newView);
+      return;
+    }
     setView(newView);
-  }, []);
+  }, [onSwitchView]);
 
   const handleClearFilter = useCallback(() => {
     setFilter('');
@@ -288,6 +254,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
     const manifestId = IIIF_CONFIG.ID_PATTERNS.MANIFEST(baseUrl, generateUUID());
 
     const newManifest: any = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention -- IIIF Presentation 3 JSON-LD spec key
       '@context': IIIF_SPEC.PRESENTATION_3.CONTEXT,
       id: manifestId,
       type: 'Manifest',
@@ -308,8 +275,8 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   }, [root, onUpdate, selectedIds, select, showToast]);
 
   const handleOpenMap = useCallback(() => {
-    setView('map');
-  }, []);
+    onSwitchView?.('map');
+  }, [onSwitchView]);
 
   const handleEditMetadata = useCallback(() => {
     onCatalogSelection?.(Array.from(selectedIds));
@@ -347,26 +314,10 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
             <div className="text-center text-slate-500">List view not yet implemented</div>
           </div>
         );
+      // map / timeline are handled by handleViewChange → router delegation
       case 'map':
-        return (
-          <MapView
-            root={root}
-            onSelect={onSelect}
-            cx={cx}
-            fieldMode={fieldMode}
-            t={t}
-            isAdvanced={isAdvanced}
-          />
-        );
       case 'timeline':
-        return (
-          <TimelineView
-            root={root}
-            onSelect={onSelect}
-            cx={cx}
-            fieldMode={fieldMode}
-          />
-        );
+        return null;
       default:
         return null;
     }

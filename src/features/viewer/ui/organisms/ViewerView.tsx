@@ -24,26 +24,42 @@
  * - ViewerPanels: Side panels (search, metadata, transcription)
  * - MediaPlayer: Video/audio player wrapper
  * - FilmstripNavigator: Canvas thumbnails
+ *
+ * PHASE 4 INTEGRATION:
+ * Legacy components integrated from components/:
+ * - ImageRequestWorkbench: Panel for IIIF Image API parameter manipulation
+ * - CanvasComposer: Modal for synthesizing new canvases from layers
+ * - PolygonAnnotationTool: Modal for drawing polygon annotations
+ * - SearchPanel: Panel for IIIF Content Search within manifests
+ * - AVPlayer: Component for audio/video canvas playback
+ *
+ * TODO: Migrate legacy components to atomic design:
+ * - ImageRequestWorkbench → features/viewer/ui/molecules/ViewerWorkbench
+ * - CanvasComposer → features/viewer/ui/organisms/ComposerModal
+ * - PolygonAnnotationTool → features/viewer/ui/molecules/AnnotationDrawer
+ * - SearchPanel → features/viewer/ui/molecules/ViewerSearchPanel
+ * - AVPlayer → features/viewer/ui/molecules/MediaPlayer
+ *
+ * @module features/viewer/ui/organisms/ViewerView
  */
 
-import React from 'react';
-import type { IIIFCanvas, IIIFManifest } from '@/types';
-import { getIIIFValue } from '@/types';
-import { Icon } from '@/components/Icon';
+import React, { useState } from 'react';
+import { getIIIFValue, type IIIFCanvas, type IIIFManifest } from '@/types';
+import { Icon } from '@/src/shared/ui/atoms';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { ZoomControl } from '@/src/shared/ui/molecules/ZoomControl';
 import { PageCounter } from '@/src/shared/ui/molecules/PageCounter';
-import { LoadingState } from '@/src/shared/ui/molecules/LoadingState';
 import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import { useViewer } from '../../model';
 
-// LEGACY COMPONENT INTEGRATION:
+// LEGACY COMPONENT INTEGRATION (Phase 4):
 // These components are imported from the legacy components/ directory
 // and integrated into the new atomic design structure.
-// TODO: Refactor these into proper molecules/organisms in future iterations
 import { ImageRequestWorkbench } from '@/components/ImageRequestWorkbench';
-import { AVPlayer } from '@/components/AVPlayer';
+import { CanvasComposer } from '@/components/CanvasComposer';
+import { PolygonAnnotationTool } from '@/components/PolygonAnnotationTool';
 import { SearchPanel } from '@/components/SearchPanel';
+import { AVPlayer } from '@/components/AVPlayer';
 
 export interface ViewerViewProps {
   /** Canvas to display */
@@ -108,8 +124,14 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
   cx,
   fieldMode,
   t,
-  isAdvanced,
+  isAdvanced: _isAdvanced,
 }) => {
+  // Legacy component visibility states (Phase 4 integration)
+  const [showWorkbench, setShowWorkbench] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
+  const [showAnnotationTool, setShowAnnotationTool] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
+
   const {
     mediaType,
     annotations,
@@ -129,6 +151,11 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
     hasSearchService,
   } = useViewer(item, manifest, autoOpenComposer, onComposerOpened);
 
+  // Search service from manifest (derived from useViewer)
+  const currentSearchService = manifest?.service?.find(
+    (s: any) => s.type === 'SearchService2' || s.profile?.includes('search')
+  ) || null;
+
   // Empty state
   if (!item) {
     return (
@@ -143,7 +170,7 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
   }
 
   const label = getIIIFValue(item.label);
-  const currentIndex = manifestItems?.findIndex(c => c.id === item.id) ?? -1;
+  const currentIndex = manifestItems?.findIndex((c) => c.id === item.id) ?? -1;
   const totalItems = manifestItems?.length ?? 1;
 
   return (
@@ -152,9 +179,11 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
       className={`flex-1 flex flex-col overflow-hidden relative ${fieldMode ? 'bg-black' : 'bg-slate-900'}`}
     >
       {/* Header / Toolbar */}
-      <div className={`h-14 border-b flex items-center justify-between px-4 shrink-0 z-20 ${
-        fieldMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-800 border-slate-700'
-      }`}>
+      <div
+        className={`h-14 border-b flex items-center justify-between px-4 shrink-0 z-20 ${
+          fieldMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-800 border-slate-700'
+        }`}
+      >
         {/* Left: Title */}
         <div className="flex items-center gap-3 min-w-0">
           <Icon
@@ -185,8 +214,8 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
               />
 
               {/* Annotation Badge */}
-              <button
-                className={`p-2 rounded-lg hover:bg-slate-800 relative ${
+              <div
+                className={`p-2 rounded-lg hover:bg-slate-800 relative cursor-pointer ${
                   annotations.length > 0 ? 'text-green-400' : 'text-slate-400'
                 } hover:text-white`}
                 title={`${annotations.length} Annotation${annotations.length !== 1 ? 's' : ''}`}
@@ -197,7 +226,7 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
                     {annotations.length}
                   </span>
                 )}
-              </button>
+              </div>
             </>
           )}
 
@@ -206,8 +235,42 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
             <IconButton
               icon="search"
               ariaLabel="Search in Manifest"
-              onClick={() => {}}
-              variant="ghost"
+              onClick={() => setShowSearchPanel(true)}
+              variant={showSearchPanel ? 'primary' : 'ghost'}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+          )}
+
+          {/* Image Workbench Button */}
+          {mediaType === 'image' && (
+            <IconButton
+              icon="tune"
+              ariaLabel="Image Request Workbench"
+              onClick={() => setShowWorkbench(true)}
+              variant={showWorkbench ? 'primary' : 'ghost'}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+          )}
+
+          {/* Canvas Composer Button */}
+          <IconButton
+            icon="auto_awesome_motion"
+            ariaLabel="Canvas Composer"
+            onClick={() => setShowComposer(true)}
+            variant={showComposer ? 'primary' : 'ghost'}
+            cx={cx}
+            fieldMode={fieldMode}
+          />
+
+          {/* Annotation Tool Button */}
+          {mediaType === 'image' && (
+            <IconButton
+              icon="gesture"
+              ariaLabel="Annotation Tool"
+              onClick={() => setShowAnnotationTool(true)}
+              variant={showAnnotationTool ? 'primary' : 'ghost'}
               cx={cx}
               fieldMode={fieldMode}
             />
@@ -272,20 +335,25 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
             />
           ) : mediaType === 'video' ? (
             <div className="flex-1 flex items-center justify-center">
-              {/* Video player placeholder - would integrate AVPlayer component */}
-              <video
-                src={resolvedImageUrl || undefined}
-                controls
-                className="max-w-full max-h-full"
-              />
+              {/* AVPlayer integration for video content */}
+              {item && resolvedImageUrl && (
+                <AVPlayer
+                  canvas={item as any}
+                  src={resolvedImageUrl}
+                  mediaType="video"
+                />
+              )}
             </div>
           ) : mediaType === 'audio' ? (
             <div className="flex-1 flex items-center justify-center">
-              <audio
-                src={resolvedImageUrl || undefined}
-                controls
-                className="w-full max-w-md"
-              />
+              {/* AVPlayer integration for audio content */}
+              {item && resolvedImageUrl && (
+                <AVPlayer
+                  canvas={item as any}
+                  src={resolvedImageUrl}
+                  mediaType="audio"
+                />
+              )}
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-slate-500">
@@ -303,9 +371,11 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
 
       {/* Footer: Page Counter & Filmstrip */}
       {manifestItems && manifestItems.length > 1 && (
-        <div className={`h-12 border-t flex items-center justify-between px-4 ${
-          fieldMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-800 border-slate-700'
-        }`}>
+        <div
+          className={`h-12 border-t flex items-center justify-between px-4 ${
+            fieldMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-800 border-slate-700'
+          }`}
+        >
           <PageCounter
             current={currentIndex + 1}
             total={totalItems}
@@ -319,25 +389,76 @@ export const ViewerView: React.FC<ViewerViewProps> = ({
         </div>
       )}
 
-      {/* LEGACY COMPONENTS INTEGRATION STATUS:
-        
-        ✅ INTEGRATED (Import Ready):
-        - ImageRequestWorkbench: Imported, can be rendered via showWorkbench state
-        - AVPlayer: Imported, can replace native <video>/<audio> elements
-        - SearchPanel: Imported, can be rendered via showSearchPanel state
-        
-        ⏳ PENDING INTEGRATION:
-        - CanvasComposer: Needs panel wrapper and state management
-          LEGACY: components/CanvasComposer.tsx
-          SIZE: 419 lines
-          
-        - PolygonAnnotationTool: Needs modal/panel wrapper
-          LEGACY: components/PolygonAnnotationTool.tsx
-          SIZE: 545 lines
-          
-        To complete integration, wire the showXxx states from useViewer to
-        conditionally render these components. The imports are ready.
-      */}
+      {/* LEGACY COMPONENTS MODALS/PANELS (Phase 4 Integration) */}
+
+      {/* Image Request Workbench */}
+      {showWorkbench && item && (
+        <ImageRequestWorkbench
+          canvas={item as any}
+          onClose={() => setShowWorkbench(false)}
+          onApply={(url) => {
+            console.log('Applied IIIF URL:', url);
+            setShowWorkbench(false);
+          }}
+        />
+      )}
+
+      {/* Canvas Composer */}
+      {showComposer && item && (
+        <CanvasComposer
+          canvas={item as any}
+          root={manifest as any}
+          onUpdate={(updatedCanvas) => {
+            onUpdate(updatedCanvas);
+            setShowComposer(false);
+          }}
+          onClose={() => setShowComposer(false)}
+        />
+      )}
+
+      {/* Polygon Annotation Tool */}
+      {showAnnotationTool && item && (
+        <PolygonAnnotationTool
+          canvas={item as any}
+          imageUrl={resolvedImageUrl || ''}
+          onCreateAnnotation={(annotation) => {
+            console.log('Created annotation:', annotation);
+            // TODO: Add annotation to canvas
+          }}
+          onClose={() => setShowAnnotationTool(false)}
+          existingAnnotations={annotations}
+        />
+      )}
+
+      {/* Search Panel */}
+      {showSearchPanel && manifest && (
+        <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-50 flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="font-bold text-slate-800">Search Manifest</h3>
+            <div
+              onClick={() => setShowSearchPanel(false)}
+              className="p-2 hover:bg-slate-100 rounded-lg cursor-pointer"
+            >
+              <Icon name="close" />
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <SearchPanel
+              manifest={manifest as any}
+              searchService={currentSearchService}
+              onResultSelect={(result) => {
+                console.log('Selected search result:', result);
+              }}
+              onResultsChange={(results) => {
+                console.log('Search results:', results);
+              }}
+              currentCanvasId={item?.id}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+export default ViewerView;

@@ -11,7 +11,8 @@
  */
 
 import React from 'react';
-import { Button, Icon } from '../atoms';
+import { Button } from '@/ui/primitives/Button';
+import { Icon } from '../atoms';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface IconButtonProps {
@@ -32,15 +33,21 @@ export interface IconButtonProps {
   /** Tooltip text (optional) */
   title?: string;
   /** Contextual styles from template */
-  cx?: ContextualClassNames;
+  cx?: ContextualClassNames | {};
   /** Current field mode */
   fieldMode?: boolean;
 }
 
 const sizeClasses = {
-  sm: { button: 'p-1', icon: 'text-sm' },
-  md: { button: 'p-1.5', icon: 'text-base' },
-  lg: { button: 'p-2', icon: 'text-lg' },
+  sm: 'text-sm',
+  md: 'text-base',
+  lg: 'text-lg',
+};
+
+const sizePadding = {
+  sm: '4px',
+  md: '6px',
+  lg: '8px',
 };
 
 /**
@@ -63,38 +70,46 @@ export const IconButton: React.FC<IconButtonProps> = ({
   disabled = false,
   className = '',
   title,
-  cx = {},
-  fieldMode = false,
+  cx: _cx = {},
+  fieldMode: _fieldMode = false,
 }) => {
-  // Context is provided via props (no hook calls)
+  // Map variant to Button atom variant
+  const variantMap: Record<string, 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'> = {
+    default: 'secondary',
+    primary: 'primary',
+    danger: 'danger',
+    ghost: 'ghost',
+  };
 
-  const sizeClass = sizeClasses[size];
+  // Map size to Button atom size
+  const sizeMap: Record<string, 'sm' | 'base' | 'lg' | 'xl'> = {
+    sm: 'sm',
+    md: 'base',
+    lg: 'lg',
+  };
 
-  const variantClasses = {
-    default: `${cx.iconButton} hover:bg-slate-100 dark:hover:bg-slate-800`,
-    primary: `text-iiif-blue hover:bg-blue-50 dark:text-yellow-400 dark:hover:bg-yellow-400/10`,
-    danger: `text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10`,
-    ghost: `text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800`,
+  // Custom style for circular icon button
+  const customStyle: React.CSSProperties = {
+    padding: sizePadding[size],
+    minWidth: 'auto',
+    borderRadius: '8px',
+    aspectRatio: '1',
   };
 
   return (
-    <button
+    <Button
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
       title={title || ariaLabel}
-      className={`
-        rounded-lg transition-all
-        focus:outline-none focus:ring-2 focus:ring-offset-1
-        ${cx.focusRing}
-        ${sizeClass.button}
-        ${variantClasses[variant]}
-        disabled:opacity-50 disabled:cursor-not-allowed
-        ${className}
-      `}
+      variant={variantMap[variant]}
+      size={sizeMap[size]}
+      minimal={variant === 'ghost'}
+      style={customStyle}
+      className={className}
     >
-      <Icon name={icon} className={sizeClass.icon} aria-hidden="true" />
-    </button>
+      <Icon name={icon} className={sizeClasses[size]} aria-hidden="true" />
+    </Button>
   );
 };
 

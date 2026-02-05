@@ -1,15 +1,23 @@
 # Collection Entity (`src/entities/collection/`)
 
-The Collection entity layer re-exports collection-specific selectors and actions for safe feature access.
+The **Collection entity** represents a IIIF Collection — a grouping of Manifests and/or other Collections.
 
-## Structure
+## What is a Collection?
+
+In IIIF Presentation API 3.0, a Collection:
+- Contains an ordered list of Manifests and/or nested Collections
+- Has descriptive metadata (label, description, attribution)
+- Can be hierarchical (collections within collections)
+- Can reference manifests without owning them (membership)
+
+## Entity Structure
 
 ```
-collection/
-├── model.ts     ← Selectors for querying collection state
-├── actions.ts   ← Action creators for collection mutations
-├── index.ts     ← Public API
-└── README.md    (this file)
+src/entities/collection/
+├── model.ts      ← Selectors: read collection data from vault
+├── actions.ts    ← Action creators: modify collection data
+├── index.ts      ← Public API export
+└── README.md     ← This file
 ```
 
 ## Key Concepts
@@ -21,277 +29,141 @@ Collections in IIIF 3.0 have two types of relationships:
 
 The Collection entity supports both patterns.
 
-## Selectors (model.ts)
+## Usage in Features
 
-### `selectById(state, id): IIIFCollection | null`
-
-Get a collection by ID.
+### Reading Collection Data (Model)
 
 ```typescript
 import { collection } from '@/src/entities';
 
+// Get a collection by ID
 const collectionData = collection.model.selectById(state, 'collection-id');
-```
 
-### `selectAll(state): IIIFCollection[]`
-
-Get all collections in the vault.
-
-```typescript
+// Get all collections
 const allCollections = collection.model.selectAll(state);
-```
 
-### `selectMembers(state, collectionId): string[]`
-
-Get member IDs (manifests or nested collections) of a collection.
-
-```typescript
+// Get member IDs (manifests or nested collections)
 const memberIds = collection.model.selectMembers(state, collectionId);
-```
 
-### `selectParentCollection(state, collectionId): string | null`
-
-Get parent collection ID (hierarchical ownership).
-
-```typescript
+// Get parent collection (hierarchical ownership)
 const parentId = collection.model.selectParentCollection(state, collectionId);
-```
 
-### `selectCollectionMemberships(state, collectionId): string[]`
-
-Get all collections that reference this collection (many-to-many).
-
-```typescript
+// Get all collections that reference this collection (many-to-many)
 const memberOfCollections = collection.model.selectCollectionMemberships(state, collectionId);
-```
 
-### `selectLabel(state, collectionId): LanguageMap | null`
-
-Get collection label.
-
-```typescript
-const label = collection.model.selectLabel(state, collectionId);
-console.log(label?.en?.[0]);
-```
-
-### `selectSummary(state, collectionId): LanguageMap | null`
-
-Get collection description.
-
-```typescript
-const summary = collection.model.selectSummary(state, collectionId);
-```
-
-### `selectMetadata(state, collectionId): Metadata[]`
-
-Get collection metadata fields.
-
-```typescript
-const metadata = collection.model.selectMetadata(state, collectionId);
-```
-
-### `selectAncestors(state, collectionId): string[]`
-
-Get path to root (parent collection → ... → root).
-
-```typescript
+// Get ancestors (path to root)
 const ancestors = collection.model.selectAncestors(state, collectionId);
-```
 
-### `selectDescendants(state, collectionId): string[]`
-
-Get all nested items recursively.
-
-```typescript
+// Get descendants (nested items)
 const descendants = collection.model.selectDescendants(state, collectionId);
+
+// Get metadata
+const label = collection.model.selectLabel(state, collectionId);
+const summary = collection.model.selectSummary(state, collectionId);
+const metadata = collection.model.selectMetadata(state, collectionId);
+
+// Get counts
+const memberCount = collection.model.countMembers(state, collectionId);
+const manifestCount = collection.model.countManifests(state, collectionId);
 ```
 
-### `countMembers(state, collectionId): number`
-
-Count direct members.
+### Modifying Collection Data (Actions)
 
 ```typescript
-const count = collection.model.countMembers(state, collectionId);
-```
+import { collection } from '@/src/entities';
+import { useVault } from '@/services/vault';
 
-### `hasMembers(state, collectionId): boolean`
+const vault = useVault();
 
-Check if collection has any members.
-
-```typescript
-if (collection.model.hasMembers(state, collectionId)) {
-  console.log('Collection has members');
-}
-```
-
-### `selectOrphanManifests(state): string[]`
-
-Get all manifests not in any collection.
-
-```typescript
-const orphans = collection.model.selectOrphanManifests(state);
-```
-
-### `isRoot(state, collectionId): boolean`
-
-Check if collection is the root.
-
-```typescript
-if (collection.model.isRoot(state, collectionId)) {
-  console.log('This is the root collection');
-}
-```
-
-### `selectTopLevel(state): IIIFCollection[]`
-
-Get top-level collections (those without a parent).
-
-```typescript
-const topLevel = collection.model.selectTopLevel(state);
-```
-
-## Actions (actions.ts)
-
-All action creators return an `Action` object. Features dispatch these via the Vault singleton's ActionDispatcher.
-
-### `updateLabel(collectionId, label): Action`
-
-Update collection label.
-
-```typescript
-const action = collection.actions.updateLabel(id, { en: ['New Label'] });
+// Update collection label
+const action = collection.actions.updateLabel(collectionId, { en: ['New Collection Name'] });
 vault.dispatch(action);
-```
 
-### `updateSummary(collectionId, summary): Action`
+// Update summary/description
+const action = collection.actions.updateSummary(collectionId, { en: ['Description'] });
+vault.dispatch(action);
 
-Update collection description.
-
-```typescript
-const action = collection.actions.updateSummary(id, { en: ['Description'] });
-```
-
-### `updateMetadata(collectionId, metadata): Action`
-
-Update collection metadata.
-
-```typescript
-const action = collection.actions.updateMetadata(id, [
-  { label: { en: ['Theme'] }, value: { en: ['Nature'] } }
+// Update metadata
+const action = collection.actions.updateMetadata(collectionId, [
+  { label: { en: ['Author'] }, value: { en: ['Name'] } }
 ]);
-```
+vault.dispatch(action);
 
-### `updateRights(collectionId, rights): Action`
+// Add a member (manifest or collection)
+const action = collection.actions.addMember(collectionId, memberId);
+vault.dispatch(action);
 
-Update rights URI.
+// Move to different parent collection
+const action = collection.actions.moveToParentCollection(collectionId, newParentId, index);
+vault.dispatch(action);
 
-```typescript
-const action = collection.actions.updateRights(id, 'https://example.org/rights');
-```
+// Update rights
+const action = collection.actions.updateRights(collectionId, 'https://creativecommons.org/licenses/by/4.0/');
+vault.dispatch(action);
 
-### `updateBehavior(collectionId, behavior): Action`
+// Update viewing behavior
+const action = collection.actions.updateBehavior(collectionId, ['multi-part']);
+vault.dispatch(action);
 
-Update viewing behaviors.
-
-```typescript
-const action = collection.actions.updateBehavior(id, ['paged']);
-```
-
-### `addMember(collectionId, memberId): Action`
-
-Add member (manifest or nested collection) to collection.
-
-This creates a reference, not ownership. The member can be in multiple collections.
-
-```typescript
-const action = collection.actions.addMember(collectionId, manifestId);
+// Batch update
+const action = collection.actions.batchUpdate(collectionId, { 
+  label: { en: ['New'] }, 
+  summary: { en: ['Desc'] } 
+});
 vault.dispatch(action);
 ```
 
-### `moveToParentCollection(collectionId, parentCollectionId, index?): Action`
+## Available Selectors (Model)
 
-Move nested collection to different parent collection.
+| Selector | Purpose |
+|----------|---------|
+| `selectById(state, id)` | Get collection by ID |
+| `selectAll(state)` | Get all collections |
+| `selectMembers(state, collectionId)` | Get member IDs |
+| `selectParentCollection(state, collectionId)` | Get parent collection ID |
+| `selectCollectionMemberships(state, collectionId)` | Get collections referencing this one |
+| `selectAncestors(state, collectionId)` | Get path to root |
+| `selectDescendants(state, collectionId)` | Get all nested items |
+| `selectLabel(state, collectionId)` | Get label |
+| `selectSummary(state, collectionId)` | Get description |
+| `selectMetadata(state, collectionId)` | Get metadata array |
+| `countMembers(state, collectionId)` | Count total members |
+| `countManifests(state, collectionId)` | Count manifest members only |
 
-```typescript
-const action = collection.actions.moveToParentCollection(collectionId, newParentId);
-```
+## Available Actions
 
-### `batchUpdate(collectionId, changes): Action`
-
-Batch update multiple properties.
-
-```typescript
-const action = collection.actions.batchUpdate(collectionId, {
-  label: { en: ['Updated'] },
-  rights: 'https://example.org/rights'
-});
-```
-
-## Usage in Features
-
-```typescript
-import { collection, manifest } from '@/src/entities';
-import { getVault } from '@/services';
-
-export const CollectionBrowser = ({ collectionId, state }) => {
-  const collectionData = collection.model.selectById(state, collectionId);
-  const memberIds = collection.model.selectMembers(state, collectionId);
-  const vault = getVault();
-
-  const handleAddManifest = (manifestId) => {
-    const action = collection.actions.addMember(collectionId, manifestId);
-    vault.dispatch(action);
-  };
-
-  return (
-    <div>
-      <h2>{collectionData?.label?.en?.[0]}</h2>
-      <p>{memberIds.length} members</p>
-      <MemberList memberIds={memberIds} state={state} />
-    </div>
-  );
-};
-```
-
-## Hierarchical vs Many-to-Many
-
-### Hierarchical (Parent-Child)
-
-```
-Root Collection
-└── Sub-Collection
-    └── Sub-Sub-Collection
-```
-
-Use `selectParentCollection()` to traverse upward, `selectAncestors()` for full path.
-
-### Many-to-Many (References)
-
-```
-Manifest
-├── In Collection A
-├── In Collection B
-└── In Collection C
-```
-
-Use `selectCollectionMemberships()` to find all collections that reference a manifest.
+| Action | Purpose |
+|--------|---------|
+| `updateLabel(collectionId, label)` | Update collection label |
+| `updateSummary(collectionId, summary)` | Update description |
+| `updateMetadata(collectionId, metadata)` | Update metadata |
+| `addMember(collectionId, memberId)` | Add member reference |
+| `moveToParentCollection(collectionId, parentId, index?)` | Move to different parent |
+| `updateRights(collectionId, rights)` | Update rights statement |
+| `updateBehavior(collectionId, behavior)` | Update viewing behavior |
+| `batchUpdate(collectionId, changes)` | Update multiple properties |
 
 ## Rules
 
-✅ **Collection entity CAN:**
-- Re-export collection-specific selectors
-- Re-export collection-specific action creators
-- Use vault functions for traversal
-- Support both hierarchical and referential relationships
+✅ **Correct Usage:**
+- Import from `@/src/entities` not from `@/services`
+- Use selectors for reading, actions for writing
+- Dispatch actions through vault
+- Understand the difference between members and children
 
-❌ **Collection entity CANNOT:**
-- Implement new business logic
-- Access other entity models
-- Manage global state
-- Perform UI operations
+❌ **Incorrect Usage:**
+- Don't import directly from `services/vault` in features
+- Don't mutate collection data directly
+- Don't confuse `selectMembers` (membership) with `selectDescendants` (hierarchy)
 
-## See Also
+## Relationships
 
-- `../README.md` — Entity layer philosophy
-- `../canvas/README.md` — Canvas entity
-- `../manifest/README.md` — Manifest entity
+```
+Collection (can be parent)
+    ├── Collection (nested - owned)
+    │       └── Manifest
+    └── Manifest (member - referenced)
+            └── Canvas
+```
+
+A collection can both own nested collections AND reference manifests as members.

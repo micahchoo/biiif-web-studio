@@ -56,7 +56,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   action,
   className = '',
   cx = {},
-  fieldMode = false,
+  fieldMode: _fieldMode = false,
 }) => {
   // Context is provided via props (no hook calls)
 

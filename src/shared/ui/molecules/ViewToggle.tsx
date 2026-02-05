@@ -85,12 +85,14 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         const isSelected = value === option.value;
 
         return (
-          <button
+          <Button
             key={option.value}
             onClick={() => handleClick(option.value)}
             title={option.label || option.value}
             aria-pressed={isSelected}
             aria-label={option.label || option.value}
+            variant="ghost"
+            size="sm"
             className={`
               p-2 rounded transition-all flex items-center justify-center
               focus:outline-none focus:ring-2 focus:ring-offset-1
@@ -100,10 +102,9 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
                 : cx.iconButton
               }
             `}
-            type="button"
           >
             <Icon name={option.icon} className="text-base" aria-hidden="true" />
-          </button>
+          </Button>
         );
       })}
     </div>

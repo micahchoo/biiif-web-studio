@@ -25,9 +25,9 @@
  */
 
 import React from 'react';
-import type { IIIFCanvas, IIIFItem } from '@/types';
-import { getIIIFValue } from '@/types';
-import { Icon } from '@/components/Icon';
+import { getIIIFValue, type IIIFItem } from '@/types';
+import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { TimelineTick } from '@/src/shared/ui/molecules/TimelineTick';
 import {
@@ -131,17 +131,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         {/* Zoom Controls */}
         <div className={`flex items-center gap-2 ${cx.surface} p-1 rounded`}>
           {ZOOM_OPTIONS.map(({ level, label }) => (
-            <button
+            <Button
               key={level}
               onClick={() => setZoomLevel(level)}
-              className={`px-3 py-1 text-xs font-bold rounded transition-all ${
-                zoomLevel === level
-                  ? `${cx.active} shadow`
-                  : cx.textMuted
-              }`}
+              variant={zoomLevel === level ? 'primary' : 'ghost'}
+              size="sm"
+              className="text-xs font-bold"
             >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

@@ -32,6 +32,10 @@ const canvasData = canvas.model.selectById(state, canvasId);
 const annotationPages = canvas.model.selectAnnotationPages(state, canvasId);
 const parentManifest = canvas.model.selectParentManifest(state, canvasId);
 const dimensions = canvas.model.selectDimensions(state, canvasId);
+const ancestors = canvas.model.selectAncestors(state, canvasId);
+const descendants = canvas.model.selectDescendants(state, canvasId);
+const hasAnnos = canvas.model.hasAnnotations(state, canvasId);
+const annoCount = canvas.model.countAnnotations(state, canvasId);
 ```
 
 ### Modifying Canvas Data (Actions)
@@ -56,6 +60,14 @@ const action = canvas.actions.addAnnotation(canvasId, {
   body: { type: 'TextualBody', value: 'Note' }
 });
 vault.dispatch(action);
+
+// Move canvas to different manifest
+const action = canvas.actions.moveToManifest(canvasId, newManifestId, index);
+vault.dispatch(action);
+
+// Batch update multiple properties
+const action = canvas.actions.batchUpdate(canvasId, { label: { en: ['New'] }, summary: { en: ['Desc'] } });
+vault.dispatch(action);
 ```
 
 ## Available Selectors (Model)
@@ -66,9 +78,12 @@ vault.dispatch(action);
 | `selectAnnotationPages(state, canvasId)` | Get annotation page IDs |
 | `selectParentManifest(state, canvasId)` | Get containing manifest ID |
 | `selectAll(state)` | Get all canvases |
+| `selectAncestors(state, canvasId)` | Get path to root |
+| `selectDescendants(state, canvasId)` | Get nested items |
 | `selectDimensions(state, canvasId)` | Get width/height |
 | `selectLabel(state, canvasId)` | Get localized label |
-| `selectThumbnail(state, canvasId)` | Get thumbnail URL |
+| `hasAnnotations(state, canvasId)` | Check if canvas has annotations |
+| `countAnnotations(state, canvasId)` | Count total annotations |
 
 ## Available Actions
 
@@ -80,7 +95,8 @@ vault.dispatch(action);
 | `updateDimensions(canvasId, width, height)` | Update dimensions |
 | `addAnnotation(canvasId, annotation)` | Add annotation |
 | `removeAnnotation(canvasId, annotationId)` | Remove annotation |
-| `updateThumbnail(canvasId, thumbnail)` | Update thumbnail |
+| `moveToManifest(canvasId, manifestId, index?)` | Move to different manifest |
+| `batchUpdate(canvasId, changes)` | Update multiple properties |
 
 ## Rules
 
@@ -88,23 +104,29 @@ vault.dispatch(action);
 - Import from `@/src/entities` not from `@/services`
 - Use selectors in components or derived state
 - Dispatch actions through vault
+- Compose with other entity operations
 
 ❌ **Incorrect Usage:**
 - Don't import directly from `services/vault` in features
 - Don't mutate canvas data directly
 - Don't bypass the entity layer
+- Don't dispatch from within entity actions
 
 ## Dependencies
 
 ```
 canvas/entity
-  ├── imports: services/vault, services/actions
-  ├── used by: features/viewer, features/archive
-  └── depends on: types.ts (IIIFCanvas)
+├── vault service (selectors)
+├── actions service (action creators)
+└── types (IIIFCanvas type)
 ```
 
----
+## Relationships
 
-See also:
-- [`src/entities/manifest/`](../manifest/) — Parent entity
-- [`src/entities/collection/`](../collection/) — Ancestor entity
+```
+Manifest (parent)
+    └── Canvas (this entity)
+            ├── AnnotationPage (children)
+            │       └── Annotation
+            └── Thumbnail (content reference)
+```

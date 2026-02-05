@@ -17,6 +17,7 @@ import { getIIIFValue, IIIFItem } from '../types';
 import { contentStateService, ViewportState } from '../services/contentState';
 import { useToast } from './Toast';
 import { Icon } from './Icon';
+import { Button } from '@/ui/primitives/Button';
 import { COLORS, PATTERNS, SPACING, TOUCH_TARGETS } from '../designSystem';
 
 interface ShareButtonProps {
@@ -179,72 +180,58 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 
   // Dynamic sizing
   const buttonSize = fieldMode ? TOUCH_TARGETS.field : TOUCH_TARGETS.minimum;
-  const sizeClasses = {
-    sm: 'p-1.5 text-sm',
-    md: 'p-2',
-    lg: 'p-3 text-lg'
-  };
 
   // Field mode: simple button
   if (fieldMode) {
     return (
-      <button
+      <Button
         onClick={handleFieldModeShare}
-        draggable
-        onDragStart={handleDragStart}
-        className="
-          inline-flex items-center justify-center gap-2
-          rounded-lg border transition-all
-          bg-black text-yellow-400 border-yellow-400
-          hover:bg-yellow-400 hover:text-black
-          font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400
-          cursor-grab active:cursor-grabbing
-        "
+        variant="primary"
+        size="lg"
         style={{
           height: buttonSize.height,
           minWidth: buttonSize.width,
           padding: `0 ${SPACING[6]}`,
           fontSize: '18px',
+          backgroundColor: '#000000',
+          color: '#facc15',
+          borderColor: '#facc15',
         }}
         aria-label="Share this view"
         title="Share this view"
+        draggable
+        onDragStart={handleDragStart}
       >
         <Icon name="share" className="text-2xl" />
-      </button>
+      </Button>
     );
   }
 
   // Desktop mode: dropdown menu
   return (
     <div className="relative" ref={menuRef}>
-      <button
+      <Button
         onClick={() => setShowMenu(!showMenu)}
-        draggable
-        onDragStart={handleDragStart}
-        className={`
-          ${sizeClasses[size]}
-          inline-flex items-center justify-center gap-2
-          rounded-lg border transition-all
-          bg-white text-slate-700 border-slate-300
-          hover:bg-slate-50 hover:border-blue-500
-          font-medium focus:outline-none focus:ring-2 focus:ring-blue-500
-          cursor-grab active:cursor-grabbing
-        `}
+        variant="secondary"
+        size="base"
         style={{
           height: buttonSize.height,
           minWidth: buttonSize.width,
           padding: `0 ${SPACING[4]}`,
           fontSize: '14px',
+          gap: '8px',
         }}
         aria-label="Share this view"
         aria-expanded={showMenu}
         aria-haspopup="menu"
         title="Share (drag to share via drag-and-drop)"
+        draggable
+        onDragStart={handleDragStart}
       >
         <Icon name="share" className="text-base" />
         <span>{PATTERNS.shareButton.label}</span>
         <Icon name="expand_more" className="text-base opacity-50" />
-      </button>
+      </Button>
 
       {showMenu && (
         <div
@@ -262,100 +249,51 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 
           <div className="p-2 space-y-1">
             {/* Copy View Link */}
-            <button
+            <MenuItemButton
               onClick={handleCopyViewLink}
-              className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 text-left transition-colors group"
-              role="menuitem"
-            >
-              <div className="w-8 h-8 bg-iiif-blue/10 rounded-lg flex items-center justify-center text-iiif-blue group-hover:bg-iiif-blue group-hover:text-white transition-colors">
-                <Icon name={copied === 'view' ? 'check' : 'content_copy'} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-800">
-                  {copied === 'view' ? 'Copied!' : 'Copy View Link'}
-                </div>
-                <div className="text-[10px] text-slate-500 truncate">
-                  {selectedRegion ? 'Share exact zoom & position' : 'Share current canvas'}
-                </div>
-              </div>
-            </button>
+              icon={copied === 'view' ? 'check' : 'content_copy'}
+              label={copied === 'view' ? 'Copied!' : 'Copy View Link'}
+              description={selectedRegion ? 'Share exact zoom & position' : 'Share current canvas'}
+              highlighted={copied === 'view'}
+            />
 
             {/* Copy Canvas Link (simpler) */}
             {selectedRegion && (
-              <button
+              <MenuItemButton
                 onClick={handleCopyCanvasLink}
-                className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 text-left transition-colors group"
-                role="menuitem"
-              >
-                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-slate-200 transition-colors">
-                  <Icon name={copied === 'canvas' ? 'check' : 'link'} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-800">
-                    {copied === 'canvas' ? 'Copied!' : 'Copy Canvas Link'}
-                  </div>
-                  <div className="text-[10px] text-slate-500 truncate">
-                    Link to canvas (no zoom)
-                  </div>
-                </div>
-              </button>
+                icon={copied === 'canvas' ? 'check' : 'link'}
+                label={copied === 'canvas' ? 'Copied!' : 'Copy Canvas Link'}
+                description="Link to canvas (no zoom)"
+                highlighted={copied === 'canvas'}
+              />
             )}
 
             {/* Embed Code */}
-            <button
+            <MenuItemButton
               onClick={handleCopyEmbedCode}
-              className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 text-left transition-colors group"
-              role="menuitem"
-            >
-              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-slate-200 transition-colors">
-                <Icon name={copied === 'embed' ? 'check' : 'code'} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-800">
-                  {copied === 'embed' ? 'Copied!' : 'Copy Embed Code'}
-                </div>
-                <div className="text-[10px] text-slate-500 truncate">
-                  HTML iframe for websites
-                </div>
-              </div>
-            </button>
+              icon={copied === 'embed' ? 'check' : 'code'}
+              label={copied === 'embed' ? 'Copied!' : 'Copy Embed Code'}
+              description="HTML iframe for websites"
+              highlighted={copied === 'embed'}
+            />
 
             {/* Copy JSON */}
-            <button
+            <MenuItemButton
               onClick={handleCopyJson}
-              className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 text-left transition-colors group"
-              role="menuitem"
-            >
-              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-slate-200 transition-colors">
-                <Icon name={copied === 'json' ? 'check' : 'data_object'} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-800">
-                  {copied === 'json' ? 'Copied!' : 'Copy Content State JSON'}
-                </div>
-                <div className="text-[10px] text-slate-500 truncate">
-                  IIIF Content State Annotation
-                </div>
-              </div>
-            </button>
+              icon={copied === 'json' ? 'check' : 'data_object'}
+              label={copied === 'json' ? 'Copied!' : 'Copy Content State JSON'}
+              description="IIIF Content State Annotation"
+              highlighted={copied === 'json'}
+            />
 
             {/* Native Share (if available) */}
             {typeof navigator !== 'undefined' && navigator.share && (
-              <button
+              <MenuItemButton
                 onClick={handleNativeShare}
-                className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 text-left transition-colors group"
-                role="menuitem"
-              >
-                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-slate-200 transition-colors">
-                  <Icon name="ios_share" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-800">Share via...</div>
-                  <div className="text-[10px] text-slate-500 truncate">
-                    Open system share dialog
-                  </div>
-                </div>
-              </button>
+                icon="ios_share"
+                label="Share via..."
+                description="Open system share dialog"
+              />
             )}
           </div>
 
@@ -375,6 +313,76 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         }
       `}</style>
     </div>
+  );
+};
+
+/**
+ * Menu Item Button Component - Uses atomic Button
+ */
+interface MenuItemButtonProps {
+  onClick: () => void;
+  icon: string;
+  label: string;
+  description?: string;
+  highlighted?: boolean;
+}
+
+const MenuItemButton: React.FC<MenuItemButtonProps> = ({
+  onClick,
+  icon,
+  label,
+  description,
+  highlighted = false,
+}) => {
+  const iconElement = (
+    <div
+      style={{
+        width: '32px',
+        height: '32px',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: highlighted ? '#3b82f6' : '#f1f5f9',
+        color: highlighted ? '#ffffff' : '#64748b',
+        transition: 'all 0.2s',
+      }}
+    >
+      <Icon name={icon} className="text-base" aria-hidden="true" />
+    </div>
+  );
+
+  const content = description ? (
+    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+      <span style={{ fontSize: '14px', fontWeight: 500, color: '#1e293b' }}>{label}</span>
+      <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {description}
+      </span>
+    </div>
+  ) : (
+    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+      <span style={{ fontSize: '14px', fontWeight: 500, color: '#1e293b' }}>{label}</span>
+    </div>
+  );
+
+  return (
+    <Button
+      onClick={onClick}
+      variant="ghost"
+      size="sm"
+      fullWidth
+      icon={iconElement}
+      role="menuitem"
+      style={{
+        justifyContent: 'flex-start',
+        padding: '10px',
+        gap: '12px',
+        textAlign: 'left',
+        backgroundColor: 'transparent',
+      }}
+    >
+      {content}
+    </Button>
   );
 };
 

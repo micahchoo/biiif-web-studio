@@ -2,6 +2,13 @@
 
 Route dispatcher that maps app modes to feature views. Routes are wrapped with templates and context providers.
 
+## Files
+
+| File | Purpose |
+|------|---------|
+| `ViewRouter.tsx` | Main view dispatcher - maps modes to feature views |
+| `index.ts` | Barrel export for ViewRouter and types |
+
 ## ViewRouter
 
 **Responsibility:** Route requests to appropriate feature based on app mode
@@ -24,64 +31,36 @@ export const App = () => {
       onModeChange={setMode}
       onSelect={setSelectedId}
       onSidebarToggle={toggleSidebar}
+      sidebarContent={<Sidebar />}
+      headerContent={<Header />}
     />
   );
 };
-```
-
-## Usage
-
-### Minimal Setup
-
-```typescript
-import { ViewRouter } from '@/src/app/routes';
-import { AppProviders } from '@/src/app/providers';
-
-export default function App() {
-  const [mode, setMode] = useState<AppMode>('archive');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showSidebar, setShowSidebar] = useState(true);
-
-  return (
-    <AppProviders>
-      <ViewRouter
-        currentMode={mode}
-        selectedId={selectedId}
-        root={root} // From vault or loaded state
-        showSidebar={showSidebar}
-        onModeChange={setMode}
-        onSelect={setSelectedId}
-        onSidebarToggle={() => setShowSidebar(!showSidebar)}
-        sidebarContent={<Sidebar />}
-        headerContent={<Header />}
-      />
-    </AppProviders>
-  );
-}
 ```
 
 ## Supported Modes
 
 Routes dispatch to different views based on `currentMode`:
 
-| Mode | Feature | Phase | Status |
-|------|---------|-------|--------|
-| `archive` | Browse/organize collections | 4 | TBD |
-| `boards` | Board layout design | 4 | TBD |
-| `metadata` | Edit metadata | 4 | TBD |
-| `staging` | Two-pane import workbench | 4 | TBD |
-| `search` | Full-text search | Future | - |
-| `viewer` | IIIF viewer | Future | - |
-| `collections` | Structure/hierarchy | Future | - |
+| Mode | Feature | Status |
+|------|---------|--------|
+| `archive` | Browse/organize collections | ✅ Implemented |
+| `boards` | Board layout design | ✅ Implemented |
+| `metadata` | Edit metadata | ✅ Implemented |
+| `staging` | Two-pane import workbench | ✅ Implemented |
+| `search` | Full-text search | ✅ Implemented |
+| `viewer` | IIIF viewer | ✅ Implemented |
+| `timeline` | Temporal timeline | ✅ Implemented |
+| `collections` | Structure/hierarchy | Future |
+| `trash` | Deleted items | Future |
 
-## Implementation Pattern (Phase 4+)
+## Implementation Pattern
 
-When features are implemented, routes follow this pattern:
+Each route wraps the feature view with templates:
 
 ```typescript
 export const ViewRouter: React.FC<ViewRouterProps> = ({
   currentMode,
-  selectedId,
   root,
   // ... other props
 }) => {
@@ -94,32 +73,23 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
               return (
                 <ArchiveView
                   root={root}
-                  selectedId={selectedId}
                   cx={cx}
                   fieldMode={fieldMode}
                   t={t}
                   isAdvanced={isAdvanced}
-                  onSelect={onSelect}
                 />
               );
-
             case 'boards':
               return (
-                <BoardDesignView
+                <BoardView
                   root={root}
-                  selectedId={selectedId}
                   cx={cx}
                   fieldMode={fieldMode}
                   t={t}
                   isAdvanced={isAdvanced}
-                  onUpdate={onUpdate}
                 />
               );
-
-            // ... more cases
-
-            default:
-              return <div>Unknown mode: {currentMode}</div>;
+            // ... other cases
           }
         }}
       </FieldModeTemplate>
@@ -128,32 +98,43 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
 };
 ```
 
-## Strangler Fig Pattern
+## Props Interface
 
-During Phase 4 implementation:
+```typescript
+interface ViewRouterProps {
+  /** Current app mode */
+  currentMode: AppMode;
+  /** Currently selected entity ID */
+  selectedId: string | null;
+  /** IIIF tree root */
+  root: IIIFItem | null;
+  /** Show/hide sidebar */
+  showSidebar: boolean;
+  /** Callback when mode changes */
+  onModeChange: (mode: AppMode) => void;
+  /** Callback when selection changes */
+  onSelect: (id: string | null) => void;
+  /** Callback when sidebar toggle is clicked */
+  onSidebarToggle: () => void;
+  /** Optional sidebar content */
+  sidebarContent?: React.ReactNode;
+  /** Optional header content */
+  headerContent?: React.ReactNode;
+}
+```
 
-1. **Current state:** ViewRouter wraps old `components/ViewRouter`
-2. **Implementation:** Add new feature imports (ArchiveView, BoardView, etc.)
-3. **Switchover:** Update case statements to use new feature views
-4. **Cleanup:** Delete old components once all routes are migrated
+## Key Design Decisions
 
-## Rules
+1. **Router knows about templates** — Each route is wrapped with `BaseTemplate` and `FieldModeTemplate`
+2. **Context via render props** — Template context is passed to features via render props, not hooks
+3. **Features are mode-agnostic** — Features don't know about routing, they just receive props
+4. **Incremental adoption** — New features can be added without changing existing ones
 
-✅ **Routes CAN:**
-- Map modes to views
-- Use templates for layout/context
-- Compose feature organisms
-- Handle route-specific logic
+## Adding a New Route
 
-❌ **Routes CANNOT:**
-- Contain business logic
-- Know about feature internals
-- Manage entity state (use vault)
-- Access other routes directly
+To add a new route:
 
-## See Also
-
-- `../templates/` — Layout templates
-- `../providers/` — Context providers
-- `../../entities/` — Domain models
-- `../../features/` — Feature implementations
+1. Create the feature in `src/features/<name>/`
+2. Export the main view component from `src/features/<name>/index.ts`
+3. Add a case in `ViewRouter.tsx` switch statement
+4. Update the `AppMode` type if needed

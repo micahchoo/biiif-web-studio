@@ -10,9 +10,10 @@
  */
 
 import React from 'react';
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/src/shared/ui/atoms';
 import { getIIIFValue } from '@/types';
 import type { PlacedResource } from '@/hooks/useLayerHistory';
+import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export type BackgroundMode = 'grid' | 'dark' | 'light';
 
@@ -47,6 +48,8 @@ export interface ComposerCanvasProps {
   onDragOver: (e: React.DragEvent) => void;
   /** Callback when text changes */
   onTextChange: (id: string, text: string) => void;
+  cx?: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**
@@ -59,7 +62,7 @@ export const ComposerCanvas: React.FC<ComposerCanvasProps> = ({
   bgMode,
   layers,
   activeLayerId,
-  isResizing,
+  isResizing: _isResizing,
   containerRef,
   onLayerSelect,
   onResizeStart,

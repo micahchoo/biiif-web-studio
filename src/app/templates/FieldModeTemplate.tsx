@@ -20,9 +20,8 @@
  */
 
 import React, { ReactNode } from 'react';
-import { useAppSettings } from '@/hooks/useAppSettings';
+import { useAppSettings, useTerminology } from '@/src/app/providers';
 import { ContextualClassNames, useContextualStyles } from '@/hooks/useContextualStyles';
-import { useTerminology } from '@/hooks/useTerminology';
 
 export interface FieldModeTemplateRenderProps {
   /** Contextual class names for current fieldMode (light/dark) */

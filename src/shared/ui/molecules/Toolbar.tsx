@@ -56,7 +56,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   compact = false,
   ariaLabel = 'Toolbar',
   cx,
-  fieldMode = false,
+  fieldMode: _fieldMode = false,
 }) => {
   // Context is provided via props (no hook calls)
 

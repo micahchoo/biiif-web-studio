@@ -4,16 +4,25 @@
  * Composes: StackedThumbnail, Icon atoms, and virtualized grid layout.
  * Renders a grid of Canvas items with selection, hover, and context menu.
  *
+ * PROPS NOTE: 11 props are required for virtualization support:
+ * - items, visibleRange, columns, itemSize: Virtualization configuration
+ * - isSelected, onItemClick, onContextMenu: Selection/interaction handlers
+ * - cx, fieldMode, isMobile: Theming and responsive behavior
+ * - activeItem, filter, onClearFilter: UI state management
+ *
+ * This is acceptable for an organism with virtualization requirements.
+ * See: docs/Atomic System Architecture.md - Organism prop guidelines
+ *
  * IDEAL OUTCOME: Efficient virtualized grid with consistent styling
  * FAILURE PREVENTED: No prop drilling, uses cx and fieldMode from template
  */
 
 import React from 'react';
-import type { IIIFCanvas } from '@/types';
-import { getIIIFValue } from '@/types';
+import { getIIIFValue, type IIIFCanvas } from '@/types';
 // NEW: StackedThumbnail molecule
 import { StackedThumbnail } from '@/src/shared/ui/molecules';
 import { Icon } from '@/src/shared/ui/atoms';
+import { Button } from '@/ui/primitives/Button';
 import { RESOURCE_TYPE_CONFIG } from '@/constants';
 import { resolveHierarchicalThumbs } from '@/utils/imageSourceResolver';
 import { getFileDNA } from '../../model';
@@ -98,7 +107,7 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
   const gap = 16;
   const rowHeight = itemSize.height + gap;
   const totalRows = Math.ceil(items.length / columns);
-  const totalHeight = totalRows * rowHeight;
+  const _totalHeight = totalRows * rowHeight;
 
   const startRow = Math.floor(visibleRange.start / columns);
   const topSpacer = startRow * rowHeight;
@@ -174,12 +183,14 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
               : 'Import files to get started building your archive.'}
           </p>
           {filter && onClearFilter && (
-            <button
+            <Button
               onClick={onClearFilter}
-              className="mt-4 px-4 py-2 bg-iiif-blue text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+              variant="primary"
+              size="sm"
+              className="mt-4"
             >
               Clear Filter
-            </button>
+            </Button>
           )}
         </div>
       )}

@@ -23,6 +23,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '../atoms';
+import { IconButton } from './IconButton';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 import { CLUSTER_INTENSITY } from '../../config/tokens';
 
@@ -48,6 +49,7 @@ export interface ClusterBadgeProps {
   disabled?: boolean;
   /** Contextual styles from template (required for theming) */
   cx: ContextualClassNames;
+  fieldMode?: boolean;
 }
 
 /**
@@ -90,9 +92,11 @@ export const ClusterBadge: React.FC<ClusterBadgeProps> = ({
   return (
     <div className="relative">
       {/* Cluster badge button */}
-      <button
+      <Button
         onClick={handleClick}
         disabled={disabled}
+        variant="secondary"
+        size="sm"
         className={`
           ${config.badge} rounded-full flex items-center justify-center
           font-bold text-white shadow-lg transition-all duration-200
@@ -103,7 +107,7 @@ export const ClusterBadge: React.FC<ClusterBadgeProps> = ({
         aria-label={`${count} items in cluster`}
       >
         {count > 99 ? '99+' : count}
-      </button>
+      </Button>
 
       {/* Expanded item preview */}
       {isExpanded && items.length > 0 && (
@@ -125,28 +129,33 @@ export const ClusterBadge: React.FC<ClusterBadgeProps> = ({
             <span className={`text-sm font-medium ${cx.text}`}>
               {count} items
             </span>
-            <button
+            <IconButton
+              icon="close"
+              ariaLabel="Close"
               onClick={() => setIsExpanded(false)}
-              className={`${cx.textMuted} hover:${cx.text}`}
-              aria-label="Close"
-            >
-              <span className="material-icons text-sm">close</span>
-            </button>
+              variant="ghost"
+              size="sm"
+              className={cx.textMuted}
+              cx={cx}
+            />
           </div>
 
           {/* Item list */}
           <div className="p-2 space-y-1">
             {items.slice(0, 5).map((item) => (
-              <button
+              <Button
                 key={item.id}
                 onClick={() => {
                   onSelectItem?.(item.id);
                   setIsExpanded(false);
                 }}
+                variant="ghost"
+                size="sm"
                 className={`
                   w-full flex items-center gap-2 p-2 rounded
                   text-left transition-colors
                   hover:${cx.headerBg}
+                  justify-start
                 `}
               >
                 {item.thumbnail ? (
@@ -171,7 +180,7 @@ export const ClusterBadge: React.FC<ClusterBadgeProps> = ({
                   <p className={`text-sm truncate ${cx.text}`}>{item.title}</p>
                   <p className={`text-xs ${cx.textMuted}`}>{item.type}</p>
                 </div>
-              </button>
+              </Button>
             ))}
 
             {/* Show more indicator */}
@@ -203,3 +212,5 @@ export const ClusterBadge: React.FC<ClusterBadgeProps> = ({
     </div>
   );
 };
+
+export default ClusterBadge;

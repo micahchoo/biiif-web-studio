@@ -7,14 +7,26 @@
  *
  * ATOMIC DESIGN COMPLIANCE:
  * - Props-driven, no context
- * - Internal state only (positioning)
+ * - Internal state only (positioning via refs)
+ * - Composes: ContextMenuSection, ContextMenuSelectionBadge
  * - Uses Icon atom
+ *
+ * IDEAL OUTCOME: Accessible, positioned context menus with clear sections
+ * FAILURE PREVENTED: Menus going off-screen, missing keyboard support
+ *
+ * @module shared/ui/molecules/ContextMenu
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Icon } from '../atoms';
+import { ContextMenuSection } from './ContextMenuSection';
+import { ContextMenuSelectionBadge } from './ContextMenuSelectionBadge';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
+// Re-export types from sub-components for backwards compatibility
+export type { ContextMenuItemProps as ContextMenuItem } from './ContextMenuItem';
+export type { ContextMenuSectionProps as ContextMenuSection } from './ContextMenuSection';
+
+// Keep interfaces here for backwards compatibility
 export interface ContextMenuItem {
   /** Unique identifier for the item */
   id: string;
@@ -34,7 +46,7 @@ export interface ContextMenuItem {
   description?: string;
 }
 
-export interface ContextMenuSection {
+export interface ContextMenuSectionType {
   /** Section title (optional) */
   title?: string;
   /** Items in this section */
@@ -46,7 +58,7 @@ export interface ContextMenuProps {
   x: number;
   y: number;
   /** Menu sections (separated by dividers) */
-  sections: ContextMenuSection[];
+  sections: ContextMenuSectionType[];
   /** Close handler */
   onClose: () => void;
   /** Whether to show the menu */
@@ -59,10 +71,30 @@ export interface ContextMenuProps {
   selectionCount?: number;
   /** Contextual styles from template */
   cx?: ContextualClassNames;
-  /** Current field mode */
+  /** Current field mode (unused, kept for API compatibility) */
   fieldMode?: boolean;
 }
 
+/**
+ * ContextMenu Component
+ *
+ * Positioned context menu with sections and keyboard support.
+ *
+ * @example
+ * <ContextMenu
+ *   x={100}
+ *   y={200}
+ *   isOpen={true}
+ *   onClose={() => setOpen(false)}
+ *   sections={[
+ *     {
+ *       items: [
+ *         { id: 'open', label: 'Open', icon: 'visibility', onClick: () => {} },
+ *       ]
+ *     }
+ *   ]}
+ * />
+ */
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   x,
   y,
@@ -73,15 +105,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   maxHeight = 400,
   selectionCount = 1,
   cx = {},
-  fieldMode = false,
+  fieldMode: _fieldMode = false,
 }) => {
-  // Context is provided via props (no hook calls)
-
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to close
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return undefined;
 
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -104,7 +134,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
   // Handle escape key to close
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return undefined;
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -117,7 +147,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   }, [isOpen, onClose]);
 
   // Calculate position to keep menu on screen
-  const getAdjustedPosition = useCallback(() => {
+  const computePosition = useCallback(() => {
     if (!menuRef.current) return { x, y };
 
     const menu = menuRef.current;
@@ -148,51 +178,18 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   // Update position after render
   useEffect(() => {
     if (isOpen && menuRef.current) {
-      const pos = getAdjustedPosition();
+      const pos = computePosition();
       menuRef.current.style.left = `${pos.x}px`;
       menuRef.current.style.top = `${pos.y}px`;
     }
-  }, [isOpen, getAdjustedPosition]);
+  }, [isOpen, computePosition]);
 
   if (!isOpen) return null;
 
   // Filter out empty sections
-  const validSections = sections.filter(section =>
-    section.items.some(item => !item.disabled)
-  );
+  const validSections = sections.filter((section) => section.items.some((item) => !item.disabled));
 
   if (validSections.length === 0) return null;
-
-  const getItemClasses = (item: ContextMenuItem) => {
-    const baseClasses = 'w-full px-3 py-2 text-left text-sm flex items-center gap-3 transition-colors rounded-lg mx-1';
-
-    if (item.disabled) {
-      return `${baseClasses} opacity-40 cursor-not-allowed ${cx.textMuted}`;
-    }
-
-    switch (item.variant) {
-      case 'danger':
-        return `${baseClasses} ${cx.danger} ${cx.dangerHover}`;
-      case 'primary':
-        return `${baseClasses} text-iiif-blue hover:bg-iiif-blue/10`;
-      default:
-        return `${baseClasses} ${cx.subtleText} hover:${cx.subtleBg}`;
-    }
-  };
-
-  const getIconClasses = (item: ContextMenuItem) => {
-    const baseClasses = 'text-lg';
-    if (item.disabled) return `${baseClasses} ${cx.label}`;
-
-    switch (item.variant) {
-      case 'danger':
-        return `${baseClasses} ${cx.danger}`;
-      case 'primary':
-        return `${baseClasses} text-iiif-blue`;
-      default:
-        return `${baseClasses} ${cx.textMuted}`;
-    }
-  };
 
   return (
     <div
@@ -208,61 +205,24 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         left: x,
         top: y,
         maxHeight,
-        overflowY: 'auto'
+        overflowY: 'auto',
       }}
       onContextMenu={(e) => e.preventDefault()}
+      role="menu"
     >
       {/* Selection count badge for multi-select */}
-      {selectionCount > 1 && (
-        <div className={`px-3 py-1.5 mb-2 mx-1 rounded-lg ${cx.subtleBg}`}>
-          <span className={`text-xs font-bold ${cx.textMuted}`}>
-            {selectionCount} items selected
-          </span>
-        </div>
-      )}
+      <ContextMenuSelectionBadge count={selectionCount} cx={cx} />
 
+      {/* Menu sections */}
       {validSections.map((section, sectionIndex) => (
-        <React.Fragment key={section.title || `section-${sectionIndex}`}>
-          {/* Section divider (except before first section) */}
-          {sectionIndex > 0 && (
-            <div className={`h-px my-1.5 mx-3 ${cx.subtleBg}`} />
-          )}
-
-          {/* Section title */}
-          {section.title && (
-            <div className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest ${cx.label}`}>
-              {section.title}
-            </div>
-          )}
-
-          {/* Section items */}
-          <div className="px-1">
-            {section.items.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  if (!item.disabled) {
-                    item.onClick();
-                    onClose();
-                  }
-                }}
-                disabled={item.disabled}
-                className={getItemClasses(item)}
-                title={item.description}
-              >
-                {item.icon && (
-                  <Icon name={item.icon} className={getIconClasses(item)} />
-                )}
-                <span className="flex-1">{item.label}</span>
-                {item.shortcut && (
-                  <kbd className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${cx.kbd}`}>
-                    {item.shortcut}
-                  </kbd>
-                )}
-              </button>
-            ))}
-          </div>
-        </React.Fragment>
+        <ContextMenuSection
+          key={section.title || `section-${sectionIndex}`}
+          title={section.title}
+          items={section.items}
+          showDivider={sectionIndex > 0}
+          cx={cx}
+          onItemClick={() => onClose()}
+        />
       ))}
     </div>
   );

@@ -13,6 +13,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Icon, Input } from '../atoms';
+import { IconButton } from './IconButton';
 import { INPUT_CONSTRAINTS } from '../../config/tokens';
 import { sanitizeForInput } from '@/utils/inputValidation';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
@@ -64,7 +65,7 @@ export const FilterInput: React.FC<FilterInputProps> = ({
   id,
   ariaLabel,
   cx = {},
-  fieldMode = false,
+  fieldMode: _fieldMode = false,
 }) => {
   // Context is provided via props (no hook calls)
 
@@ -127,8 +128,6 @@ export const FilterInput: React.FC<FilterInputProps> = ({
   }, [debounceTimer]);
 
   const inputId = id || 'filter-input';
-  const clearButtonId = `${inputId}-clear`;
-
   return (
     <div className={`relative ${width} ${className}`}>
       {/* Search Icon */}
@@ -160,20 +159,17 @@ export const FilterInput: React.FC<FilterInputProps> = ({
 
       {/* Clear Button */}
       {showClear && localValue && (
-        <button
-          id={clearButtonId}
-          onClick={handleClear}
-          className={`
-            absolute right-2 top-2 p-0.5 rounded-full
-            transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1
-            ${cx.iconButton}
-          `}
-          title="Clear filter"
-          aria-label="Clear filter"
-          type="button"
-        >
-          <Icon name="close" className="text-sm" aria-hidden="true" />
-        </button>
+        <div className="absolute right-2 top-2">
+          <IconButton
+            icon="close"
+            ariaLabel="Clear filter"
+            onClick={handleClear}
+            size="sm"
+            variant="ghost"
+            title="Clear filter"
+            cx={cx}
+          />
+        </div>
       )}
     </div>
   );

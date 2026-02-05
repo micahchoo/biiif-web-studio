@@ -41,6 +41,16 @@ export type { MuseumLabelProps, MuseumLabelType } from './MuseumLabel';
 export { ContextMenu } from './ContextMenu';
 export type { ContextMenuProps, ContextMenuItem, ContextMenuSection } from './ContextMenu';
 
+// Context Menu Sub-components
+export { ContextMenuItem, getContextMenuItemClasses, getContextMenuIconClasses } from './ContextMenuItem';
+export type { ContextMenuItemProps } from './ContextMenuItem';
+
+export { ContextMenuSection } from './ContextMenuSection';
+export type { ContextMenuSectionProps } from './ContextMenuSection';
+
+export { ContextMenuSelectionBadge } from './ContextMenuSelectionBadge';
+export type { ContextMenuSelectionBadgeProps } from './ContextMenuSelectionBadge';
+
 // Filter & Search
 export { FilterInput } from './FilterInput';
 export type { FilterInputProps } from './FilterInput';
@@ -70,6 +80,9 @@ export type { IconButtonProps } from './IconButton';
 
 export { ActionButton } from './ActionButton';
 export type { ActionButtonProps } from './ActionButton';
+
+export { MenuButton } from './MenuButton';
+export type { MenuButtonProps } from './MenuButton';
 
 // State & Info
 export { EmptyState } from './EmptyState';
@@ -111,3 +124,23 @@ export type { TimelineTickProps, TimelineItem } from './TimelineTick';
 
 export { RangeSelector } from './RangeSelector';
 export type { RangeSelectorProps, RangePreset } from './RangeSelector';
+
+// Drag & Drop Components (Phase 4)
+export { CanvasItem } from './CanvasItem';
+export type { CanvasItemProps } from './CanvasItem';
+
+export { CollectionCard } from './CollectionCard';
+export type { CollectionCardProps } from './CollectionCard';
+
+// CollectionCard Sub-components (for advanced composition)
+export { CollectionCardHeader } from './CollectionCardHeader';
+export type { CollectionCardHeaderProps } from './CollectionCardHeader';
+
+export { CollectionCardDropOverlay } from './CollectionCardDropOverlay';
+export type { CollectionCardDropOverlayProps } from './CollectionCardDropOverlay';
+
+export { CollectionCardEditForm } from './CollectionCardEditForm';
+export type { CollectionCardEditFormProps } from './CollectionCardEditForm';
+
+export { CollectionCardMenu } from './CollectionCardMenu';
+export type { CollectionCardMenuProps } from './CollectionCardMenu';
