@@ -1,7 +1,7 @@
 
 import JSZip from 'jszip';
 import { getIIIFValue, IIIFAnnotation, IIIFCanvas, IIIFCollection, IIIFItem, IIIFManifest, isCanvas, isCollection, isManifest } from '@/src/shared/types';
-import { validator } from './validator';
+import { validator } from '@/src/entities/manifest/model/validation/validator';
 import {
   createImageServiceReference,
   generateInfoJson,
