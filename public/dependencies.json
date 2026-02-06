@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-06T18:11:33.275Z",
+  "generatedAt": "2026-02-06T18:25:21.618Z",
   "totalFiles": 373,
   "files": {
     "src/app/App.tsx": {
@@ -466,7 +466,7 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 32242,
+      "size": 32300,
       "lines": 743
     },
     "src/app/providers/AppModeProvider.tsx": {
@@ -17896,8 +17896,8 @@
         "src/features/viewer/model/useMediaPlayer.ts"
       ],
       "dependents": [],
-      "size": 17298,
-      "lines": 560
+      "size": 17456,
+      "lines": 564
     },
     "src/features/viewer/model/useMediaPlayer.ts": {
       "filePath": "src/features/viewer/model/useMediaPlayer.ts",
@@ -29790,8 +29790,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 13094,
-      "lines": 385
+      "size": 13145,
+      "lines": 386
     },
     "src/shared/ui/molecules/FormInput.tsx": {
       "filePath": "src/shared/ui/molecules/FormInput.tsx",

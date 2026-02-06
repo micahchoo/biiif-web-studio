@@ -143,6 +143,8 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   // State
   const [filter, setFilter] = useState('');
   const [sortBy] = useState<SortMode>('name');
+  const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>('comfortable');
+  useEffect(() => { console.log('[ArchiveView] Density changed to:', density); }, [density]);
   const [activeItem, setActiveItem] = useState<IIIFCanvas | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string; isMulti?: boolean } | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -192,10 +194,13 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   // Handlers
   const handleFilterChange = useCallback((value: string) => setFilter(value), []);
   const handleViewChange = useCallback((newView: ArchiveViewMode) => {
+    console.log('[ArchiveView] View change requested:', newView);
     if (newView === 'map' || newView === 'timeline') {
+      console.log('[ArchiveView] Delegating to app mode:', newView);
       onSwitchView?.(newView);
       return;
     }
+    console.log('[ArchiveView] Setting view to:', newView);
     setView(newView);
   }, [onSwitchView]);
 
@@ -299,6 +304,8 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
             activeItem={activeItem}
             filter={filter}
             onClearFilter={handleClearFilter}
+            density={density}
+            onDensityChange={setDensity}
           />
         );
       case 'list':

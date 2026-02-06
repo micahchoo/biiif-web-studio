@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './src/index.css';
 import App from './src/app/App';
 import { ErrorBoundary } from '@/src/shared/ui/molecules/ErrorBoundary';
 import { searchService } from '@/src/shared/services/searchService';
