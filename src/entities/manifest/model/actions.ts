@@ -36,7 +36,7 @@ import {
   IIIFManifest,
   LanguageMap
 } from '@/src/shared/types';
-import { PropertyChange, provenanceService } from './provenanceService';
+import { PropertyChange, provenanceService } from '@/src/shared/services/provenanceService';
 import {
   getRelationshipType,
   getValidChildTypes,
