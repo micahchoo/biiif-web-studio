@@ -6,7 +6,7 @@
  * from traversal.ts for performance when only items array is needed.
  */
 
-import type { IIIFItem } from '../../../types';
+import type { IIIFItem } from '@/src/shared/types';
 import { findNodeById, getPathToNode } from './traversal';
 
 // ============================================================================

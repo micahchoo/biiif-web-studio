@@ -11,7 +11,7 @@ import {
 } from '../../atoms/id';
 import type { DuplicateIdResult } from './traversal';
 import { findDuplicateIds } from './traversal';
-import type { IIIFItem } from '../../../types';
+import type { IIIFItem } from '@/src/shared/types';
 
 // ============================================================================
 // ID Generation

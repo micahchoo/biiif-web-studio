@@ -20,6 +20,7 @@
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import type { IIIFItem } from '@/src/shared/types';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { Icon } from '@/src/shared/ui/atoms';
 import { FacetPill } from '@/src/shared/ui/molecules/FacetPill';
 import { ResultCard } from '@/src/shared/ui/molecules/ResultCard';
@@ -40,18 +41,7 @@ export interface SearchViewProps {
   /** Optional callback to reveal item on map */
   onRevealMap?: (id: string) => void;
   /** Contextual styles from template */
-  cx: {
-    surface: string;
-    text: string;
-    accent: string;
-    border: string;
-    divider: string;
-    headerBg: string;
-    textMuted: string;
-    input: string;
-    label: string;
-    active: string;
-  };
+  cx: ContextualClassNames;
   /** Current field mode */
   fieldMode: boolean;
   /** Terminology function from template */

@@ -57,7 +57,7 @@ export interface AppSettings {
   ingestPreferences: typeof import('@/src/shared/constants').DEFAULT_INGEST_PREFS;
   autoSaveInterval: number; // in seconds
   showTechnicalIds: boolean;
-  metadataTemplate: string[]; // List of suggested property labels
+  metadataTemplate: readonly string[]; // List of suggested property labels
   metadataComplexity: import('@/src/shared/constants').MetadataComplexity; // Field visibility level
 }
 
@@ -716,3 +716,16 @@ export class LanguageString {
     return this.get() || '[empty]';
   }
 }
+
+// ============================================================================
+// Vault Types - Re-exported from vault module for convenience
+// ============================================================================
+export type {
+  EntityType,
+  NormalizedState,
+  TrashedEntity,
+  VaultSnapshot,
+  RemoveOptions,
+  RestoreOptions,
+  EmptyTrashResult
+} from '@/src/entities/manifest/model/vault/types';

@@ -29,6 +29,8 @@ export interface StepIndicatorProps {
   variant?: 'numbered' | 'simple';
   /** Additional CSS class */
   className?: string;
+  /** Field mode styling */
+  fieldMode?: boolean;
 }
 
 export const StepIndicator: React.FC<StepIndicatorProps> = ({

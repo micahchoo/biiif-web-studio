@@ -141,7 +141,7 @@ export function denormalizeAnnotationPage(state: NormalizedState, id: string): I
     .map(aid => {
       const anno = cloneAsRecord(state.entities.Annotation[aid]);
       applyExtensions(anno, state.extensions[aid]);
-      return recordAs<import('@/types').IIIFAnnotation>(anno);
+      return recordAs<import('@/src/shared/types').IIIFAnnotation>(anno);
     });
 
   // Apply preserved extensions

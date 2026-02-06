@@ -2,7 +2,7 @@
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms/Icon';
 import { getIIIFValue, IIIFItem } from '@/src/shared/types';
-import { ValidationIssue } from '@/src/shared/services/validator';
+import { ValidationIssue } from '@/src/entities/manifest/model/validation/validator';
 import { useSharedSelection } from '@/src/shared/lib/hooks/useSharedSelection';
 
 interface StatusBarProps {

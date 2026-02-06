@@ -42,6 +42,7 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import type { IIIFCollection, IIIFItem } from '@/src/shared/types';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { ViewContainer } from '@/src/shared/ui/molecules/ViewContainer';
 import { FilterInput } from '@/src/shared/ui/molecules/FilterInput';
 import { Toolbar } from '@/src/shared/ui/molecules/Toolbar';
@@ -61,19 +62,7 @@ export interface StagingViewProps {
   /** Target collections (right pane) - optional */
   targetCollections?: IIIFCollection[];
   /** Contextual styles from template */
-  cx: {
-    surface: string;
-    text: string;
-    accent: string;
-    border: string;
-    divider: string;
-    headerBg: string;
-    textMuted: string;
-    input: string;
-    label: string;
-    active: string;
-    inactive: string;
-  };
+  cx: ContextualClassNames;
   /** Current field mode */
   fieldMode: boolean;
   /** Called when manifests are added to a collection */

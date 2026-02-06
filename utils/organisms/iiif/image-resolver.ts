@@ -10,7 +10,7 @@ import {
   isImageMimeType,
   isVisualMimeType,
 } from '../../molecules/media-detection';
-import type { IIIFItem } from '../../../types';
+import type { IIIFItem } from '@/src/shared/types';
 
 // ============================================================================
 // Types

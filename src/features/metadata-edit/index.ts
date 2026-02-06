@@ -51,4 +51,6 @@ export { Inspector } from './ui/organisms/Inspector';
 export { CSVImportModal } from './ui/molecules/CSVImportModal';
 export type { CSVImportModalProps, ImportStep, CSVImportResult } from './ui/molecules/CSVImportModal';
 
+export { StructureTabPanel } from './ui/molecules/StructureTabPanel';
+
 export * from './model';

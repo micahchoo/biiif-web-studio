@@ -372,6 +372,8 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
                     settings={settings}
                     visible={true}
                     onClose={() => setShowInspectorPanel(false)}
+                    // Canvases for structure tab (when inspecting manifest)
+                    canvases={viewerData.manifest?.items || []}
                     // Annotations for display
                     annotations={canvasAnnotations}
                     // Annotation creation integration

@@ -16,20 +16,7 @@
 import React from 'react';
 import { ListItemBase } from '@/src/shared/ui/molecules';
 import { getIIIFValue, type IIIFAnnotation } from '@/src/shared/types';
-
-// Reuse the ContextualStyles interface from MetadataEditorPanel
-export interface ContextualStyles {
-  surface: string;
-  text: string;
-  accent: string;
-  border: string;
-  divider: string;
-  headerBg: string;
-  textMuted: string;
-  input: string;
-  label: string;
-  active: string;
-}
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface AnnotationItemProps {
   /** Annotation data */
@@ -43,7 +30,7 @@ export interface AnnotationItemProps {
   /** Called when delete button is clicked */
   onDelete?: () => void;
   /** Contextual styles from parent */
-  cx: ContextualStyles;
+  cx: ContextualClassNames;
   /** Field mode flag */
   fieldMode: boolean;
   /** Additional CSS class */

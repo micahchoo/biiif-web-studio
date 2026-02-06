@@ -18,6 +18,7 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { getIIIFValue, type IIIFAnnotation, type IIIFCanvas, type IIIFManifest } from '@/src/shared/types';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import {
   AnnotationDrawingOverlay,
   FilmstripNavigator,
@@ -48,20 +49,7 @@ export interface ViewerViewProps {
   onComposerOpened?: () => void;
   /** Navigate to Board view with current canvas */
   onAddToBoard?: (canvasId: string) => void;
-  cx: {
-    surface: string;
-    text: string;
-    accent: string;
-    border: string;
-    divider: string;
-    headerBg: string;
-    textMuted: string;
-    input: string;
-    label: string;
-    active: string;
-    subtleBg?: string;
-    subtleText?: string;
-  };
+  cx: ContextualClassNames;
   fieldMode: boolean;
   t: (key: string) => string;
   isAdvanced: boolean;

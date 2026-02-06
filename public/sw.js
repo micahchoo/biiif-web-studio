@@ -479,6 +479,155 @@ function getFromIDB(storeName, key) {
   });
 }
 
+// ============================================================================
+// IIIF Image API 3.0 Enhanced Implementation
+// ============================================================================
+
+/**
+ * Apply quality transformations to image data
+ * @param {OffscreenCanvas} canvas - The canvas with the image
+ * @param {string} quality - Quality parameter (default, color, gray, bitonal)
+ */
+function applyQuality(canvas, quality) {
+  if (quality === 'default' || quality === 'color') return;
+
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  if (quality === 'gray') {
+    // Convert to grayscale using luminance formula
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+      data[i] = gray;     // R
+      data[i + 1] = gray; // G
+      data[i + 2] = gray; // B
+    }
+  } else if (quality === 'bitonal') {
+    // Convert to black and white using threshold
+    const threshold = 128;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+      const value = gray >= threshold ? 255 : 0;
+      data[i] = value;     // R
+      data[i + 1] = value; // G
+      data[i + 2] = value; // B
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/**
+ * Parse rotation parameter
+ * @param {string} rotationParam - Rotation string (e.g., "90", "!180", "270")
+ * @returns {{ degrees: number, mirror: boolean }}
+ */
+function parseRotation(rotationParam) {
+  const mirror = rotationParam.startsWith('!');
+  const degreesStr = mirror ? rotationParam.substring(1) : rotationParam;
+  const degrees = parseFloat(degreesStr) || 0;
+  return { degrees: degrees % 360, mirror };
+}
+
+/**
+ * Apply rotation and mirroring to canvas
+ * @param {OffscreenCanvas} sourceCanvas - Source canvas
+ * @param {number} degrees - Rotation degrees (0, 90, 180, 270)
+ * @param {boolean} mirror - Whether to mirror horizontally
+ * @returns {OffscreenCanvas} - Rotated canvas
+ */
+function applyRotation(sourceCanvas, degrees, mirror) {
+  // Normalize degrees to 0, 90, 180, or 270
+  const normalizedDegrees = Math.round(degrees / 90) * 90 % 360;
+
+  // If no transformation needed, return source
+  if (normalizedDegrees === 0 && !mirror) {
+    return sourceCanvas;
+  }
+
+  const sw = sourceCanvas.width;
+  const sh = sourceCanvas.height;
+
+  // Calculate output dimensions
+  const swapped = normalizedDegrees === 90 || normalizedDegrees === 270;
+  const outWidth = swapped ? sh : sw;
+  const outHeight = swapped ? sw : sh;
+
+  const outputCanvas = new OffscreenCanvas(outWidth, outHeight);
+  const ctx = outputCanvas.getContext('2d');
+
+  // Move to center for rotation
+  ctx.translate(outWidth / 2, outHeight / 2);
+
+  // Apply mirroring (horizontal flip)
+  if (mirror) {
+    ctx.scale(-1, 1);
+  }
+
+  // Apply rotation
+  ctx.rotate((normalizedDegrees * Math.PI) / 180);
+
+  // Draw image centered
+  ctx.drawImage(sourceCanvas, -sw / 2, -sh / 2);
+
+  return outputCanvas;
+}
+
+/**
+ * Calculate square region from image dimensions
+ * @param {number} width - Image width
+ * @param {number} height - Image height
+ * @returns {{ x: number, y: number, w: number, h: number }}
+ */
+function calculateSquareRegion(width, height) {
+  const size = Math.min(width, height);
+  const x = Math.floor((width - size) / 2);
+  const y = Math.floor((height - size) / 2);
+  return { x, y, w: size, h: size };
+}
+
+/**
+ * Calculate confined size (best fit within bounds)
+ * @param {number} regionWidth - Region width
+ * @param {number} regionHeight - Region height
+ * @param {number} maxWidth - Maximum width constraint
+ * @param {number} maxHeight - Maximum height constraint
+ * @returns {{ width: number, height: number }}
+ */
+function calculateConfinedSize(regionWidth, regionHeight, maxWidth, maxHeight) {
+  const scaleW = maxWidth / regionWidth;
+  const scaleH = maxHeight / regionHeight;
+  const scale = Math.min(scaleW, scaleH, 1); // Don't upscale unless ^ prefix
+  return {
+    width: Math.round(regionWidth * scale),
+    height: Math.round(regionHeight * scale)
+  };
+}
+
+/**
+ * Get MIME type and blob options for format
+ * @param {string} format - Format string (jpg, png, webp, gif)
+ * @param {string} quality - Quality string (affects compression)
+ * @returns {{ mimeType: string, options: object }}
+ */
+function getFormatOptions(format, quality) {
+  const formatMap = {
+    'jpg': { mimeType: 'image/jpeg', options: { quality: 0.85 } },
+    'jpeg': { mimeType: 'image/jpeg', options: { quality: 0.85 } },
+    'png': { mimeType: 'image/png', options: {} },
+    'webp': { mimeType: 'image/webp', options: { quality: 0.85 } },
+    'gif': { mimeType: 'image/gif', options: {} }
+  };
+
+  // For bitonal, prefer PNG for lossless
+  if (quality === 'bitonal' && format === 'jpg') {
+    return formatMap['png'];
+  }
+
+  return formatMap[format] || formatMap['jpg'];
+}
+
 async function handleImageRequest(request) {
   const url = request.url;
   const cache = await caches.open(TILE_CACHE_NAME);
@@ -498,11 +647,12 @@ async function handleImageRequest(request) {
     const identifier = decodeURIComponent(params[0]);
     const region = params[1];
     const size = params[2];
-    const rotationParam = params[3];
+    const rotationParam = params[3] || '0';
     const qualityFormat = params[4] ? params[4].split('.') : ['default', 'jpg'];
     const quality = qualityFormat[0];
-    const format = qualityFormat[1];
+    const format = qualityFormat[1] || 'jpg';
 
+    // Handle info.json request
     if (params[1] === 'info.json') {
       const blob = await getFromIDB(FILES_STORE, identifier);
       if (!blob) return new Response('Not found', { status: 404 });
@@ -520,24 +670,38 @@ async function handleImageRequest(request) {
             { "width": 150, "height": Math.floor(150 * (bitmap.height/bitmap.width)) },
             { "width": 600, "height": Math.floor(600 * (bitmap.height/bitmap.width)) },
             { "width": 1200, "height": Math.floor(1200 * (bitmap.height/bitmap.width)) }
+        ],
+        "extraQualities": ["gray", "bitonal"],
+        "extraFormats": ["png", "webp"],
+        "extraFeatures": [
+          "mirroring",
+          "regionByPct",
+          "regionByPx",
+          "regionSquare",
+          "rotationBy90s",
+          "sizeByConfinedWh",
+          "sizeByH",
+          "sizeByPct",
+          "sizeByW",
+          "sizeByWh"
         ]
       };
-      return new Response(JSON.stringify(info), { 
-          headers: { 
-              'Content-Type': 'application/json', 
+      return new Response(JSON.stringify(info), {
+          headers: {
+              'Content-Type': 'application/json',
               'Access-Control-Allow-Origin': '*',
               'Cache-Control': 'no-cache'
-          } 
+          }
       });
     }
 
+    // Check for pre-computed derivatives (fast path)
     if (region === 'full' && rotationParam === '0' && (quality === 'default' || quality === 'color')) {
         let sizeKey = null;
         const widthMatch = size.match(/^(\d+),$/);
         const width = widthMatch ? parseInt(widthMatch[1]) : null;
 
         // Flexible matching for derivative sizes
-        // Matches standard presets defined in constants.ts
         if (width === 150 || size === 'pct:7.5') sizeKey = 'thumb';
         else if ((width && width <= 600) || size === 'pct:30') sizeKey = 'small';
         else if ((width && width <= 1200) || size === 'pct:60') sizeKey = 'medium';
@@ -545,18 +709,31 @@ async function handleImageRequest(request) {
         if (sizeKey) {
             const derivativeBlob = await getFromIDB(DERIVATIVES_STORE, `${identifier}_${sizeKey}`);
             if (derivativeBlob) {
-                return new Response(derivativeBlob, { headers: { 'Content-Type': 'image/jpeg', 'Access-Control-Allow-Origin': '*' } });
+                const { mimeType } = getFormatOptions(format, quality);
+                return new Response(derivativeBlob, {
+                  headers: {
+                    'Content-Type': mimeType,
+                    'Access-Control-Allow-Origin': '*',
+                    'X-IIIF-Derivative': sizeKey
+                  }
+                });
             }
         }
     }
 
+    // Load original image
     const originalBlob = await getFromIDB(FILES_STORE, identifier);
     if (!originalBlob) return new Response('Not found', { status: 404 });
-    
+
     const bitmap = await createImageBitmap(originalBlob);
     let rx = 0, ry = 0, rw = bitmap.width, rh = bitmap.height;
-    
-    if (region !== 'full') {
+
+    // Parse region parameter
+    if (region === 'square') {
+      // Square region - centered square
+      const sq = calculateSquareRegion(bitmap.width, bitmap.height);
+      rx = sq.x; ry = sq.y; rw = sq.w; rh = sq.h;
+    } else if (region !== 'full') {
         if (region.startsWith('pct:')) {
              const p = region.replace('pct:', '').split(',').map(Number);
              if (p.length === 4) {
@@ -571,40 +748,88 @@ async function handleImageRequest(request) {
         }
     }
 
+    // Clamp region to image bounds
+    rx = Math.max(0, Math.min(rx, bitmap.width - 1));
+    ry = Math.max(0, Math.min(ry, bitmap.height - 1));
+    rw = Math.max(1, Math.min(rw, bitmap.width - rx));
+    rh = Math.max(1, Math.min(rh, bitmap.height - ry));
+
+    // Parse size parameter
     let sw = rw, sh = rh;
-    if (size !== 'max') {
-        if (size.startsWith('pct:')) {
-             const pct = Number(size.split(':')[1]);
+    const hasUpscale = size.startsWith('^');
+    const sizeWithoutPrefix = hasUpscale ? size.substring(1) : size;
+
+    if (sizeWithoutPrefix !== 'max') {
+        // Confined size (!w,h) - fit within bounds maintaining aspect ratio
+        const confinedMatch = sizeWithoutPrefix.match(/^!(\d+),(\d+)$/);
+        if (confinedMatch) {
+            const confined = calculateConfinedSize(rw, rh, parseInt(confinedMatch[1]), parseInt(confinedMatch[2]));
+            sw = confined.width;
+            sh = confined.height;
+        } else if (sizeWithoutPrefix.startsWith('pct:')) {
+             const pct = Number(sizeWithoutPrefix.split(':')[1]);
              if (!isNaN(pct)) {
                  sw = Math.floor(rw * (pct/100));
                  sh = Math.floor(rh * (pct/100));
              }
-        } else if (size.includes(',')) {
-             const p = size.split(',');
-             if (p[0] && p[1]) { 
-                 sw = Number(p[0]); sh = Number(p[1]); 
-             } else if (p[0]) { 
-                 sw = Number(p[0]); sh = Math.floor((sw / rw) * rh); 
-             } else if (p[1]) { 
-                 sh = Number(p[1]); sw = Math.floor((sh / rh) * rw); 
+        } else if (sizeWithoutPrefix.includes(',')) {
+             const p = sizeWithoutPrefix.split(',');
+             if (p[0] && p[1]) {
+                 sw = Number(p[0]); sh = Number(p[1]);
+             } else if (p[0]) {
+                 sw = Number(p[0]); sh = Math.floor((sw / rw) * rh);
+             } else if (p[1]) {
+                 sh = Number(p[1]); sw = Math.floor((sh / rh) * rw);
              }
         }
     }
 
-    const canvas = new OffscreenCanvas(Math.max(1, Math.floor(sw)), Math.max(1, Math.floor(sh)));
-    const ctx = canvas.getContext('2d');
+    // Ensure minimum size
+    sw = Math.max(1, Math.floor(sw));
+    sh = Math.max(1, Math.floor(sh));
+
+    // Create canvas and draw region at target size
+    let canvas = new OffscreenCanvas(sw, sh);
+    let ctx = canvas.getContext('2d');
     ctx.drawImage(bitmap, rx, ry, rw, rh, 0, 0, sw, sh);
 
-    const blobOutput = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
-    const res = new Response(blobOutput, { headers: { 'Content-Type': 'image/jpeg', 'Access-Control-Allow-Origin': '*' } });
-    
+    // Apply quality transformation (grayscale, bitonal)
+    if (quality !== 'default' && quality !== 'color') {
+      applyQuality(canvas, quality);
+    }
+
+    // Apply rotation and mirroring
+    const { degrees, mirror } = parseRotation(rotationParam);
+    if (degrees !== 0 || mirror) {
+      canvas = applyRotation(canvas, degrees, mirror);
+    }
+
+    // Get format options and create output blob
+    const { mimeType, options } = getFormatOptions(format, quality);
+    const blobOutput = await canvas.convertToBlob({ type: mimeType, ...options });
+
+    const res = new Response(blobOutput, {
+      headers: {
+        'Content-Type': mimeType,
+        'Access-Control-Allow-Origin': '*',
+        'X-IIIF-Quality': quality,
+        'X-IIIF-Rotation': rotationParam
+      }
+    });
+
     // Use LRU cache instead of simple cache.put
     await addToCache(request, res.clone());
     return res;
 
   } catch (err) {
     console.error('[SW] Error handling image request:', err);
-    return new Response('Error', { status: 500 });
+    return new Response(JSON.stringify({
+      error: 'Error processing image request',
+      details: err.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 

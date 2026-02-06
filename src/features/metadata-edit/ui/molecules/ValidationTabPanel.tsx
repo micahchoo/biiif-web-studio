@@ -42,11 +42,17 @@ export interface ValidationTabPanelProps {
  *   onFixAll={handleFixAll}
  * />
  */
+const defaultCx: ContextualClassNames = {
+  surface: 'bg-white dark:bg-slate-900',
+  text: 'text-slate-900 dark:text-slate-100',
+  accent: 'text-blue-600 dark:text-blue-400',
+};
+
 export const ValidationTabPanel: React.FC<ValidationTabPanelProps> = ({
   issues,
   onFixIssue,
   onFixAll,
-  cx = {},
+  cx = defaultCx,
   fieldMode = false,
 }) => {
   // Sort issues by severity: error > warning > info
@@ -73,8 +79,8 @@ export const ValidationTabPanel: React.FC<ValidationTabPanelProps> = ({
     return (
       <EmptyState
         icon="check_circle"
-        message="All validations passed!"
-        description="No issues found with this resource."
+        title="All validations passed!"
+        message="No issues found with this resource."
         fieldMode={fieldMode}
       />
     );

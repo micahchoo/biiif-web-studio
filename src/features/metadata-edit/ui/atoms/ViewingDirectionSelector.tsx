@@ -20,7 +20,7 @@ import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualS
 
 export interface ViewingDirectionSelectorProps {
   /** Currently selected viewing direction */
-  value: string;
+  value: 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top';
   /** Called when selection changes */
   onChange: (value: string) => void;
   /** Default value if none selected */
@@ -35,6 +35,8 @@ export interface ViewingDirectionSelectorProps {
   label?: string;
   /** Whether to show label */
   showLabel?: boolean;
+  /** Additional CSS classes */
+  className?: string;
 }
 
 export const ViewingDirectionSelector: React.FC<ViewingDirectionSelectorProps> = ({

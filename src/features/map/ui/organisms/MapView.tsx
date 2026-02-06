@@ -25,6 +25,7 @@
 
 import React from 'react';
 import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { Icon } from '@/src/shared/ui/atoms';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { MapMarker } from '@/src/shared/ui/molecules/MapMarker';
@@ -42,18 +43,7 @@ export interface MapViewProps {
   /** Called when a canvas is selected */
   onSelect: (item: IIIFItem) => void;
   /** Contextual styles from template */
-  cx: {
-    surface: string;
-    text: string;
-    accent: string;
-    border: string;
-    divider: string;
-    headerBg: string;
-    textMuted: string;
-    input: string;
-    label: string;
-    active: string;
-  };
+  cx: ContextualClassNames;
   /** Current field mode */
   fieldMode: boolean;
   /** Terminology function from template */

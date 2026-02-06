@@ -202,13 +202,23 @@ export function getConflictingBehaviors(behavior: string): string[] {
 }
 
 /**
- * Viewing directions (spec §3.5)
+ * Viewing direction values (spec §3.5)
  */
-export const VIEWING_DIRECTIONS = [
+export const VIEWING_DIRECTION_VALUES = [
   'left-to-right',
   'right-to-left',
   'top-to-bottom',
   'bottom-to-top'
+] as const;
+
+/**
+ * Viewing directions as SelectOption array for dropdowns
+ */
+export const VIEWING_DIRECTIONS = [
+  { value: 'left-to-right', label: 'Left to Right' },
+  { value: 'right-to-left', label: 'Right to Left' },
+  { value: 'top-to-bottom', label: 'Top to Bottom' },
+  { value: 'bottom-to-top', label: 'Bottom to Top' }
 ] as const;
 
 /**

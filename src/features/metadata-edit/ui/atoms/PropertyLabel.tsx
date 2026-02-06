@@ -28,6 +28,8 @@ export interface PropertyLabelProps {
   className?: string;
   /** Whether to show the DC hint badge */
   showHint?: boolean;
+  /** Optional help text (tooltip or inline) */
+  helpText?: string;
 }
 
 export const PropertyLabel: React.FC<PropertyLabelProps> = ({

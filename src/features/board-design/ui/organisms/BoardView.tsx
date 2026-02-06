@@ -14,6 +14,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { IIIFItem } from '@/src/shared/types';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { useHistory } from '@/src/shared/lib/hooks/useHistory';
 import { usePipeline } from '@/src/shared/lib/hooks';
 import { useToast } from '@/src/shared/ui/molecules/Toast';
@@ -36,14 +37,7 @@ export interface BoardViewProps {
   /** Root IIIF item (source for drag-drop resources) */
   root: IIIFItem | null;
   /** Contextual styles from template */
-  cx: {
-    surface: string;
-    text: string;
-    accent: string;
-    border: string;
-    textMuted?: string;
-    subtleBg?: string;
-  };
+  cx: ContextualClassNames;
   /** Current field mode */
   fieldMode: boolean;
   /** Terminology function from template */

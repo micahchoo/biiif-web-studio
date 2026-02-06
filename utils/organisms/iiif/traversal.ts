@@ -3,7 +3,7 @@
  * Organism - depends on molecules/search
  */
 
-import type { IIIFItem } from '../../../types';
+import type { IIIFItem } from '@/src/shared/types';
 
 // ============================================================================
 // Type Definitions

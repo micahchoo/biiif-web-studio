@@ -31,6 +31,8 @@ export interface BehaviorTagProps {
   className?: string;
   /** Callback when tag is clicked */
   onClick?: () => void;
+  /** Size variant */
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 export const BehaviorTag: React.FC<BehaviorTagProps> = ({

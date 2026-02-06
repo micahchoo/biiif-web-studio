@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   metadataComplexity: 'standard',
 };
 
-interface UseAppSettingsReturn {
+export interface UseAppSettingsReturn {
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings>) => void;
   toggleFieldMode: () => void;

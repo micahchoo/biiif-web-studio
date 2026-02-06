@@ -28,7 +28,7 @@ export interface PropertyInputProps {
   /** Input placeholder */
   placeholder?: string;
   /** Input type (default 'text') */
-  type?: 'text' | 'textarea' | 'datetime-local';
+  type?: 'text' | 'textarea' | 'datetime-local' | 'url';
   /** Whether this field is a location field (shows location picker button) */
   isLocationField?: boolean;
   /** Called when location picker button is clicked */
@@ -39,6 +39,8 @@ export interface PropertyInputProps {
   cx?: ContextualClassNames;
   /** Field mode flag */
   fieldMode?: boolean;
+  /** Additional CSS classes */
+  className?: string;
 }
 
 export const PropertyInput: React.FC<PropertyInputProps> = ({

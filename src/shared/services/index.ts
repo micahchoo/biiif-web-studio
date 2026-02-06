@@ -36,12 +36,18 @@ export type { AuthService } from './authService';
 // ============================================================================
 // Content State API
 // ============================================================================
-export { parseContentState, createContentState, isContentStateUri } from './contentState';
+export { contentStateService } from './contentState';
+export type { ContentState } from './contentState';
 
 // ============================================================================
 // Remote Loader (IIIF Resource Fetching)
 // ============================================================================
-export { remoteLoader } from './remoteLoader';
+export {
+  fetchRemoteManifest,
+  fetchRemoteResource,
+  requiresAuth
+} from './remoteLoader';
+export type { RemoteResource, FetchResult, FetchOptions } from './remoteLoader';
 
 // ============================================================================
 // Search Service
@@ -61,10 +67,17 @@ export { provenanceService } from './provenanceService';
 // ============================================================================
 // Metadata Services
 // ============================================================================
-export { metadataHarvester } from './metadataHarvester';
-export { metadataTemplateService } from './metadataTemplateService';
+export { extractMetadata } from './metadataHarvester';
+export {
+  exportMetadataTemplate,
+  previewMetadataTemplate,
+  getVocabularyOptions,
+  downloadMetadataTemplate
+} from './metadataTemplateService';
+export type { MetadataTemplateOptions, MetadataTemplateExport } from './metadataTemplateService';
 
 // ============================================================================
 // Guidance Service
 // ============================================================================
-export { guidanceService } from './guidanceService';
+export { guidance } from './guidanceService';
+export type { GuidanceTopic } from './guidanceService';

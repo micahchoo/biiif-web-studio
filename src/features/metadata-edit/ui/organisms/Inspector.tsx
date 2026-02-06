@@ -18,6 +18,7 @@ import { usePersistedTab } from '@/src/shared/lib/hooks/usePersistedTab';
 import { useInspectorValidation } from '../../model/useInspectorValidation';
 import { useMetadataEditor } from '@/src/shared/lib/hooks/useMetadataEditor';
 import { useContextualStyles } from '@/src/shared/lib/hooks/useContextualStyles';
+import { StructureTabPanel } from '../molecules/StructureTabPanel';
 
 interface InspectorProps {
   resource: IIIFItem | null;
@@ -30,6 +31,8 @@ interface InspectorProps {
   designTab?: React.ReactNode;
   /** Annotations for this resource */
   annotations?: IIIFAnnotation[];
+  /** Canvases available for structure editing (for manifests) */
+  canvases?: import('@/src/shared/types').IIIFCanvas[];
   /** Whether annotation drawing mode is active */
   annotationModeActive?: boolean;
   /** Current annotation drawing state */
@@ -224,6 +227,7 @@ const InspectorComponent: React.FC<InspectorProps> = ({
   isMobile,
   designTab,
   annotations = [],
+  canvases = [],
   annotationModeActive = false,
   annotationDrawingState,
   annotationText = '',
@@ -744,26 +748,13 @@ const InspectorComponent: React.FC<InspectorProps> = ({
         )}
 
         {tab === 'structure' && resource && isManifest(resource) && (
-          <div role="tabpanel" className="space-y-4">
-            <div className={`p-3 rounded-lg border ${settings.fieldMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-              <h3 className={`text-xs font-bold uppercase mb-2 ${cx.accent}`}>Table of Contents</h3>
-              {(resource as IIIFManifest).structures && (resource as IIIFManifest).structures!.length > 0 ? (
-                <div className="space-y-2">
-                  {(resource as IIIFManifest).structures!.map((range, idx) => (
-                    <div key={range.id} className={`p-2 rounded border text-[10px] ${settings.fieldMode ? 'bg-black border-slate-800' : 'bg-white border-slate-200'}`}>
-                      <div className="flex items-center gap-2 font-bold">
-                        <Icon name="segment" className="text-xs opacity-50" />
-                        {getIIIFValue(range.label, settings.language) || `Range ${idx + 1}`}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-[10px] text-slate-400 italic py-4 text-center">
-                  No structural ranges defined
-                </div>
-              )}
-            </div>
+          <div role="tabpanel">
+            <StructureTabPanel
+              manifest={resource as IIIFManifest}
+              onUpdateManifest={(updates) => onUpdateResource(updates as Partial<IIIFItem>)}
+              settings={settings}
+              canvases={canvases}
+            />
           </div>
         )}
 

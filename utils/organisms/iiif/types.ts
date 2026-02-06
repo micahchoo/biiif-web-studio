@@ -5,6 +5,9 @@
 
 import type { ContentResourceType } from '../../atoms/media-types';
 
+// Re-export for use by other iiif modules
+export type { ContentResourceType } from '../../atoms/media-types';
+
 // ============================================================================
 // Type Definitions
 // ============================================================================

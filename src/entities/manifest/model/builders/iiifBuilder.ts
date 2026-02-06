@@ -39,8 +39,8 @@ import {
   getContentTypeFromFilename,
   getMimeType,
   IMAGE_API_PROTOCOL,
-  isImageMime,
-  isTimeBasedMime,
+  isImageMimeType,
+  isTimeBasedMimeType,
   suggestBehaviors,
   validateResource
 } from '@/utils';
@@ -732,8 +732,8 @@ const processNodeWithProgress = async (
         await storage.saveAsset(file, assetId);
 
         // Get image dimensions
-        let imageWidth = DEFAULT_INGEST_PREFS.defaultCanvasWidth;
-        let imageHeight = DEFAULT_INGEST_PREFS.defaultCanvasHeight;
+        let imageWidth: number = DEFAULT_INGEST_PREFS.defaultCanvasWidth;
+        let imageHeight: number = DEFAULT_INGEST_PREFS.defaultCanvasHeight;
 
         if (file.type.startsWith('image/')) {
           try {
@@ -1076,8 +1076,8 @@ const processNode = async (
             await storage.saveAsset(file, assetId);
 
             // Get actual image dimensions for proper canvas sizing
-            let imageWidth = DEFAULT_INGEST_PREFS.defaultCanvasWidth;
-            let imageHeight = DEFAULT_INGEST_PREFS.defaultCanvasHeight;
+            let imageWidth: number = DEFAULT_INGEST_PREFS.defaultCanvasWidth;
+            let imageHeight: number = DEFAULT_INGEST_PREFS.defaultCanvasHeight;
 
             if (file.type.startsWith('image/')) {
                 // Read actual dimensions from image file

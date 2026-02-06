@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { AppMode, getIIIFValue, IIIFItem, ViewType } from '@/src/shared/types';
+import { AbstractionLevel, AppMode, getIIIFValue, IIIFItem, ViewType } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms/Icon';
 import { CONSTANTS, RESOURCE_TYPE_CONFIG } from '@/src/shared/constants';
 import {
@@ -28,8 +28,8 @@ interface SidebarProps {
   onToggleQuickHelp?: () => void;
   isMobile?: boolean;
   onClose?: () => void;
-  abstractionLevel?: import('../types').AbstractionLevel;
-  onAbstractionLevelChange?: (level: import('../types').AbstractionLevel) => void;
+  abstractionLevel?: AbstractionLevel;
+  onAbstractionLevelChange?: (level: AbstractionLevel) => void;
 }
 
 // Clean navigation item - Field mode: high contrast black/yellow

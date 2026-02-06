@@ -35,6 +35,8 @@ export interface RightsSelectorProps {
   label?: string;
   /** Whether to show label */
   showLabel?: boolean;
+  /** Additional CSS classes */
+  className?: string;
 }
 
 export const RightsSelector: React.FC<RightsSelectorProps> = ({

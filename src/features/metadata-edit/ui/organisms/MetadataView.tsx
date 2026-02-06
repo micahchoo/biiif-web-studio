@@ -22,6 +22,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { IIIFItem } from '@/src/shared/types';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { ViewContainer } from '@/src/shared/ui/molecules/ViewContainer';
 import { FilterInput } from '@/src/shared/ui/molecules/FilterInput';
 import { Toolbar } from '@/src/shared/ui/molecules/Toolbar';
@@ -42,19 +43,7 @@ export interface MetadataViewProps {
   /** Root IIIF item (source for metadata editing) */
   root: IIIFItem | null;
   /** Contextual styles from template */
-  cx: {
-    surface: string;
-    text: string;
-    accent: string;
-    border: string;
-    divider: string;
-    headerBg: string;
-    textMuted: string;
-    input: string;
-    label: string;
-    active: string;
-    subtleBg?: string;
-  };
+  cx: ContextualClassNames;
   /** Current field mode */
   fieldMode: boolean;
   /** Called when root is updated with new metadata */

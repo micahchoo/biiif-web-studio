@@ -18,7 +18,7 @@
 import { useMemo } from 'react';
 import {
   useVaultState,
-} from './useIIIFEntity';
+} from '@/src/entities/manifest/model/hooks/useIIIFEntity';
 import {
   IIIFAnnotation,
   IIIFAnnotationPage,
@@ -39,7 +39,7 @@ import {
   getEntityType,
   getParentId,
   NormalizedState,
-} from '@/src/shared/services/vault';
+} from '@/src/entities/manifest/model/vault';
 import { ValidationIssue } from '@/src/entities/manifest/model/validation/validator';
 
 // BreadcrumbSegment type defined inline below (used only in this file)

@@ -4,7 +4,7 @@
  */
 
 import { findAllOfType, getAllCanvases } from './traversal';
-import type { IIIFItem } from '../../../types';
+import type { IIIFItem } from '@/src/shared/types';
 
 // ============================================================================
 // Types

@@ -16,14 +16,14 @@
 import React from 'react';
 
 export interface SelectOption {
-  value: string;
-  label: string;
-  description?: string;
+  readonly value: string;
+  readonly label: string;
+  readonly description?: string;
 }
 
 export interface SelectOptionGroup {
-  label: string;
-  options: SelectOption[];
+  readonly label: string;
+  readonly options: readonly SelectOption[];
 }
 
 export interface SelectFieldProps {
@@ -32,9 +32,9 @@ export interface SelectFieldProps {
   /** Called when value changes */
   onChange: (value: string) => void;
   /** Simple options (for non-grouped select) */
-  options?: SelectOption[];
+  options?: readonly SelectOption[];
   /** Grouped options (for optgroup-based select) */
-  groups?: SelectOptionGroup[];
+  groups?: readonly SelectOptionGroup[];
   /** Placeholder text */
   placeholder?: string;
   /** Whether disabled */

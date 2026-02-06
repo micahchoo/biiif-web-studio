@@ -37,7 +37,7 @@ export type {
   RemoveOptions,
   RestoreOptions,
   EmptyTrashResult
-} from '@/src/shared/types';
+} from './types';
 
 // ============================================================================
 // Molecules (Utilities)

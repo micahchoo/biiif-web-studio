@@ -23,7 +23,7 @@ export interface IconButtonProps {
   /** Click handler */
   onClick: () => void;
   /** Visual variant */
-  variant?: 'default' | 'primary' | 'danger' | 'ghost';
+  variant?: 'default' | 'primary' | 'danger' | 'ghost' | 'secondary';
   /** Size variant */
   size?: 'sm' | 'md' | 'lg';
   /** Disabled state */
@@ -87,6 +87,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   const variantMap: Record<string, 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'> = {
     default: isActive ? 'primary' : 'secondary',
     primary: 'primary',
+    secondary: 'secondary',
     danger: 'danger',
     ghost: isActive ? 'primary' : 'ghost',
   };
