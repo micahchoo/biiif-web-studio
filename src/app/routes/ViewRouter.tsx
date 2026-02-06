@@ -20,7 +20,7 @@
  */
 
 import React, { useEffect } from 'react';
-import type { AppMode, IIIFItem } from '@/types';
+import type { AppMode, IIIFItem } from '@/src/shared/types';
 import { BaseTemplate } from '../templates/BaseTemplate';
 import { FieldModeTemplate } from '../templates/FieldModeTemplate';
 

@@ -8,8 +8,8 @@
  * This follows the widget pattern - a self-contained unit with state and behavior.
  */
 
-import type { IIIFItem, IIIFManifest } from '@/types';
-import type { NormalizedState, VaultSnapshot } from './types';
+import type { IIIFItem, IIIFManifest } from '@/src/shared/types';
+import type { NormalizedState, VaultSnapshot } from '@/src/shared/types';
 import { normalize, createEmptyState } from './normalization';
 import { denormalize } from './denormalization';
 import { getEntity, getParentId, getChildIds, getEntitiesByType } from './queries';

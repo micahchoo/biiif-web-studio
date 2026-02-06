@@ -4,7 +4,7 @@
  * Templates, field definitions, and metadata-related constants.
  */
 
-import type { AbstractionLevel } from '@/types';
+import type { AbstractionLevel } from '@/src/shared/types';
 
 export type MetadataComplexity = 'simple' | 'standard' | 'advanced';
 

@@ -20,7 +20,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { getIIIFValue, type IIIFItem } from '@/types';
+import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
 import { TabBar } from '@/src/shared/ui/molecules';
 import { ModalDialog } from '@/src/shared/ui/molecules';
 import { EmptyProperties } from '../atoms/EmptyProperties';
@@ -30,7 +30,7 @@ import { AnnotationsTabPanel } from '../molecules/AnnotationsTabPanel';
 import { ValidationSummary } from '../molecules/ValidationSummary';
 import { ValidationTabPanel } from '../molecules/ValidationTabPanel';
 import { LocationPickerModal } from '../molecules/LocationPickerModal';
-import { DUBLIN_CORE_MAP } from '@/constants';
+import { DUBLIN_CORE_MAP } from '@/src/shared/constants';
 import { usePersistedTab, useResponsive } from '@/src/shared/lib/hooks';
 import { useInspectorValidation } from '../../model';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';

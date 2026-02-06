@@ -16,7 +16,7 @@
  */
 
 import React, { useCallback, useMemo, useRef } from 'react';
-import type { SourceManifest, SourceManifests } from '@/types';
+import type { SourceManifest, SourceManifests } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
 import { Button } from '@/ui/primitives/Button';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';

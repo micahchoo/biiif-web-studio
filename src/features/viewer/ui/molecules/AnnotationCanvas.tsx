@@ -5,8 +5,8 @@
  */
 
 import React from 'react';
-import type { IIIFAnnotation, IIIFCanvas } from '@/types';
-import type { Point } from '@/constants/viewport';
+import type { IIIFAnnotation, IIIFCanvas } from '@/src/shared/types';
+import type { Point } from '@/src/shared/constants/viewport';
 import { parseSvgSelector, pointsToSvgPath } from '../../model/annotation';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 

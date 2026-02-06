@@ -7,7 +7,7 @@
  * @module features/board-design/model
  */
 
-import { getIIIFValue, type IIIFItem, type IIIFManifest } from '@/types';
+import { getIIIFValue, type IIIFItem, type IIIFManifest } from '@/src/shared/types';
 import { canvas, manifest } from '@/src/entities';
 
 // Re-export entity models for convenience

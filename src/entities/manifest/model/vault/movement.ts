@@ -5,7 +5,7 @@
  * These operations maintain the hierarchical structure of the IIIF tree.
  */
 
-import type { NormalizedState } from './types';
+import type { NormalizedState } from '@/src/shared/types';
 
 /**
  * Move an entity to a new parent

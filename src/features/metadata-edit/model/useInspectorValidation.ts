@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useCallback } from 'react';
-import type { IIIFItem, IIIFCollection, IIIFManifest, IIIFCanvas } from '@/types';
+import type { IIIFItem, IIIFCollection, IIIFManifest, IIIFCanvas } from '@/src/shared/types';
 
 export type ValidationSeverity = 'error' | 'warning' | 'info';
 

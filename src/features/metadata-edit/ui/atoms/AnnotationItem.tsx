@@ -15,7 +15,7 @@
 
 import React from 'react';
 import { ListItemBase } from '@/src/shared/ui/molecules';
-import { getIIIFValue, type IIIFAnnotation } from '@/types';
+import { getIIIFValue, type IIIFAnnotation } from '@/src/shared/types';
 
 // Reuse the ContextualStyles interface from MetadataEditorPanel
 export interface ContextualStyles {

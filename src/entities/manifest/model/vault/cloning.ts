@@ -6,8 +6,8 @@
  */
 
 import { enableMapSet, produce, setAutoFreeze } from 'immer';
-import { USE_IMMER_CLONING } from '@/constants';
-import type { NormalizedState } from './types';
+import { USE_IMMER_CLONING } from '@/src/shared/constants';
+import type { NormalizedState } from '@/src/shared/types';
 
 // Enable Immer Map/Set support for better performance
 enableMapSet();

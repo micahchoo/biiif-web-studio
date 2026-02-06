@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { getIIIFValue, type IIIFItem } from '@/types';
+import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
 import { Button, Icon } from '@/src/shared/ui/atoms';
 
 export interface HeaderBreadcrumbProps {

@@ -21,7 +21,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { Icon, Input } from '@/src/shared/ui/atoms';
 import { IconButton } from '@/src/shared/ui/molecules';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
-import type { IIIFManifest } from '@/types';
+import type { IIIFManifest } from '@/src/shared/types';
 
 export interface SearchResult {
   id: string;

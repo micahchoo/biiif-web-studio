@@ -24,7 +24,7 @@
  */
 
 import React from 'react';
-import { getIIIFValue, type IIIFItem } from '@/types';
+import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { MapMarker } from '@/src/shared/ui/molecules/MapMarker';

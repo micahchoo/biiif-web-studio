@@ -21,7 +21,7 @@ import type {
   IIIFManifest,
   IngestFileInfo,
   IngestProgress
-} from '@/types';
+} from '@/src/shared/types';
 
 // ============================================================================
 // Message Types for Worker Communication Protocol

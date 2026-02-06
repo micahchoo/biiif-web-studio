@@ -22,7 +22,7 @@ import React from 'react';
 import { IconButton } from '@/src/shared/ui/molecules';
 import { type SearchResult, type SearchService, ViewerSearchPanel } from './ViewerSearchPanel';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
-import type { IIIFManifest } from '@/types';
+import type { IIIFManifest } from '@/src/shared/types';
 
 export interface ViewerPanelsProps {
   /** Currently selected canvas ID */

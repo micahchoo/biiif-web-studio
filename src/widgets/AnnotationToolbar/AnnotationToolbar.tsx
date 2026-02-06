@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import type { IIIFAnnotation, IIIFCanvas, IIIFItem } from '@/types';
+import type { IIIFAnnotation, IIIFCanvas, IIIFItem } from '@/src/shared/types';
 import { AnnotationToolPanel } from '@/src/features/viewer/ui/organisms/AnnotationToolPanel';
 import { MetadataEditorPanel } from '@/src/features/metadata-edit/ui/organisms/MetadataEditorPanel';
 

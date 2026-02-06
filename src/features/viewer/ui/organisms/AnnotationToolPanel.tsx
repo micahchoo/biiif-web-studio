@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect } from 'react';
-import type { IIIFAnnotation, IIIFCanvas } from '@/types';
+import type { IIIFAnnotation, IIIFCanvas } from '@/src/shared/types';
 import { useAnnotation } from '../../model';
 import {
   AnnotationCanvas,

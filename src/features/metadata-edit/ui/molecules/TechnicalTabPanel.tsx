@@ -19,7 +19,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { type IIIFItem } from '@/types';
+import { type IIIFItem } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
 import { PropertyInput } from '../atoms/PropertyInput';
 import { PropertyLabel } from '../atoms/PropertyLabel';

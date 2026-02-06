@@ -30,7 +30,7 @@ import { Icon } from '@/src/shared/ui/atoms';
 import { IconButton } from '@/src/shared/ui/molecules';
 import { useMediaPlayer } from '@/src/features/viewer/model';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
-import type { IIIFCanvas } from '@/types';
+import type { IIIFCanvas } from '@/src/shared/types';
 
 export interface MediaPlayerProps {
   canvas: IIIFCanvas;

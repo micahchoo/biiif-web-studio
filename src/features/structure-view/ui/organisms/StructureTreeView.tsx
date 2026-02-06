@@ -19,7 +19,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 import { VirtualTreeList, StructureToolbar, EmptyStructure } from '../molecules';
 import { TreeSearchBar } from '../atoms';
 import { useStructureTree } from '../../model/useStructureTree';

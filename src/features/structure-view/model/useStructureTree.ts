@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { IIIFItem, IIIFCollection, IIIFManifest, IIIFCanvas } from '@/types';
+import type { IIIFItem, IIIFCollection, IIIFManifest, IIIFCanvas } from '@/src/shared/types';
 import {
   getAllCollections,
   getAllManifests,

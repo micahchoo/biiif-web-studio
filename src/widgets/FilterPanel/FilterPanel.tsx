@@ -14,7 +14,7 @@
  */
 
 import React, { useState } from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 import { ValidationIssue } from '@/services/validator';
 import { ArchiveView } from '@/src/features/archive/ui/organisms/ArchiveView';
 import { SearchView } from '@/src/features/search/ui/organisms/SearchView';

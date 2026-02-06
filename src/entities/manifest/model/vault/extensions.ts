@@ -7,7 +7,7 @@
  */
 
 import { getAllowedProperties } from '@/utils/iiifSchema';
-import type { EntityType } from './types';
+import type { EntityType } from '@/src/shared/types';
 import { cloneAsRecord } from './cloning';
 
 /**

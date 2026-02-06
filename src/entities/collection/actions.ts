@@ -9,7 +9,7 @@
  */
 
 import { type Action, actions as vaultActions } from '@/services/actions';
-import type { LanguageMap } from '@/types';
+import type { LanguageMap } from '@/src/shared/types';
 
 /**
  * Update collection label

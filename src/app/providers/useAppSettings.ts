@@ -10,8 +10,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { AppSettings } from '@/types';
-import { DEFAULT_INGEST_PREFS, DEFAULT_MAP_CONFIG, DEFAULT_ZOOM_CONFIG, IIIF_CONFIG, METADATA_TEMPLATES } from '@/constants';
+import { AppSettings } from '@/src/shared/types';
+import { DEFAULT_INGEST_PREFS, DEFAULT_MAP_CONFIG, DEFAULT_ZOOM_CONFIG, IIIF_CONFIG, METADATA_TEMPLATES } from '@/src/shared/constants';
 
 const SETTINGS_KEY = 'iiif-field-settings';
 

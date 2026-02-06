@@ -9,7 +9,7 @@
  */
 
 import { type Action, actions as vaultActions } from '@/services/actions';
-import type { IIIFAnnotation, IIIFCanvas, LanguageMap } from '@/types';
+import type { IIIFAnnotation, IIIFCanvas, LanguageMap } from '@/src/shared/types';
 
 /**
  * Update canvas label

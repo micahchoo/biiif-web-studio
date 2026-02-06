@@ -13,7 +13,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 import { useHistory } from '@/hooks/useHistory';
 import { useToast } from '@/components/Toast';
 import {

@@ -9,7 +9,7 @@
  */
 
 // Design tokens (from existing designSystem.ts)
-export { COLORS, SPACING, LAYOUT, TOUCH_TARGETS, INTERACTION } from '@/designSystem';
+export { COLORS, SPACING, LAYOUT, TOUCH_TARGETS, INTERACTION } from '@/src/shared/config/design-tokens';
 
 // ============================================================================
 // INPUT & FORM CONSTRAINTS

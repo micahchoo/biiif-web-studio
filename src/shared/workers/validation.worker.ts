@@ -5,7 +5,7 @@
  * Handles large manifests and collections without freezing the interface.
  */
 
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 
 // Validation issue type defined locally for worker
 interface ValidationIssue {

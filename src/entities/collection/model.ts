@@ -18,7 +18,7 @@ import {
   getParentId,
   NormalizedState
 } from '@/services/vault';
-import type { IIIFCollection } from '@/types';
+import type { IIIFCollection } from '@/src/shared/types';
 
 /**
  * Select a collection by ID

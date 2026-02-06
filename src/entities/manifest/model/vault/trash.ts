@@ -6,9 +6,9 @@
  */
 
 import { produce } from 'immer';
-import type { IIIFItem } from '@/types';
-import { USE_IMMER_CLONING } from '@/constants';
-import type { EntityType, NormalizedState, TrashedEntity, EmptyTrashResult } from './types';
+import type { IIIFItem } from '@/src/shared/types';
+import { USE_IMMER_CLONING } from '@/src/shared/constants';
+import type { EntityType, NormalizedState, TrashedEntity, EmptyTrashResult } from '@/src/shared/types';
 import { getEntity, getDescendants } from './queries';
 import { removeEntity } from './updates';
 

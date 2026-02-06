@@ -16,7 +16,7 @@
 import React from 'react';
 import { ListContainer } from '@/src/shared/ui/molecules';
 import { AnnotationItem } from '../atoms/AnnotationItem';
-import type { IIIFAnnotation } from '@/types';
+import type { IIIFAnnotation } from '@/src/shared/types';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 
 export interface AnnotationsTabPanelProps {

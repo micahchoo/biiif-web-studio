@@ -18,7 +18,7 @@ import {
   isOrphanManifest,
   NormalizedState
 } from '@/services/vault';
-import type { IIIFManifest } from '@/types';
+import type { IIIFManifest } from '@/src/shared/types';
 
 /**
  * Select a manifest by ID

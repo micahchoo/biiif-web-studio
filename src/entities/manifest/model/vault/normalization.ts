@@ -13,8 +13,8 @@ import type {
   IIIFItem,
   IIIFManifest,
   IIIFRange
-} from '@/types';
-import type { EntityType, NormalizedState } from './types';
+} from '@/src/shared/types';
+import type { EntityType, NormalizedState } from '@/src/shared/types';
 import { cloneAsRecord, hasType } from './cloning';
 import { extractExtensions } from './extensions';
 

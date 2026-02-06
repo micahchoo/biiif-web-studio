@@ -12,8 +12,8 @@ import type {
   IIIFItem,
   IIIFManifest,
   IIIFRange
-} from '@/types';
-import type { NormalizedState } from './types';
+} from '@/src/shared/types';
+import type { NormalizedState } from '@/src/shared/types';
 import { cloneAsRecord, recordAs } from './cloning';
 import { applyExtensions } from './extensions';
 

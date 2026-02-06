@@ -15,4 +15,4 @@
 
 export * as model from './model';
 export * as actions from './actions';
-export type { IIIFManifest } from '@/types';
+export type { IIIFManifest } from '@/src/shared/types';

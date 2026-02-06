@@ -15,4 +15,4 @@
 
 export * as model from './model';
 export * as actions from './actions';
-export type { IIIFCanvas } from '@/types';
+export type { IIIFCanvas } from '@/src/shared/types';

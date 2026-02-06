@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import { getIIIFValue } from '@/types';
+import { getIIIFValue } from '@/src/shared/types';
 import type { PlacedResource } from '@/hooks/useLayerHistory';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
 

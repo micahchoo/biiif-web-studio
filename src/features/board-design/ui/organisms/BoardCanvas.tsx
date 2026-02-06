@@ -16,7 +16,7 @@
  */
 
 import React, { forwardRef } from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 import {
   type BoardItem,
   type Connection,

@@ -14,7 +14,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getIIIFValue, type IIIFCanvas, type IIIFItem, isCanvas } from '@/types';
+import { getIIIFValue, type IIIFCanvas, type IIIFItem, isCanvas } from '@/src/shared/types';
 
 // ============================================================================
 // Types

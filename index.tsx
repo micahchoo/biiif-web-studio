@@ -5,7 +5,7 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { searchService } from './services/searchService';
 import { storage } from './services/storage';
-import { FEATURE_FLAGS, IIIF_SPEC } from './constants';
+import { FEATURE_FLAGS, IIIF_SPEC } from '@/src/shared/constants';
 import { initializeI18n } from './i18n';
 
 // Initialize i18n if feature flag is enabled

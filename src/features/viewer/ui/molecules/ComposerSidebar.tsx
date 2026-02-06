@@ -12,7 +12,7 @@
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
 import { Button } from '@/ui/primitives/Button';
-import { getIIIFValue, type IIIFItem } from '@/types';
+import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
 import type { PlacedResource } from '@/hooks/useLayerHistory';
 
 export type SidebarTab = 'layers' | 'library';

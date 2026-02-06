@@ -17,7 +17,7 @@
  */
 
 import React, { useState } from 'react';
-import { getIIIFValue, type IIIFCanvas, type IIIFManifest } from '@/types';
+import { getIIIFValue, type IIIFCanvas, type IIIFManifest } from '@/src/shared/types';
 import {
   FilmstripNavigator,
   type SearchResult,

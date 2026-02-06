@@ -6,8 +6,8 @@
  * than owning them, allowing Manifests to exist in multiple Collections.
  */
 
-import type { IIIFManifest } from '@/types';
-import type { NormalizedState } from './types';
+import type { IIIFManifest } from '@/src/shared/types';
+import type { NormalizedState } from '@/src/shared/types';
 
 /**
  * Get all Collections that reference a given resource (Manifest or nested Collection)

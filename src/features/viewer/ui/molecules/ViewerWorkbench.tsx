@@ -21,7 +21,7 @@ import {
   QualitySelector, FormatSelector, CodePanel, WorkbenchFooter,
 } from '@/src/features/viewer/ui/atoms';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
-import type { IIIFCanvas } from '@/types';
+import type { IIIFCanvas } from '@/src/shared/types';
 
 export interface ViewerWorkbenchProps {
   canvas: IIIFCanvas;

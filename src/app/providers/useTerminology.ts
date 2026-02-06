@@ -19,7 +19,7 @@ import {
   TERMINOLOGY_MAP,
   type TerminologyKey
 } from '@/utils/uiTerminology';
-import type { AbstractionLevel } from '@/types';
+import type { AbstractionLevel } from '@/src/shared/types';
 
 export interface UseTerminologyOptions {
   /** The abstraction level to use for terminology */

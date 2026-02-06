@@ -1,9 +1,9 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type AbstractionLevel, type AppMode, type FileTree, getIIIFValue, type IIIFItem, isCanvas, isCollection, type ViewType } from './types';
+import { type AbstractionLevel, type AppMode, type FileTree, getIIIFValue, type IIIFItem, isCanvas, isCollection, type ViewType } from '@/src/shared/types';
 import { ToastProvider, useToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { METADATA_TEMPLATES } from './constants';
+import { METADATA_TEMPLATES } from '@/src/shared/constants';
 import { Sidebar } from './components/Sidebar';
 import { Inspector } from './components/Inspector';
 import { StatusBar } from './components/StatusBar';

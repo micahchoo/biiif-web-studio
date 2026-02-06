@@ -13,7 +13,7 @@ import type {
   IIIFItem,
   IIIFManifest,
   IIIFRange
-} from '@/types';
+} from '@/src/shared/types';
 
 /**
  * Entity types supported by the vault

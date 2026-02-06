@@ -11,8 +11,8 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { IIIFAnnotation, IIIFCanvas } from '@/types';
-import type { Point } from '@/constants/viewport';
+import type { IIIFAnnotation, IIIFCanvas } from '@/src/shared/types';
+import type { Point } from '@/src/shared/constants/viewport';
 
 // ============================================================================
 // Types

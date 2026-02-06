@@ -22,11 +22,11 @@ import {
   IIIFManifest,
   IIIFRange,
   LanguageString
-} from '@/types';
+} from '@/src/shared/types';
 import { getAllowedProperties } from '@/utils/iiifSchema';
 import { sanitizeAnnotationBody } from '@/utils/sanitization';
 import { enableMapSet, produce, setAutoFreeze } from 'immer';
-import { USE_IMMER_CLONING } from '@/constants';
+import { USE_IMMER_CLONING } from '@/src/shared/constants';
 
 // Enable Immer Map/Set support for better performance
 enableMapSet();

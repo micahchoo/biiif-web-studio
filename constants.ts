@@ -37,7 +37,7 @@ export const {USE_WORKER_SEARCH} = FEATURE_FLAGS;
 // Progressive Disclosure - UX Simplification (Phase 3)
 // =============================================================================
 
-import type { AbstractionLevel, CoreViewMode, UIAbstractionConfig } from './types';
+import type { AbstractionLevel, CoreViewMode, UIAbstractionConfig } from '@/src/shared/types';
 
 /**
  * Default UI abstraction configuration

@@ -12,7 +12,7 @@
  */
 
 import React, { useState } from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 
 export interface BoardTemplate {
   id: string;

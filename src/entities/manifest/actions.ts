@@ -9,7 +9,7 @@
  */
 
 import { type Action, actions as vaultActions } from '@/services/actions';
-import type { IIIFCanvas, LanguageMap } from '@/types';
+import type { IIIFCanvas, LanguageMap } from '@/src/shared/types';
 
 /**
  * Update manifest label

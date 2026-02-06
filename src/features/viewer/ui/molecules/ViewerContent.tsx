@@ -23,7 +23,7 @@ import { EmptyState } from '@/src/shared/ui/molecules';
 import { MediaPlayer } from './MediaPlayer';
 import { AnnotationOverlay, type IIIFAnnotation } from './AnnotationOverlay';
 import type { ContextualClassNames } from '@/hooks/useContextualStyles';
-import type { IIIFCanvas } from '@/types';
+import type { IIIFCanvas } from '@/src/shared/types';
 
 export interface ViewerContentProps {
   /** Canvas to display */

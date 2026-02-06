@@ -24,7 +24,7 @@
  * @module features/staging/model
  */
 
-import type { IIIFCollection, IIIFManifest } from '@/types';
+import type { IIIFCollection, IIIFManifest } from '@/src/shared/types';
 import { collection, manifest } from '@/src/entities';
 
 // Re-export entity models for convenience

@@ -41,7 +41,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import type { IIIFCollection, IIIFItem } from '@/types';
+import type { IIIFCollection, IIIFItem } from '@/src/shared/types';
 import { ViewContainer } from '@/src/shared/ui/molecules/ViewContainer';
 import { FilterInput } from '@/src/shared/ui/molecules/FilterInput';
 import { Toolbar } from '@/src/shared/ui/molecules/Toolbar';

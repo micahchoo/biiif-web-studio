@@ -16,7 +16,7 @@ import {
   getParentId,
   NormalizedState
 } from '@/services/vault';
-import type { IIIFCanvas } from '@/types';
+import type { IIIFCanvas } from '@/src/shared/types';
 
 /**
  * Select a canvas by ID

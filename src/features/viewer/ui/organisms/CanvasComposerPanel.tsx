@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback } from 'react';
-import type { IIIFCanvas, IIIFItem } from '@/types';
+import type { IIIFCanvas, IIIFItem } from '@/src/shared/types';
 import { useComposer } from '../../model';
 import {
   ComposerCanvas,

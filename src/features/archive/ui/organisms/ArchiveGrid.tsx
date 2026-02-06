@@ -17,11 +17,11 @@
  */
 
 import React, { useState } from 'react';
-import { getIIIFValue, type IIIFCanvas } from '@/types';
+import { getIIIFValue, type IIIFCanvas } from '@/src/shared/types';
 import { StackedThumbnail } from '@/src/shared/ui/molecules';
 import { Icon } from '@/src/shared/ui/atoms';
 import { Button } from '@/ui/primitives/Button';
-import { RESOURCE_TYPE_CONFIG } from '@/constants';
+import { RESOURCE_TYPE_CONFIG } from '@/src/shared/constants';
 import { resolveHierarchicalThumbs } from '@/utils/imageSourceResolver';
 import { getFileDNA } from '../../model';
 

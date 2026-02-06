@@ -30,7 +30,7 @@ export {
 } from './useMediaPlayer';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { IIIFAnnotation, IIIFCanvas, IIIFManifest } from '@/types';
+import type { IIIFAnnotation, IIIFCanvas, IIIFManifest } from '@/src/shared/types';
 import { contentSearchService } from '@/services/contentSearchService';
 
 declare const OpenSeadragon: any;

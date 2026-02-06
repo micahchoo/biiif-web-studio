@@ -5,7 +5,7 @@
  * Re-exports from entities and adds archive-specific logic.
  */
 
-import { getIIIFValue, type IIIFCanvas, type IIIFItem } from '@/types';
+import { getIIIFValue, type IIIFCanvas, type IIIFItem } from '@/src/shared/types';
 import { canvas, manifest } from '@/src/entities';
 
 // Re-export entity models for convenience

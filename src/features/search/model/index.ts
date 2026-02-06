@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 import { AutocompleteResult, SearchResult, searchService } from '@/services/searchService';
 import { UI_TIMING } from '@/src/shared/config/tokens';
 

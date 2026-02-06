@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 
 import { ArchiveHeader } from '@/src/features/archive/ui/organisms/ArchiveHeader';
 import type { ArchiveViewMode } from '@/src/features/archive/model';

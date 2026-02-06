@@ -19,7 +19,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import type { IIIFItem } from '@/types';
+import type { IIIFItem } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
 import { FacetPill } from '@/src/shared/ui/molecules/FacetPill';
 import { ResultCard } from '@/src/shared/ui/molecules/ResultCard';

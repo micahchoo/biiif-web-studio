@@ -16,7 +16,7 @@
  */
 
 import React, { useState } from 'react';
-import { getIIIFValue, type IIIFItem } from '@/types';
+import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
 import { Button } from '@/ui/primitives/Button';
 import { LocationPicker } from '../atoms/LocationPicker';
