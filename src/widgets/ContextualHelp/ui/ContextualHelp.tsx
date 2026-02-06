@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from '@/src/shared/ui/atoms/Icon';
 import { guidance } from '@/src/shared/services/guidanceService';
-import { WELCOME_MESSAGES } from '../constants/helpContent';
+import { WELCOME_MESSAGES } from '@/src/shared/constants/helpContent';
 
 interface ContextualHelpProps {
   mode: string;
