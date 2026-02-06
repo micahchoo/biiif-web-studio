@@ -15,7 +15,7 @@
 
 import React, { useState } from 'react';
 import type { IIIFItem } from '@/src/shared/types';
-import { ValidationIssue } from '@/services/validator';
+import { ValidationIssue } from '@/src/entities/manifest/model/validation/validator';
 import { ArchiveView } from '@/src/features/archive/ui/organisms/ArchiveView';
 import { SearchView } from '@/src/features/search/ui/organisms/SearchView';
 import { Button } from '@/src/shared/ui/atoms';

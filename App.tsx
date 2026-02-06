@@ -33,7 +33,7 @@ import { storage } from '@/src/shared/services/storage';
 import { setGlobalQuotaErrorHandler } from './services/ingestWorkerPool';
 import { ValidationIssue, validator } from './services/validator';
 import { contentStateService } from '@/src/shared/services/contentState';
-import { useBulkOperations, useUndoRedoShortcuts, useVault, VaultProvider } from './hooks/useIIIFEntity';
+import { useBulkOperations, useUndoRedoShortcuts, useVault, VaultProvider } from '@/src/entities/manifest/model/hooks/useIIIFEntity';
 import { actions } from './services/actions';
 import { UserIntentProvider } from './hooks/useUserIntent';
 import { ResourceContextProvider } from './hooks/useResourceContext';

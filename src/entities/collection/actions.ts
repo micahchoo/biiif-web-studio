@@ -8,7 +8,7 @@
  * the ActionDispatcher (typically handled by the Vault singleton).
  */
 
-import { type Action, actions as vaultActions } from '@/services/actions';
+import { type Action, actions as vaultActions } from '@/src/entities/manifest/model/actions';
 import type { LanguageMap } from '@/src/shared/types';
 
 /**

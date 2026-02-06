@@ -31,7 +31,7 @@ export {
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { IIIFAnnotation, IIIFCanvas, IIIFManifest } from '@/src/shared/types';
-import { contentSearchService } from '@/services/contentSearchService';
+import { contentSearchService } from '@/src/entities/annotation/model/contentSearchService';
 
 declare const OpenSeadragon: any;
 
