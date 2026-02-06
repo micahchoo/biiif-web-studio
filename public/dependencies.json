@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-06T22:07:13.375Z",
+  "generatedAt": "2026-02-06T22:15:11.731Z",
   "totalFiles": 378,
   "files": {
     "src/app/App.tsx": {
@@ -1515,8 +1515,8 @@
       "dependents": [
         "src/app/routes/index.ts"
       ],
-      "size": 23810,
-      "lines": 635
+      "size": 23826,
+      "lines": 636
     },
     "src/app/routes/index.ts": {
       "filePath": "src/app/routes/index.ts",
@@ -6852,8 +6852,8 @@
         "src/features/archive/index.ts",
         "src/features/archive/ui/organisms/ArchiveView.tsx"
       ],
-      "size": 14537,
-      "lines": 352
+      "size": 16949,
+      "lines": 417
     },
     "src/features/archive/ui/organisms/ArchiveHeader.tsx": {
       "filePath": "src/features/archive/ui/organisms/ArchiveHeader.tsx",
@@ -7228,8 +7228,8 @@
         "src/features/archive/index.ts",
         "src/features/archive/index.ts"
       ],
-      "size": 22093,
-      "lines": 605
+      "size": 23589,
+      "lines": 646
     },
     "src/features/board-design/hooks/useCanvasDrag.ts": {
       "filePath": "src/features/board-design/hooks/useCanvasDrag.ts",
