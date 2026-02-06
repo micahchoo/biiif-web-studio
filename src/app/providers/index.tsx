@@ -50,11 +50,11 @@
  */
 
 import React, { ReactNode } from 'react';
-import { VaultProvider } from '@/src/shared/lib/hooks/useIIIFEntity';
+import { VaultProvider } from '@/src/entities/manifest/model/hooks/useIIIFEntity';
 import { ToastProvider } from '@/src/shared/ui/molecules/Toast';
 import { ErrorBoundary } from '@/src/shared/ui/molecules/ErrorBoundary';
-import { UserIntentProvider } from '@/src/shared/lib/hooks/useUserIntent';
-import { ResourceContextProvider } from '@/src/shared/lib/hooks/useResourceContext';
+import { UserIntentProvider } from './UserIntentProvider';
+import { ResourceContextProvider } from './ResourceContextProvider';
 
 export interface AppProvidersProps {
   children: ReactNode;
