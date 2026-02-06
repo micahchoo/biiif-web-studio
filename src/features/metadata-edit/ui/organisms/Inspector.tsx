@@ -2,21 +2,23 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AppSettings, getIIIFValue, IIIFAnnotation, IIIFItem, IIIFManifest, isManifest } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms/Icon';
-import { MuseumLabel } from './MuseumLabel';
-import { ShareButton } from './ShareButton';
-import { GeoEditor } from './GeoEditor';
+import { MuseumLabel } from '@/src/shared/ui/molecules/MuseumLabel';
+// TODO: Migrate these components or remove if unused
+// import { ShareButton } from './ShareButton';
+// import { GeoEditor } from './GeoEditor';
+// import { ValidatedInput } from './ValidatedInput';
 import { useResizablePanel } from '@/src/shared/lib/hooks/useResizablePanel';
 import { RESOURCE_TYPE_CONFIG } from '@/src/shared/constants';
 import { useTerminology } from '@/src/app/providers/useTerminology';
-import { isPropertyAllowed } from '../utils/iiifSchema';
-import { getValidationForField, ValidationIssue } from '../services';
-import { suggestBehaviors } from '../utils/iiifBehaviors';
-import { resolvePreviewUrl } from '../utils/imageSourceResolver';
-import { ValidatedInput } from './ValidatedInput';
+import { isPropertyAllowed } from '@/utils/iiifSchema';
+import { getValidationForField, ValidationIssue } from '@/src/entities/manifest/model/validation/validator';
+import { suggestBehaviors } from '@/utils/iiifBehaviors';
+import { resolvePreviewUrl } from '@/utils/imageSourceResolver';
 import { useDebouncedValue } from '@/src/shared/lib/hooks/useDebouncedValue';
 import { usePersistedTab } from '@/src/shared/lib/hooks/usePersistedTab';
-import { useInspectorValidation } from '../hooks/useInspectorValidation';
-import { useMetadataEditor } from '../hooks/useMetadataEditor';
+import { useInspectorValidation } from '../model/useInspectorValidation';
+// TODO: Migrate this hook or remove if unused
+// import { useMetadataEditor } from '../hooks/useMetadataEditor';
 import { useContextualStyles } from '@/src/shared/lib/hooks/useContextualStyles';
 
 interface InspectorProps {
