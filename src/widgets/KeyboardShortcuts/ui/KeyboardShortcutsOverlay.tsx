@@ -21,7 +21,7 @@ import {
   ShortcutContext,
   ShortcutDefinition,
   SHORTCUTS,
-} from '../constants/shortcuts';
+} from '@/src/shared/constants/shortcuts';
 
 export interface KeyboardShortcutsOverlayProps {
   isOpen: boolean;

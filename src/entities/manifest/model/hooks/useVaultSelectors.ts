@@ -41,11 +41,20 @@ import {
   NormalizedState,
 } from '../vault';
 import { ValidationIssue } from '../validation/validator';
-import { BreadcrumbSegment } from './useBreadcrumbPath';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+/**
+ * Breadcrumb segment for entity path navigation
+ */
+export interface BreadcrumbSegment {
+  id: string;
+  label: string;
+  type: 'Collection' | 'Manifest' | 'Canvas';
+  isCurrent: boolean;
+}
 
 /**
  * Union type of all normalized IIIF entities
