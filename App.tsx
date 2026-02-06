@@ -35,8 +35,8 @@ import { ValidationIssue, validator } from './services/validator';
 import { contentStateService } from '@/src/shared/services/contentState';
 import { useBulkOperations, useUndoRedoShortcuts, useVault, VaultProvider } from '@/src/entities/manifest/model/hooks/useIIIFEntity';
 import { actions } from './services/actions';
-import { UserIntentProvider } from './hooks/useUserIntent';
-import { ResourceContextProvider } from './hooks/useResourceContext';
+import { UserIntentProvider } from '@/src/app/providers/UserIntentProvider';
+import { ResourceContextProvider } from '@/src/app/providers/ResourceContextProvider';
 
 // Custom hooks for cleaner state management
 import { useResponsive } from '@/src/shared/lib/hooks/useResponsive';

@@ -20,7 +20,7 @@ import { StepIndicator as WizardStepIndicator, StepConnector as WizardStepConnec
 import { UploadStep } from './UploadStep';
 import { MappingStep } from './MappingStep';
 import { ResultStep } from './ResultStep';
-import type { CSVColumnMapping } from '@/services/csvImporter';
+import type { CSVColumnMapping } from '@/src/features/ingest/model/csvImporter';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export type ImportStep = 'upload' | 'map' | 'result';
