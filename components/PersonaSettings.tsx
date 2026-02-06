@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { AbstractionLevel, AppSettings } from '../types';
 import { Icon } from './Icon';
 import { getFieldsByCategory, getVisibleFields, METADATA_TEMPLATES, MetadataComplexity } from '../constants';
-import { guidance } from '../services/guidanceService';
+import { guidance } from '@/src/shared/services/guidanceService';
 
 interface PersonaSettingsProps {
   settings: AppSettings;

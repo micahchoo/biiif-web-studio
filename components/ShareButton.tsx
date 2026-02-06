@@ -14,8 +14,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { getIIIFValue, IIIFItem } from '../types';
-import { contentStateService, ViewportState } from '../services/contentState';
-import { useToast } from './Toast';
+import { contentStateService, ViewportState } from '@/src/shared/services/contentState';
+import { useToast } from '@/src/shared/ui/molecules/Toast';
 import { Icon } from './Icon';
 import { Button } from '@/ui/primitives/Button';
 import { COLORS, PATTERNS, SPACING, TOUCH_TARGETS } from '../designSystem';

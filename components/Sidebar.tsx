@@ -8,7 +8,7 @@ import {
   getValidChildTypes,
   isValidChildType
 } from '../utils/iiifHierarchy';
-import { useResizablePanel } from '../hooks/useResizablePanel';
+import { useResizablePanel } from '@/src/shared/lib/hooks/useResizablePanel';
 import { useAppSettings } from '@/src/app/providers/useAppSettings';
 
 interface SidebarProps {

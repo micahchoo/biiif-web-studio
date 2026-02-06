@@ -1,9 +1,9 @@
 
 import { IIIFItem, isCollection, isManifest } from '../types';
-import { virtualManifestFactory } from './virtualManifestFactory';
-import { specBridge } from './specBridge';
+import { virtualManifestFactory } from '@/services/virtualManifestFactory';
+import { specBridge } from '@/services/specBridge';
 import { authService, AuthService } from './authService';
-import { validateResource } from '../utils/iiifSchema';
+import { validateResource } from '@/utils/iiifSchema';
 
 export interface RemoteResource {
   id: string;

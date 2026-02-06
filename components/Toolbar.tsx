@@ -13,7 +13,7 @@ import { AbstractionLevelToggle } from './AbstractionLevelToggle';
 import type { AbstractionLevel } from '../types';
 import { FEATURE_FLAGS } from '../constants/features';
 import { useAppSettings } from '@/src/app/providers/useAppSettings';
-import { useContextualStyles } from '@/hooks/useContextualStyles';
+import { useContextualStyles } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ToolbarProps {
   /** @deprecated No longer needed - theme from context */

@@ -4,7 +4,7 @@ import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
 import { getIIIFValue, IIIFAnnotation, IIIFAnnotationPage, IIIFCanvas, IIIFItem, IIIFManifest } from '../types';
 import { DEFAULT_INGEST_PREFS, IIIF_CONFIG, IIIF_SPEC } from '../constants';
-import { useToast } from './Toast';
+import { useToast } from '@/src/shared/ui/molecules/Toast';
 
 interface BoardItem {
   id: string;

@@ -9,7 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Icon } from './Icon';
-import { storage } from '../services/storage';
+import { storage } from '@/src/shared/services/storage';
 
 interface StorageFullDialogProps {
   isOpen: boolean;

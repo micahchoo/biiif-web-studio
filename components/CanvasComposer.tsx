@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { getIIIFValue, IIIFCanvas, IIIFItem } from '../types';
 import { DEFAULT_INGEST_PREFS } from '../constants';
 import { Icon } from './Icon';
-import { useToast } from './Toast';
+import { useToast } from '@/src/shared/ui/molecules/Toast';
 import { usePanZoomGestures, useViewport, useViewportKeyboard } from '../hooks';
 import { buildCanvasFromLayers, PlacedResource, useLayerHistory } from '../hooks/useLayerHistory';
 

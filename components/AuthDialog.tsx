@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { authService, AuthService, AuthState, ProbeResponse } from '../services/authService';
+import { authService, AuthService, AuthState, ProbeResponse } from '@/src/shared/services/authService';
 import { Icon } from './Icon';
 
 interface AuthDialogProps {

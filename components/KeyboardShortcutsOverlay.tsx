@@ -4,7 +4,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './Icon';
-import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useFocusTrap } from '@/src/shared/lib/hooks/useFocusTrap';
 import {
   CATEGORY_CONFIG,
   compareShortcuts,

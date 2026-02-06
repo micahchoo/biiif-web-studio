@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { getIIIFValue, IIIFItem, isCollection } from '../types';
-import { AuthRequiredResult, fetchRemoteResource, requiresAuth } from '../services/remoteLoader';
-import { AuthService } from '../services/authService';
+import { AuthRequiredResult, fetchRemoteResource, requiresAuth } from '@/src/shared/services/remoteLoader';
+import { AuthService } from '@/src/shared/services/authService';
 import { Icon } from './Icon';
 
 interface ExternalImportDialogProps {

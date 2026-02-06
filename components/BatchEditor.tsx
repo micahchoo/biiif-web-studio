@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getIIIFValue, IIIFItem } from '../types';
 import { Icon } from './Icon';
-import { useToast } from './Toast';
+import { useToast } from '@/src/shared/ui/molecules/Toast';
 
 const BATCH_SNAPSHOT_KEY = 'batch-editor-snapshot';
 

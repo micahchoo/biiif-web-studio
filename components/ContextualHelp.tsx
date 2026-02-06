@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Icon } from './Icon';
-import { guidance } from '../services/guidanceService';
+import { guidance } from '@/src/shared/services/guidanceService';
 import { WELCOME_MESSAGES } from '../constants/helpContent';
 
 interface ContextualHelpProps {

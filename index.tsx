@@ -2,7 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary } from '@/src/shared/ui/molecules/ErrorBoundary';
 import { searchService } from './services/searchService';
 import { storage } from './services/storage';
 import { FEATURE_FLAGS, IIIF_SPEC } from '@/src/shared/constants';

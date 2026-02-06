@@ -7,7 +7,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
-import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useFocusTrap } from '@/src/shared/lib/hooks/useFocusTrap';
 import { SyncProvider } from '../services/sync/syncProvider';
 import { SyncState } from '../services/sync/types';
 import type { PresenceInfo } from '../services/sync/crdtAdapter';

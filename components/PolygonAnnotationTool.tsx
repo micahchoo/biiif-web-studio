@@ -1,7 +1,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
-import { useToast } from './Toast';
+import { useToast } from '@/src/shared/ui/molecules/Toast';
 import { IIIFAnnotation, IIIFCanvas } from '../types';
 import type { Point } from '../constants/viewport';
 

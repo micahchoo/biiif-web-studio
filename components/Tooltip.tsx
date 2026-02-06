@@ -1,7 +1,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
-import { guidance } from '../services/guidanceService';
+import { guidance } from '@/src/shared/services/guidanceService';
 
 // ============================================================================
 // Types

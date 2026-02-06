@@ -1,8 +1,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type AbstractionLevel, type AppMode, type FileTree, getIIIFValue, type IIIFItem, isCanvas, isCollection, type ViewType } from '@/src/shared/types';
-import { ToastProvider, useToast } from './components/Toast';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider, useToast } from '@/src/shared/ui/molecules/Toast';
+import { ErrorBoundary } from '@/src/shared/ui/molecules/ErrorBoundary';
 import { METADATA_TEMPLATES } from '@/src/shared/constants';
 import { Sidebar } from './components/Sidebar';
 import { Inspector } from './components/Inspector';
@@ -21,27 +21,27 @@ import { CommandPalette } from './components/CommandPalette';
 import { KeyboardShortcutsOverlay } from './components/KeyboardShortcutsOverlay';
 import { AuthDialog } from './components/AuthDialog';
 import { SkipLink } from './components/SkipLink';
-import { Icon } from './components/Icon';
+import { Icon } from '@/src/shared/ui/atoms/Icon';
 import { StorageFullDialog } from './components/StorageFullDialog';
 // NEW: Use the refactored ViewRouter from src/app/routes (Phase 5)
 // This routes to new feature slices for implemented routes (archive)
 // and falls back to old components for unimplemented routes
 import { ViewRouter } from './src/app/routes';
 import { buildTree, ingestTree } from './services/iiifBuilder';
-import { AuthService, AuthState } from './services/authService';
-import { storage } from './services/storage';
+import { AuthService, AuthState } from '@/src/shared/services/authService';
+import { storage } from '@/src/shared/services/storage';
 import { setGlobalQuotaErrorHandler } from './services/ingestWorkerPool';
 import { ValidationIssue, validator } from './services/validator';
-import { contentStateService } from './services/contentState';
+import { contentStateService } from '@/src/shared/services/contentState';
 import { useBulkOperations, useUndoRedoShortcuts, useVault, VaultProvider } from './hooks/useIIIFEntity';
 import { actions } from './services/actions';
 import { UserIntentProvider } from './hooks/useUserIntent';
 import { ResourceContextProvider } from './hooks/useResourceContext';
 
 // Custom hooks for cleaner state management
-import { useResponsive } from './hooks/useResponsive';
+import { useResponsive } from '@/src/shared/lib/hooks/useResponsive';
 import { useAppSettings } from '@/src/app/providers/useAppSettings';
-import { useDialogState } from './hooks/useDialogState';
+import { useDialogState } from '@/src/shared/lib/hooks/useDialogState';
 
 // ============================================================================
 // Types

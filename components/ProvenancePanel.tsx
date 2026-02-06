@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { IIIFItem } from '../types';
 import { Icon } from './Icon';
-import { PropertyChange, ProvenanceEntry, provenanceService, useProvenance } from '../services/provenanceService';
+import { PropertyChange, ProvenanceEntry, provenanceService, useProvenance } from '@/src/shared/services/provenanceService';
 import { COLORS, FEEDBACK, SPACING } from '../designSystem';
 
 interface ProvenancePanelProps {

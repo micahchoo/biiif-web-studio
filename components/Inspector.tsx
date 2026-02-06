@@ -5,7 +5,7 @@ import { Icon } from './Icon';
 import { MuseumLabel } from './MuseumLabel';
 import { ShareButton } from './ShareButton';
 import { GeoEditor } from './GeoEditor';
-import { useResizablePanel } from '../hooks/useResizablePanel';
+import { useResizablePanel } from '@/src/shared/lib/hooks/useResizablePanel';
 import { RESOURCE_TYPE_CONFIG } from '../constants';
 import { useTerminology } from '@/src/app/providers/useTerminology';
 import { isPropertyAllowed } from '../utils/iiifSchema';
@@ -13,11 +13,11 @@ import { getValidationForField, ValidationIssue } from '../services';
 import { suggestBehaviors } from '../utils/iiifBehaviors';
 import { resolvePreviewUrl } from '../utils/imageSourceResolver';
 import { ValidatedInput } from './ValidatedInput';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { usePersistedTab } from '../hooks/usePersistedTab';
+import { useDebouncedValue } from '@/src/shared/lib/hooks/useDebouncedValue';
+import { usePersistedTab } from '@/src/shared/lib/hooks/usePersistedTab';
 import { useInspectorValidation } from '../hooks/useInspectorValidation';
 import { useMetadataEditor } from '../hooks/useMetadataEditor';
-import { useContextualStyles } from '../hooks/useContextualStyles';
+import { useContextualStyles } from '@/src/shared/lib/hooks/useContextualStyles';
 
 interface InspectorProps {
   resource: IIIFItem | null;

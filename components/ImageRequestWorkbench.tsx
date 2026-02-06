@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { IIIFCanvas, IIIFItem } from '../types';
 import { Icon } from './Icon';
-import { useToast } from './Toast';
+import { useToast } from '@/src/shared/ui/molecules/Toast';
 import { IIIF_SPEC } from '../constants';
 
 interface ImageRequestWorkbenchProps {

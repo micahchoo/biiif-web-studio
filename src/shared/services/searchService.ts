@@ -1,7 +1,7 @@
 
 import * as FlexSearchModule from 'flexsearch';
 import { getIIIFValue, IIIFAnnotation, IIIFCanvas, IIIFItem, isCanvas } from '../types';
-import { getAllCanvases } from '../utils';
+import { getAllCanvases } from '@/utils';
 import { DEFAULT_SEARCH_CONFIG, fieldRegistry, SearchIndexConfig } from './fieldRegistry';
 import { USE_WORKER_SEARCH } from '../constants';
 
