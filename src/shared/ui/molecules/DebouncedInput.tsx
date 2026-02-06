@@ -13,7 +13,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Input } from '../atoms';
 import { INPUT_CONSTRAINTS, UI_TIMING } from '../../config/tokens';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { sanitizeForInput } from '@/utils/inputValidation';
 
 export interface DebouncedInputProps {

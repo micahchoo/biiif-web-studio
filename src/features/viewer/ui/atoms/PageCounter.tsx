@@ -22,7 +22,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface PageCounterProps {
   /** Current page number (1-indexed) */

@@ -14,7 +14,7 @@
  */
 
 import React, { useState } from 'react';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ImagePreviewProps {
   /** Image URL to display */

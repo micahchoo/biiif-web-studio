@@ -16,7 +16,7 @@
 import React from 'react';
 import { Button } from '@/src/shared/ui/atoms';
 import { ZoomControl } from '@/src/features/viewer/ui/atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface BoardControlsProps {
   /** Current viewport state */

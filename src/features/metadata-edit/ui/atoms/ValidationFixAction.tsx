@@ -16,7 +16,7 @@ import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
 import { IconButton } from '@/src/shared/ui/molecules';
 import type { ValidationIssue, ValidationSeverity } from '../../model/useInspectorValidation';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ValidationFixActionProps {
   /** Validation issue to display */

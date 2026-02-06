@@ -14,7 +14,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { IIIFItem } from '@/src/shared/types';
-import { useHistory } from '@/hooks/useHistory';
+import { useHistory } from '@/src/shared/lib/hooks/useHistory';
 import { useToast } from '@/src/shared/ui/molecules/Toast';
 import {
   type BoardState,

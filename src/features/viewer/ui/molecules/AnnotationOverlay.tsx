@@ -19,7 +19,7 @@
  */
 
 import React, { useMemo } from 'react';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 /** IIIF Annotation structure */
 export interface IIIFAnnotation {

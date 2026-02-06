@@ -13,7 +13,7 @@
 
 import React, { useMemo } from 'react';
 import { Icon } from '../atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 // Mapping of resource types to icon names
 const RESOURCE_ICONS: Record<string, string> = {

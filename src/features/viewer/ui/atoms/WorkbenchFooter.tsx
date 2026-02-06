@@ -14,7 +14,7 @@
 
 import React from 'react';
 import { ActionButton } from '@/src/shared/ui/molecules';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface WorkbenchFooterProps {
   /** Primary action label */

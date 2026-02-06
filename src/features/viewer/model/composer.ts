@@ -13,8 +13,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import type { IIIFCanvas, IIIFItem } from '@/src/shared/types';
 import { DEFAULT_INGEST_PREFS } from '@/src/shared/constants';
-import { usePanZoomGestures, useViewport, useViewportKeyboard } from '@/hooks';
-import { buildCanvasFromLayers, PlacedResource, useLayerHistory } from '@/hooks/useLayerHistory';
+import { usePanZoomGestures, useViewport, useViewportKeyboard } from '@/src/shared/lib/hooks';
+import { buildCanvasFromLayers, PlacedResource, useLayerHistory } from '@/src/shared/lib/hooks/useLayerHistory';
 
 // ============================================================================
 // Types

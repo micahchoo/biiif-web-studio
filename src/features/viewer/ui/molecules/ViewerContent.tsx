@@ -22,7 +22,7 @@ import React from 'react';
 import { EmptyState } from '@/src/shared/ui/molecules';
 import { MediaPlayer } from './MediaPlayer';
 import { AnnotationOverlay, type IIIFAnnotation } from './AnnotationOverlay';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFCanvas } from '@/src/shared/types';
 
 export interface ViewerContentProps {

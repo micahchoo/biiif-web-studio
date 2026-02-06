@@ -19,7 +19,7 @@
 import React, { useCallback, useState } from 'react';
 import { CollectionCardHeader } from './CollectionCardHeader';
 import { CollectionCardDropOverlay } from './CollectionCardDropOverlay';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface CollectionCardProps {
   /** Collection identifier */

@@ -12,8 +12,8 @@
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
 import { getIIIFValue } from '@/src/shared/types';
-import type { PlacedResource } from '@/hooks/useLayerHistory';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { PlacedResource } from '@/src/shared/lib/hooks/useLayerHistory';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export type BackgroundMode = 'grid' | 'dark' | 'light';
 

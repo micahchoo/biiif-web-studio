@@ -18,7 +18,7 @@
 
 import React, { useState } from 'react';
 import { Button, Icon } from '../atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface BreadcrumbItem {
   /** Unique identifier */

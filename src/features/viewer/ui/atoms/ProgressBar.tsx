@@ -14,7 +14,7 @@
  */
 
 import React, { useCallback, useRef } from 'react';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ProgressBarProps {
   /** Current playback time in seconds */

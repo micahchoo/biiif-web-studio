@@ -20,7 +20,7 @@ import { MappingRow } from '../atoms';
 import { FilePreview } from '../atoms';
 import { AutoMapButton } from '../atoms';
 import type { CSVColumnMapping } from '@/services/csvImporter';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface MappingStepProps {
   /** CSV column headers */

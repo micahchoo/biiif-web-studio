@@ -16,7 +16,7 @@
 import React from 'react';
 import { Button, Icon, Input } from '../atoms';
 import { INPUT_CONSTRAINTS } from '../../config/tokens';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface SearchFieldProps {
   /** Current search value (controlled) */

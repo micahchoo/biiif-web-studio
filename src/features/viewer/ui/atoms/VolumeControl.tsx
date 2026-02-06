@@ -15,7 +15,7 @@
 
 import React, { useCallback } from 'react';
 import { IconButton } from '@/src/shared/ui/molecules';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface VolumeControlProps {
   /** Current volume level (0-1) */

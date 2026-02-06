@@ -8,7 +8,7 @@ import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
 import { Button } from '@/ui/primitives/Button';
 import type { DrawingMode } from '../../model/annotation';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface AnnotationToolbarProps {
   currentMode: DrawingMode;

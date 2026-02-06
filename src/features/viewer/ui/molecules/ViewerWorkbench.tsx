@@ -20,7 +20,7 @@ import {
   PreviewHeader, UrlBar, RotationDial, UpscaleToggle,
   QualitySelector, FormatSelector, CodePanel, WorkbenchFooter,
 } from '@/src/features/viewer/ui/atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFCanvas } from '@/src/shared/types';
 
 export interface ViewerWorkbenchProps {

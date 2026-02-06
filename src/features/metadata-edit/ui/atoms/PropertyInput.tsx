@@ -16,7 +16,7 @@
 import React from 'react';
 import { FormInput } from '@/src/shared/ui/molecules';
 import { LocationPicker } from '../atoms/LocationPicker';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface PropertyInputProps {
   /** Current input value */

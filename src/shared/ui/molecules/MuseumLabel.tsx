@@ -13,7 +13,7 @@
 import React from 'react';
 import { Icon } from '../atoms';
 import { MUSEUM_LABEL_ICONS, MUSEUM_LABEL_STYLES } from '../../config/tokens';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export type MuseumLabelType = 'field-note' | 'exhibit' | 'spec';
 

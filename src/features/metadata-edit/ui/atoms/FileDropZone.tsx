@@ -14,7 +14,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface FileDropZoneProps {
   /** Whether file processing is in progress */

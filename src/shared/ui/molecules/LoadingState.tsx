@@ -17,7 +17,7 @@
 
 import React from 'react';
 import { Icon } from '../atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { UI_TIMING } from '../../config/tokens';
 
 export interface LoadingStateProps {

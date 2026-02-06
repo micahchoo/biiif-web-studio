@@ -25,7 +25,7 @@
 
 import React from 'react';
 import { GuidedEmptyState } from '@/src/shared/ui/molecules';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ViewerEmptyStateProps {
   /** Terminology function for localized strings */

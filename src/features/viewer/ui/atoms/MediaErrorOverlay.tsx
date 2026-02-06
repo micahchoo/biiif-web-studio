@@ -16,7 +16,7 @@
 import React from 'react';
 import { Button } from '@/ui/primitives/Button';
 import { Icon } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export type MediaErrorType =
   | 'aborted'

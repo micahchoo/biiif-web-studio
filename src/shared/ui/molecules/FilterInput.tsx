@@ -16,7 +16,7 @@ import { Icon, Input } from '../atoms';
 import { IconButton } from './IconButton';
 import { INPUT_CONSTRAINTS } from '../../config/tokens';
 import { sanitizeForInput } from '@/utils/inputValidation';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface FilterInputProps {
   /** Current filter value */

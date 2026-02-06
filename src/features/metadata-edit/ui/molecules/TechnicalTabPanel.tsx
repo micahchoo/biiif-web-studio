@@ -28,7 +28,7 @@ import { ViewingDirectionSelector } from '../atoms/ViewingDirectionSelector';
 import { BehaviorSelector } from '../atoms/BehaviorSelector';
 import { BehaviorTag } from '../atoms/BehaviorTag';
 import { BEHAVIOR_OPTIONS, getConflictingBehaviors } from '@/src/shared/constants/iiif';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface TechnicalTabPanelProps {
   /** Resource being edited */

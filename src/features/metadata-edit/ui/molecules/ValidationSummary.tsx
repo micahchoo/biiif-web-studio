@@ -16,7 +16,7 @@ import React, { useMemo } from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
 import { ActionButton } from '@/src/shared/ui/molecules';
 import type { ValidationIssue } from '../../model/useInspectorValidation';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ValidationSummaryProps {
   /** Validation issues */

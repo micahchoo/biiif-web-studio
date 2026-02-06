@@ -15,7 +15,7 @@
 
 import React, { useMemo } from 'react';
 import { SelectField, type SelectOptionGroup } from '@/src/shared/ui/molecules';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface PropertyOption {
   value: string;

@@ -18,7 +18,7 @@ import { IconButton } from '@/src/shared/ui/molecules';
 import { ColumnSelector } from './ColumnSelector';
 import { PropertySelector, type PropertyOption } from './PropertySelector';
 import { LanguageTag, type LanguageOption } from './LanguageTag';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface MappingRowProps {
   /** Available CSV columns */

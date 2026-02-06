@@ -14,7 +14,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type IIIFCanvas, type IIIFCollection, type IIIFItem, isCanvas } from '@/src/shared/types';
 import { ValidationIssue } from '@/services/validator';
 import { useToast } from '@/src/shared/ui/molecules/Toast';
-import { useGridVirtualization, useIIIFTraversal, useResponsive, useSharedSelection } from '@/hooks';
+import { useGridVirtualization, useIIIFTraversal, useResponsive, useSharedSelection } from '@/src/shared/lib/hooks';
 import { IIIF_CONFIG, IIIF_SPEC } from '@/src/shared/constants';
 import { isValidChildType } from '@/utils/iiifHierarchy';
 import { ContextMenu, type ContextMenuSection, FloatingSelectionToolbar, BreadcrumbNav, type BreadcrumbItem, GuidedEmptyState } from '@/src/shared/ui/molecules';

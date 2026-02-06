@@ -14,7 +14,7 @@
 
 import React from 'react';
 import { RIGHTS_OPTIONS } from '@/src/shared/constants/metadata';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface RightsBadgeProps {
   /** Rights statement value (URL) */

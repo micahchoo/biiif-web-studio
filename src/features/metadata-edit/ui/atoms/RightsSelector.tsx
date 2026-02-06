@@ -16,7 +16,7 @@
 import React from 'react';
 import { SelectField } from '@/src/shared/ui/molecules';
 import { RIGHTS_OPTIONS } from '@/src/shared/constants/metadata';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface RightsSelectorProps {
   /** Currently selected rights statement (URL) */

@@ -20,7 +20,7 @@
 
 import React from 'react';
 import { PageCounter } from '@/src/features/viewer/ui/atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface FilmstripNavigatorProps {
   /** Current canvas index (0-based) */

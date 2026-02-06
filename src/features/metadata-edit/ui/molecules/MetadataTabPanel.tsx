@@ -20,7 +20,7 @@ import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
 import { Button } from '@/ui/primitives/Button';
 import { LocationPicker } from '../atoms/LocationPicker';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface MetadataTabPanelProps {
   /** Resource being edited */

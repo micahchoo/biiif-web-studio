@@ -20,7 +20,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { ContextMenuSection } from './ContextMenuSection';
 import { ContextMenuSelectionBadge } from './ContextMenuSelectionBadge';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 // Re-export types from sub-components for backwards compatibility
 export type { ContextMenuItemProps as ContextMenuItem } from './ContextMenuItem';

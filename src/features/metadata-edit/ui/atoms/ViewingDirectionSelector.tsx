@@ -16,7 +16,7 @@
 import React from 'react';
 import { SelectField } from '@/src/shared/ui/molecules';
 import { VIEWING_DIRECTIONS } from '@/src/shared/constants/iiif';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ViewingDirectionSelectorProps {
   /** Currently selected viewing direction */

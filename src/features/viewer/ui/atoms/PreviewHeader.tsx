@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface PreviewHeaderProps {
   /** Title text */

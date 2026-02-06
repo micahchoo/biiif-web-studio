@@ -33,7 +33,7 @@ import { LocationPickerModal } from '../molecules/LocationPickerModal';
 import { DUBLIN_CORE_MAP } from '@/src/shared/constants';
 import { usePersistedTab, useResponsive } from '@/src/shared/lib/hooks';
 import { useInspectorValidation } from '../../model';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface MetadataEditorPanelProps {
   /** Resource being edited */

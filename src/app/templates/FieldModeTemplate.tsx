@@ -21,7 +21,7 @@
 
 import React, { ReactNode } from 'react';
 import { useAppSettings, useTerminology } from '@/src/app/providers';
-import { ContextualClassNames, useContextualStyles } from '@/hooks/useContextualStyles';
+import { ContextualClassNames, useContextualStyles } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface FieldModeTemplateRenderProps {
   /** Contextual class names for current fieldMode (light/dark) */

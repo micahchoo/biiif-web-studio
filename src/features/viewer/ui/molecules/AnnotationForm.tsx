@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Button } from '@/ui/primitives/Button';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface AnnotationFormProps {
   text: string;

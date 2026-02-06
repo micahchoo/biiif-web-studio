@@ -15,7 +15,7 @@
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
 import { BEHAVIOR_DEFINITIONS } from '@/src/shared/constants/iiif';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface BehaviorSelectorProps {
   /** Available behavior options */

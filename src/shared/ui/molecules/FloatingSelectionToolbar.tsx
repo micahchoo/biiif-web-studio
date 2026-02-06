@@ -18,7 +18,7 @@
 
 import React, { useState } from 'react';
 import { Button, Icon } from '../atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFCanvas } from '@/src/shared/types';
 
 export interface FloatingSelectionToolbarProps {

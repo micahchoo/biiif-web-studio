@@ -17,7 +17,7 @@ import { Icon } from '@/src/shared/ui/atoms';
 import { EmptyState } from '@/src/shared/ui/molecules';
 import { ValidationFixAction } from '../atoms';
 import type { ValidationIssue } from '../../model/useInspectorValidation';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ValidationTabPanelProps {
   /** Validation issues to display */

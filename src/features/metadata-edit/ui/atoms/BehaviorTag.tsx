@@ -14,7 +14,7 @@
 
 import React from 'react';
 import { BEHAVIOR_DEFINITIONS } from '@/src/shared/constants/iiif';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface BehaviorTagProps {
   /** Behavior value (e.g., 'auto-advance') */

@@ -15,7 +15,7 @@
 
 import React from 'react';
 import { FileDropZone } from '../atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface UploadStepProps {
   /** Whether file processing is in progress */

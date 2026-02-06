@@ -26,7 +26,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '../atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import { MAP_MARKER_COLORS, MAP_MARKER_DEFAULT } from '../../config/tokens';
 
 export interface MapMarkerProps {

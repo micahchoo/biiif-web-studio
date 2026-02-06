@@ -17,7 +17,7 @@ import { Icon } from '@/src/shared/ui/atoms';
 import { StackedThumbnail } from '@/src/shared/ui/molecules';
 import { RESOURCE_TYPE_CONFIG } from '@/src/shared/constants';
 import { Button } from '@/ui/primitives/Button';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface MultiSelectFilmstripProps {
   /** Array of selected canvas items */

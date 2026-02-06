@@ -18,7 +18,7 @@
 import React, { useState } from 'react';
 import { Button, Icon } from '../atoms';
 import { IconButton } from './IconButton';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface CollectionCardMenuProps {
   /** Whether this is the root collection (affects available actions) */

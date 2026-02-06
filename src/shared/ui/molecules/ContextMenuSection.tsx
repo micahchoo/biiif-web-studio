@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { ContextMenuItem, type ContextMenuItemProps } from './ContextMenuItem';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ContextMenuSectionProps {
   /** Section title (optional) */

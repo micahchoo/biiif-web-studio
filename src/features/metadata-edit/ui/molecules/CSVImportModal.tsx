@@ -16,7 +16,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ModalDialog } from '@/src/shared/ui/molecules';
 import { CSVImportWizard, type ImportStep } from './CSVImportWizard';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { CSVColumnMapping } from '@/services/csvImporter';
 
 // Local type for import result to match expected structure

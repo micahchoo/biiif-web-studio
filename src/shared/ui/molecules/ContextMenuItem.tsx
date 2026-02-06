@@ -17,7 +17,7 @@
 
 import React, { useCallback } from 'react';
 import { Button, Icon } from '../atoms';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ContextMenuItemProps {
   /** Unique identifier */

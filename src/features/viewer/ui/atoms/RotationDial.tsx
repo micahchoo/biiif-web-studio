@@ -16,7 +16,7 @@
 import React from 'react';
 import { Button } from '@/ui/primitives/Button';
 import { Slider } from './Slider';
-import type { ContextualClassNames } from '@/hooks/useContextualStyles';
+import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface RotationDialProps {
   /** Current rotation value in degrees (0-359) */
