@@ -27,14 +27,14 @@ import { StorageFullDialog } from './components/StorageFullDialog';
 // This routes to new feature slices for implemented routes (archive)
 // and falls back to old components for unimplemented routes
 import { ViewRouter } from './src/app/routes';
-import { buildTree, ingestTree } from './services/iiifBuilder';
+import { buildTree, ingestTree } from '@/src/entities/manifest/model/builders/iiifBuilder';
 import { AuthService, AuthState } from '@/src/shared/services/authService';
 import { storage } from '@/src/shared/services/storage';
-import { setGlobalQuotaErrorHandler } from './services/ingestWorkerPool';
-import { ValidationIssue, validator } from './services/validator';
+import { setGlobalQuotaErrorHandler } from '@/src/entities/manifest/model/ingest/ingestWorkerPool';
+import { ValidationIssue, validator } from '@/src/entities/manifest/model/validation/validator';
 import { contentStateService } from '@/src/shared/services/contentState';
 import { useBulkOperations, useUndoRedoShortcuts, useVault, VaultProvider } from '@/src/entities/manifest/model/hooks/useIIIFEntity';
-import { actions } from './services/actions';
+import { actions } from '@/src/entities/manifest/model/actions';
 import { UserIntentProvider } from '@/src/app/providers/UserIntentProvider';
 import { ResourceContextProvider } from '@/src/app/providers/ResourceContextProvider';
 
