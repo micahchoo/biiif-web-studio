@@ -25,7 +25,7 @@ import { storage } from '@/src/shared/services/storage';
 import { DEFAULT_INGEST_PREFS, getDerivativePreset, IIIF_CONFIG, IIIF_SPEC, IMAGE_QUALITY, MIME_TYPE_MAP } from '@/src/shared/constants';
 import { load } from 'js-yaml';
 import { extractMetadata } from '@/src/shared/services/metadataHarvester';
-import { generateDerivativeAsync, getTileWorkerPool } from './tileWorker';
+import { generateDerivativeAsync, getTileWorkerPool } from '../ingest/tileWorker';
 import { fileIntegrity, HashLookupResult } from '@/src/entities/canvas/model/fileIntegrity';
 import {
   generateId,
