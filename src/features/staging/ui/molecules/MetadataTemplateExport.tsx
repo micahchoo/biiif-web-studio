@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { SourceManifests } from '@/src/shared/types';
-import { Icon } from '../Icon';
+import { Icon } from '@/src/shared/ui/atoms/Icon';
 import { SUPPORTED_LANGUAGES } from '@/src/shared/constants';
 import {
   downloadMetadataTemplate,
