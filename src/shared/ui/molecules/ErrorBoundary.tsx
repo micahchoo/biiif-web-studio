@@ -1,7 +1,7 @@
 
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Icon } from './Icon';
+import { Icon } from '@/src/shared/ui/atoms/Icon';
 
 interface Props {
   // Made children optional to fix "Property 'children' is missing" error in index.tsx
@@ -73,7 +73,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <p className="text-red-700 text-sm">The application encountered an unexpected error.</p>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div className="bg-slate-900 rounded-lg p-4 overflow-auto max-h-64 custom-scrollbar">
                 <code className="text-red-300 font-mono text-xs block mb-2">
@@ -83,9 +83,9 @@ export class ErrorBoundary extends Component<Props, State> {
                   {this.state.errorInfo && this.state.errorInfo.componentStack}
                 </code>
               </div>
-              
+
               <div className="flex gap-3 justify-end">
-                <button 
+                <button
                   onClick={() => window.location.reload()}
                   className="px-4 py-2 bg-slate-800 text-white rounded font-bold text-sm hover:bg-slate-700 flex items-center gap-2"
                 >
@@ -93,7 +93,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </button>
               </div>
             </div>
-            
+
             <div className="bg-slate-50 p-4 text-center text-xs text-slate-400 border-t">
               If this persists, please export your data and report the issue.
             </div>

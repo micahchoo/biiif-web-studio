@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Icon } from './Icon';
-import { CONSTANTS } from '../constants';
+import { Icon } from '@/src/shared/ui/atoms/Icon';
+import { CONSTANTS } from '@/src/shared/constants';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -65,7 +65,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const showToast = useCallback((message: string, type: ToastType = 'info', action?: ToastAction) => {
     const id = Math.random().toString(36).substr(2, 9);
-    
+
     setToasts(prev => {
       // Aggressive limit to prevent overflow - remove oldest first
       const newToasts = prev.length >= MAX_TOASTS
@@ -73,18 +73,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         : prev;
       return [...newToasts, { id, message, type, action }];
     });
-    
+
     const timeout = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
       timeoutsRef.current.delete(timeout);
     }, CONSTANTS.TOAST_DURATION);
-    
+
     timeoutsRef.current.add(timeout);
   }, []);
 
   const showPersistentToast = useCallback((message: string, type: ToastType, action?: ToastAction) => {
     const id = Math.random().toString(36).substr(2, 9);
-    
+
     setToasts(prev => {
       const newToasts = prev.length >= MAX_TOASTS
         ? prev.slice(-MAX_TOASTS + 1)

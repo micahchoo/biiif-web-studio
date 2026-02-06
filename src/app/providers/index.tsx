@@ -51,8 +51,8 @@
 
 import React, { ReactNode } from 'react';
 import { VaultProvider } from '@/hooks/useIIIFEntity';
-import { ToastProvider } from '@/components/Toast';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ToastProvider } from '@/src/shared/ui/molecules/Toast';
+import { ErrorBoundary } from '@/src/shared/ui/molecules/ErrorBoundary';
 import { UserIntentProvider } from '@/hooks/useUserIntent';
 import { ResourceContextProvider } from '@/hooks/useResourceContext';
 
