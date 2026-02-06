@@ -15,7 +15,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { IIIFItem } from '@/src/shared/types';
 import { useHistory } from '@/src/shared/lib/hooks/useHistory';
+import { usePipeline } from '@/src/shared/lib/hooks';
 import { useToast } from '@/src/shared/ui/molecules/Toast';
+import { PipelineBanner } from '@/src/shared/ui/molecules/PipelineBanner';
 import {
   type BoardState,
   calculateAnchorPoints,
@@ -84,6 +86,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
   onSwitchView,
 }) => {
   const { showToast } = useToast();
+  const pipeline = usePipeline();
 
   // History-managed board state
   const { state: board, update: updateBoard, undo, redo, canUndo, canRedo } =
@@ -92,12 +95,15 @@ export const BoardView: React.FC<BoardViewProps> = ({
   const { items, connections } = board;
 
   // Tool state
-  const [activeTool, setActiveTool] = useState<'select' | 'connect' | 'note'>('select');
+  const [activeTool, setActiveTool] = useState<'select' | 'connect' | 'note' | 'text'>('select');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
 
   // Viewport state
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+
+  // Background mode (from CanvasComposer)
+  const [bgMode, setBgMode] = useState<'grid' | 'dark' | 'light'>('grid');
 
   // Refs
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -218,9 +224,86 @@ export const BoardView: React.FC<BoardViewProps> = ({
     onSwitchView?.('archive');
   }, [onSwitchView]);
 
+  // Add text layer (from CanvasComposer)
+  const handleAddTextLayer = useCallback(() => {
+    const canvasWidth = canvasRef.current?.clientWidth || 800;
+    const canvasHeight = canvasRef.current?.clientHeight || 600;
+
+    const textItem: IIIFItem = {
+      id: `text-${Date.now()}`,
+      type: 'Text' as any,
+      label: { en: ['Text Layer'] },
+      _text: 'Double-click to edit...',
+    };
+
+    const newItem = createBoardItem(textItem, {
+      x: canvasWidth / 2 - 100,
+      y: canvasHeight / 2 - 25,
+    }, { w: 200, h: 50 });
+
+    // Mark as a note/text item
+    (newItem as any).isNote = true;
+
+    updateBoard({
+      ...board,
+      items: [...items, newItem],
+    });
+
+    setSelectedItemId(newItem.id);
+    showToast('Text layer added', 'success');
+  }, [board, items, updateBoard, showToast]);
+
+  // Handle alignment (from CanvasComposer)
+  const handleAlign = useCallback((type: 'center' | 'left' | 'top' | 'right' | 'bottom') => {
+    if (!selectedItemId) return;
+
+    const canvasWidth = canvasRef.current?.clientWidth || 800;
+    const canvasHeight = canvasRef.current?.clientHeight || 600;
+
+    updateBoard({
+      ...board,
+      items: items.map((item) => {
+        if (item.id !== selectedItemId) return item;
+
+        switch (type) {
+          case 'center':
+            return { ...item, x: (canvasWidth - item.w) / 2, y: (canvasHeight - item.h) / 2 };
+          case 'left':
+            return { ...item, x: 20 };
+          case 'right':
+            return { ...item, x: canvasWidth - item.w - 20 };
+          case 'top':
+            return { ...item, y: 20 };
+          case 'bottom':
+            return { ...item, y: canvasHeight - item.h - 20 };
+          default:
+            return item;
+        }
+      }),
+    });
+
+    showToast(`Aligned ${type}`, 'info');
+  }, [board, items, selectedItemId, updateBoard, showToast]);
+
+  // Handle tool change with text layer creation
+  const handleToolChange = useCallback((tool: 'select' | 'connect' | 'note' | 'text') => {
+    setActiveTool(tool);
+
+    // Auto-create text layer when text tool is selected
+    if (tool === 'text') {
+      handleAddTextLayer();
+      setActiveTool('select'); // Switch back to select after adding
+    }
+  }, [handleAddTextLayer]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+        return;
+      }
+
       // Delete selected item
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItemId) {
         e.preventDefault();
@@ -235,20 +318,73 @@ export const BoardView: React.FC<BoardViewProps> = ({
           undo();
         }
       }
+      // Tool shortcuts (V, C, T, N)
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 'v':
+            setActiveTool('select');
+            break;
+          case 'c':
+            setActiveTool('connect');
+            break;
+          case 't':
+            handleToolChange('text');
+            break;
+          case 'n':
+            setActiveTool('note');
+            break;
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedItemId, handleDeleteSelected, undo, redo]);
+  }, [selectedItemId, handleDeleteSelected, undo, redo, handleToolChange]);
+
+  // Track if we've already loaded pipeline items (to prevent double-loading)
+  const pipelineLoadedRef = useRef(false);
 
   // Pipeline: Load selected items from Archive on mount
   useEffect(() => {
+    // Check pipeline state first (preferred)
+    if (!pipelineLoadedRef.current && root && pipeline.intent === 'compose' && pipeline.selectedIds.length > 0) {
+      pipelineLoadedRef.current = true;
+      const selectedIds = pipeline.selectedIds;
+
+      // Find items in root and add them to board
+      const itemsToAdd: IIIFItem[] = [];
+      const findItems = (node: any) => {
+        if (selectedIds.includes(node.id)) {
+          itemsToAdd.push(node);
+        }
+        const children = node.items || node.annotations || [];
+        children.forEach(findItems);
+      };
+
+      if ((root as any).items) {
+        (root as any).items.forEach(findItems);
+      }
+
+      // Add items to board in a grid layout
+      itemsToAdd.forEach((item, index) => {
+        const x = 100 + (index % 3) * 250;
+        const y = 100 + Math.floor(index / 3) * 200;
+        handleAddItem(item, { x, y });
+      });
+
+      if (itemsToAdd.length > 0) {
+        showToast(`Added ${itemsToAdd.length} items from Archive`, 'success');
+      }
+    }
+
+    // Also check sessionStorage for backwards compatibility
     const pendingSelection = sessionStorage.getItem('board-selected-items');
-    if (pendingSelection && root) {
+    if (!pipelineLoadedRef.current && pendingSelection && root) {
+      pipelineLoadedRef.current = true;
       try {
         const selectedIds = JSON.parse(pendingSelection) as string[];
         sessionStorage.removeItem('board-selected-items');
-        
+
         // Find items in root and add them to board
         const itemsToAdd: IIIFItem[] = [];
         const findItems = (node: any) => {
@@ -258,18 +394,18 @@ export const BoardView: React.FC<BoardViewProps> = ({
           const children = node.items || node.annotations || [];
           children.forEach(findItems);
         };
-        
+
         if ((root as any).items) {
           (root as any).items.forEach(findItems);
         }
-        
+
         // Add items to board in a grid layout
         itemsToAdd.forEach((item, index) => {
           const x = 100 + (index % 3) * 250;
           const y = 100 + Math.floor(index / 3) * 200;
           handleAddItem(item, { x, y });
         });
-        
+
         if (itemsToAdd.length > 0) {
           showToast(`Added ${itemsToAdd.length} items from Archive`, 'success');
         }
@@ -277,7 +413,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
         console.error('Failed to load pending selection:', e);
       }
     }
-  }, [root, handleAddItem, showToast]);
+  }, [root, handleAddItem, showToast, pipeline.intent, pipeline.selectedIds]);
 
   // Extract all items from root/archive for template usage
   const getAvailableItems = useCallback((): IIIFItem[] => {
@@ -303,50 +439,78 @@ export const BoardView: React.FC<BoardViewProps> = ({
     return items;
   }, [root]);
 
-  // Handle template selection - always creates the designed number of items
+  // Handle template selection - creates items with IIIF-specific structures
   const handleSelectTemplate = useCallback((template: BoardTemplate) => {
     const availableItems = getAvailableItems();
     const targetCount = template.itemCount;
-    
+
     // Build items list: use real archive items first, then fill with placeholders
     const itemsToAdd: IIIFItem[] = [];
-    
+
     // Add real items from archive (up to target count)
     const shuffled = [...availableItems].sort(() => Math.random() - 0.5);
     for (let i = 0; i < Math.min(shuffled.length, targetCount); i++) {
       itemsToAdd.push(shuffled[i]);
     }
-    
+
     // Fill remaining slots with placeholder items
     for (let i = itemsToAdd.length; i < targetCount; i++) {
-      itemsToAdd.push({
+      const placeholderItem: IIIFItem = {
         id: `template-${template.id}-${i}-${Date.now()}`,
         type: 'Canvas',
         label: { en: [`${template.name} ${i + 1}`] },
         thumbnail: [{ id: `https://picsum.photos/200/200?random=${i}-${Date.now()}`, type: 'Image' }],
-      });
+      };
+
+      // Add template-specific IIIF metadata to placeholders
+      if (template.previewLayout === 'timeline') {
+        // Add navDate for timeline items (spaced by 1 year for demo)
+        const baseYear = new Date().getFullYear() - targetCount + i;
+        (placeholderItem as any).navDate = `${baseYear}-01-01T00:00:00Z`;
+      } else if (template.previewLayout === 'map') {
+        // Add navPlace for map items (sample coordinates)
+        const sampleCoords = [
+          { lat: 40.7128, lng: -74.0060, name: 'New York' },
+          { lat: 51.5074, lng: -0.1278, name: 'London' },
+          { lat: 35.6762, lng: 139.6503, name: 'Tokyo' },
+        ];
+        const coord = sampleCoords[i % sampleCoords.length];
+        (placeholderItem as any).navPlace = {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [coord.lng, coord.lat]
+          },
+          properties: { name: coord.name }
+        };
+      }
+
+      itemsToAdd.push(placeholderItem);
     }
-    
+
     // Calculate canvas center for positioning
     const canvasWidth = canvasRef.current?.clientWidth || 800;
     const canvasHeight = canvasRef.current?.clientHeight || 600;
     const centerX = canvasWidth / 2;
     const centerY = canvasHeight / 2;
-    
+
+    // Track added item IDs for creating connections
+    const addedItemIds: string[] = [];
+
     // Add items to board in template-specific layout
     itemsToAdd.forEach((item, index) => {
       let position = { x: centerX, y: centerY };
-      
+
       switch (template.previewLayout) {
         case 'narrative':
-          // 4 items: Horizontal flow with slight vertical variation
+          // 4 items: Horizontal flow (like presentation slides)
           position = {
             x: centerX - 375 + index * 250,
             y: centerY + (index % 2) * 40 - 20
           };
           break;
         case 'comparison':
-          // 2 items: Side by side
+          // 2 items: Side by side for comparison
           position = {
             x: centerX - 150 + index * 300,
             y: centerY - 100
@@ -359,17 +523,8 @@ export const BoardView: React.FC<BoardViewProps> = ({
             y: centerY
           };
           break;
-        case 'grid':
-          // 6 items: 3x2 grid
-          const col = index % 3;
-          const row = Math.floor(index / 3);
-          position = {
-            x: centerX - 200 + col * 200,
-            y: centerY - 100 + row * 200
-          };
-          break;
         case 'map':
-          // 3 items: Scattered around center
+          // 3 items: Scattered around center (geographic positions)
           const angle = (index / 3) * Math.PI * 2;
           const radius = 180;
           position = {
@@ -378,12 +533,110 @@ export const BoardView: React.FC<BoardViewProps> = ({
           };
           break;
       }
-      
-      handleAddItem(item, position);
+
+      const newItem = createBoardItem(item, position);
+      addedItemIds.push(newItem.id);
+
+      updateBoard({
+        ...board,
+        items: [...items, newItem],
+      });
     });
-    
-    showToast(`Created ${template.name} with ${targetCount} items`, 'success');
-  }, [getAvailableItems, handleAddItem, showToast]);
+
+    // Create template-specific connections after items are added
+    // We need to use the board state that will exist after all items are added
+    setTimeout(() => {
+      const currentItems = items;
+      const newConnections: typeof connections = [...connections];
+
+      switch (template.previewLayout) {
+        case 'narrative':
+          // Create sequence connections between consecutive items
+          for (let i = 0; i < addedItemIds.length - 1; i++) {
+            const conn = createConnection(
+              addedItemIds[i],
+              addedItemIds[i + 1],
+              'sequence',
+              {
+                label: isAdvanced ? 'Sequence' : 'Next',
+                style: 'curved',
+              }
+            );
+            newConnections.push(conn);
+          }
+          break;
+
+        case 'comparison':
+          // Create comparison annotation between items
+          if (addedItemIds.length >= 2) {
+            const conn = createConnection(
+              addedItemIds[0],
+              addedItemIds[1],
+              'similarTo',
+              {
+                label: isAdvanced ? 'Comparison' : 'Compare',
+                style: 'straight',
+              }
+            );
+            newConnections.push(conn);
+          }
+          break;
+
+        case 'timeline':
+          // Create sequence connections for timeline
+          for (let i = 0; i < addedItemIds.length - 1; i++) {
+            const conn = createConnection(
+              addedItemIds[i],
+              addedItemIds[i + 1],
+              'sequence',
+              {
+                label: isAdvanced ? 'Temporal Sequence' : 'Then',
+                style: 'straight',
+              }
+            );
+            newConnections.push(conn);
+          }
+          break;
+
+        case 'map':
+          // Map items are connected by geographic proximity (optional)
+          // For now, just create reference connections
+          if (addedItemIds.length >= 2) {
+            const conn = createConnection(
+              addedItemIds[0],
+              addedItemIds[1],
+              'references',
+              {
+                label: isAdvanced ? 'Geographic Reference' : 'See Also',
+                style: 'curved',
+              }
+            );
+            newConnections.push(conn);
+          }
+          break;
+      }
+
+      if (newConnections.length > connections.length) {
+        updateBoard({
+          ...board,
+          items: currentItems,
+          connections: newConnections,
+        });
+      }
+    }, 100);
+
+    const templateDescription = {
+      narrative: 'as a presentation sequence',
+      comparison: 'for comparative analysis',
+      timeline: 'with temporal ordering (navDate)',
+      map: 'with geographic metadata (navPlace)',
+    };
+
+    showToast(
+      `Created ${template.name} ${templateDescription[template.previewLayout]}`,
+      'success'
+    );
+  }, [getAvailableItems, board, items, connections, updateBoard, showToast, isAdvanced]);
 
   // Empty state - use new BoardOnboarding component
   if (isEmpty) {
@@ -409,12 +662,25 @@ export const BoardView: React.FC<BoardViewProps> = ({
     );
   }
 
+  // Check if we came from Archive with items
+  const hasPipelineItems = pipeline.intent === 'compose' && pipeline.selectedIds.length > 0;
+
   return (
     <div className={`flex flex-col h-full ${cx.surface}`}>
+      {/* Pipeline Banner - shows when composing from Archive */}
+      {hasPipelineItems && (
+        <PipelineBanner
+          onBack={(mode) => onSwitchView?.(mode)}
+          onClear={() => pipeline.clearPipeline()}
+          cx={cx}
+          fieldMode={fieldMode}
+        />
+      )}
+
       <BoardHeader
         title="Board Design"
         activeTool={activeTool}
-        onToolChange={setActiveTool}
+        onToolChange={handleToolChange}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={undo}
@@ -424,6 +690,9 @@ export const BoardView: React.FC<BoardViewProps> = ({
         hasSelection={!!selectedItemId}
         itemCount={items.length}
         connectionCount={connections.length}
+        bgMode={bgMode}
+        onBgModeChange={setBgMode}
+        onAlign={handleAlign}
         cx={cx}
         fieldMode={fieldMode}
       />
@@ -444,6 +713,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
           onCompleteConnection={handleCompleteConnection}
           onAddItem={handleAddItem}
           root={root}
+          bgMode={bgMode}
           cx={cx}
           fieldMode={fieldMode}
         />

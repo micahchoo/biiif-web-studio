@@ -37,7 +37,7 @@ export type { ViewerWorkbenchProps } from './ViewerWorkbench';
 
 // New decomposition molecules (Phase 2)
 export { ViewerToolbar } from './ViewerToolbar';
-export type { ViewerToolbarProps } from './ViewerToolbar';
+export type { ViewerToolbarProps, AnnotationDrawingMode } from './ViewerToolbar';
 
 export { FilmstripNavigator } from './FilmstripNavigator';
 export type { FilmstripNavigatorProps } from './FilmstripNavigator';
@@ -53,3 +53,9 @@ export type { ViewerEmptyStateProps } from './ViewerEmptyState';
 
 export { ViewerContent } from './ViewerContent';
 export type { ViewerContentProps } from './ViewerContent';
+
+export { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+export type { KeyboardShortcutsModalProps } from './KeyboardShortcutsModal';
+
+export { AnnotationDrawingOverlay } from './AnnotationDrawingOverlay';
+export type { AnnotationDrawingOverlayProps } from './AnnotationDrawingOverlay';

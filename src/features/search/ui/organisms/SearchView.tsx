@@ -18,12 +18,13 @@
  * useAppSettings directly. This organism receives context via props.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import type { IIIFItem } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
 import { FacetPill } from '@/src/shared/ui/molecules/FacetPill';
 import { ResultCard } from '@/src/shared/ui/molecules/ResultCard';
 import { SearchField } from '@/src/shared/ui/molecules/SearchField';
+import { usePipeline } from '@/src/shared/lib/hooks';
 import {
   getResultCountText,
   type SearchFilter,
@@ -102,8 +103,17 @@ export const SearchView: React.FC<SearchViewProps> = ({
     clearRecentSearches,
   } = useSearch(root);
 
+  const { searchToArchive } = usePipeline();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
+
+  // Handle result selection with pipeline context
+  const handleResultSelect = useCallback((id: string) => {
+    // Set pipeline context for smooth navigation
+    searchToArchive(id);
+    // Navigate to archive
+    onSelect(id);
+  }, [searchToArchive, onSelect]);
 
   // Handle click outside to close autocomplete
   useEffect(() => {
@@ -311,7 +321,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   id={res.id}
                   title={res.label}
                   type={res.type}
-                  onSelect={() => onSelect(res.id)}
+                  onSelect={() => handleResultSelect(res.id)}
                   cx={cx}
                 />
               ))}

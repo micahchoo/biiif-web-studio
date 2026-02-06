@@ -46,6 +46,8 @@ export type { MetadataViewProps } from './ui/organisms/MetadataView';
 export { MetadataEditorPanel } from './ui/organisms/MetadataEditorPanel';
 export type { MetadataEditorPanelProps } from './ui/organisms/MetadataEditorPanel';
 
+export { Inspector } from './ui/organisms/Inspector';
+
 export { CSVImportModal } from './ui/molecules/CSVImportModal';
 export type { CSVImportModalProps, ImportStep, CSVImportResult } from './ui/molecules/CSVImportModal';
 

@@ -39,7 +39,7 @@ export interface BoardCanvasProps {
   /** ID of item being connected from */
   connectingFrom: string | null;
   /** Active tool mode */
-  activeTool: 'select' | 'connect' | 'note';
+  activeTool: 'select' | 'connect' | 'note' | 'text';
   /** Viewport state (pan/zoom) */
   viewport: { x: number; y: number; zoom: number };
   /** Viewport change callback */
@@ -56,6 +56,8 @@ export interface BoardCanvasProps {
   onAddItem: (resource: IIIFItem, position: { x: number; y: number }) => void;
   /** Root item for drag-drop resources */
   root: IIIFItem | null;
+  /** Background mode */
+  bgMode?: 'grid' | 'dark' | 'light';
   /** Contextual styles from template */
   cx: {
     surface: string;
@@ -92,6 +94,7 @@ export const BoardCanvas = forwardRef<HTMLDivElement, BoardCanvasProps>(
       onCompleteConnection: _onCompleteConnection,
       onAddItem: _onAddItem,
       root: _root,
+      bgMode = 'grid',
       cx,
       fieldMode,
     },
@@ -121,12 +124,19 @@ export const BoardCanvas = forwardRef<HTMLDivElement, BoardCanvasProps>(
       }
     };
 
+    // Background mode classes
+    const bgModeClasses = {
+      grid: cx.canvasBg,
+      dark: 'bg-slate-900',
+      light: 'bg-slate-100',
+    };
+
     return (
       <div
         ref={combinedSetRefs}
         className={`
           flex-1 relative overflow-hidden cursor-${activeTool === 'select' ? 'default' : 'crosshair'}
-          ${cx.canvasBg}
+          ${bgModeClasses[bgMode]}
         `}
         onClick={handleCanvasClick}
         onMouseMove={handleMouseMove}
@@ -141,8 +151,8 @@ export const BoardCanvas = forwardRef<HTMLDivElement, BoardCanvasProps>(
           }}
           className="absolute inset-0"
         >
-          {/* Grid background */}
-          <CanvasGrid cx={cx} fieldMode={fieldMode} />
+          {/* Grid background (only in grid mode) */}
+          {bgMode === 'grid' && <CanvasGrid cx={cx} fieldMode={fieldMode} />}
 
           {/* Connections layer */}
           <ConnectionLayer

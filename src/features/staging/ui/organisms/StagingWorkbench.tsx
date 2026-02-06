@@ -470,16 +470,23 @@ const StagingWorkbenchInner: React.FC<StagingWorkbenchInnerProps> = ({
           <SourcePane
             sourceManifests={sourceManifests}
             selectedIds={selectedIds}
-            onToggleSelection={toggleSelection}
-            onSelectRange={(from, to) => selectRange(from, to, allManifestIds)}
+            onSelect={(id, metaKey, shiftKey) => {
+              if (shiftKey && selectedIds.length > 0) {
+                // Range selection
+                const lastSelected = selectedIds[selectedIds.length - 1];
+                selectRange(lastSelected, id, allManifestIds);
+              } else {
+                toggleSelection(id, metaKey);
+              }
+            }}
             onClearSelection={clearSelection}
-            onSelectAll={() => selectAll(allManifestIds)}
-            onReorderCanvases={reorderCanvases}
-            onDragStart={handleManifestDragStart}
-            onFocus={() => setFocusedPane('source')}
+            onReorder={reorderCanvases}
+            onDragStart={(manifestId) => {
+              // Adapter: SourcePane expects just manifestId, but we need to start drag
+              const ids = selectedIds.includes(manifestId) ? selectedIds : [manifestId];
+              // The actual drag is handled by SourcePane's internal handleDragStart
+            }}
             isFocused={focusedPane === 'source'}
-            enableKeyboardDnd={enableKeyboardDnd}
-            keyboardDnd={keyboardDnd}
           />
         </div>
 

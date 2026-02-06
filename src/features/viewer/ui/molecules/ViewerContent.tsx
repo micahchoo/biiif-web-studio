@@ -79,12 +79,13 @@ export const ViewerContent: React.FC<ViewerContentProps> = ({
 }) => {
   // Image content with OpenSeadragon
   if (mediaType === 'image' && resolvedUrl) {
+    const bgClass = fieldMode ? 'bg-black' : 'bg-slate-100 dark:bg-slate-900';
     return (
-      <div className="flex-1 relative bg-black overflow-hidden flex" style={{ height: '100%' }}>
+      <div className={`flex-1 relative overflow-hidden flex ${bgClass}`} style={{ height: '100%' }}>
         <div
           ref={osdContainerRef}
           className="absolute inset-0 w-full h-full"
-          style={{ background: '#000' }}
+          style={{ background: fieldMode ? '#000' : undefined }}
         />
         {/* Annotation Overlay */}
         {annotations.length > 0 && (
@@ -103,8 +104,9 @@ export const ViewerContent: React.FC<ViewerContentProps> = ({
 
   // Video content
   if (mediaType === 'video' && resolvedUrl) {
+    const bgClass = fieldMode ? 'bg-black' : 'bg-slate-100 dark:bg-slate-900';
     return (
-      <div className="flex-1 flex items-center justify-center bg-black">
+      <div className={`flex-1 flex items-center justify-center ${bgClass}`}>
         <MediaPlayer
           canvas={canvas}
           src={resolvedUrl}
@@ -118,8 +120,9 @@ export const ViewerContent: React.FC<ViewerContentProps> = ({
 
   // Audio content
   if (mediaType === 'audio' && resolvedUrl) {
+    const bgClass = fieldMode ? 'bg-black' : 'bg-slate-100 dark:bg-slate-900';
     return (
-      <div className="flex-1 flex items-center justify-center bg-black">
+      <div className={`flex-1 flex items-center justify-center ${bgClass}`}>
         <MediaPlayer
           canvas={canvas}
           src={resolvedUrl}

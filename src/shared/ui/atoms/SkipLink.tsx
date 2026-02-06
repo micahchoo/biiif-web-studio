@@ -67,21 +67,21 @@ export const SkipLink: React.FC<SkipLinkProps> = ({
     'top-right': 'top-4 right-4'
   };
 
+  // Use sr-only pattern: completely hidden until focused
+  // When focused, appears in a non-intrusive position (top center)
   return (
     <a
       href={`#${targetId}`}
       onClick={handleClick}
       className={`
-        fixed z-[9999]
-        ${positionClasses[position]}
-        px-4 py-3
-        bg-sky-600 text-white
-        font-semibold text-sm
-        rounded-lg shadow-lg
-        transform -translate-y-[200%] focus:translate-y-0
-        transition-transform duration-200 ease-out
+        sr-only focus:not-sr-only
+        focus:fixed focus:z-[9999] focus:top-2 focus:left-1/2 focus:-translate-x-1/2
+        focus:px-4 focus:py-2
+        focus:bg-sky-600 focus:text-white
+        focus:font-semibold focus:text-sm
+        focus:rounded-lg focus:shadow-lg
         focus:outline-none focus:ring-4 focus:ring-sky-500/50
-        flex items-center gap-2
+        focus:flex focus:items-center focus:gap-2
         ${className}
       `}
     >

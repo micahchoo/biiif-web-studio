@@ -19,7 +19,7 @@ export interface BoardTemplate {
   name: string;
   description: string;
   icon: string;
-  previewLayout: 'narrative' | 'comparison' | 'map' | 'timeline' | 'grid';
+  previewLayout: 'narrative' | 'comparison' | 'map' | 'timeline';
   itemCount: number;
   suggestedItems?: string[];
 }
@@ -48,49 +48,40 @@ export interface BoardOnboardingProps {
 const TEMPLATES: BoardTemplate[] = [
   {
     id: 'narrative',
-    name: 'Photo Narrative',
-    description: 'Connect photos in a sequence to tell a visual story. Perfect for documenting events, journeys, or processes.',
+    name: 'Narrative Sequence',
+    description: 'Create a presentation-like sequence. Each canvas becomes a slide, exported as an ordered IIIF Manifest.',
     icon: 'auto_stories',
     previewLayout: 'narrative',
     itemCount: 4,
   },
   {
     id: 'comparison',
-    name: 'Side-by-Side Comparison',
-    description: 'Place items next to each other to highlight similarities and differences. Great for analysis.',
+    name: 'Comparative Analysis',
+    description: 'Link items with IIIF comparison annotations. Perfect for before/after, versions, or scholarly analysis.',
     icon: 'compare',
     previewLayout: 'comparison',
     itemCount: 2,
   },
   {
     id: 'timeline',
-    name: 'Timeline Story',
-    description: 'Arrange items chronologically to show progression over time. Ideal for historical sequences.',
+    name: 'Timeline',
+    description: 'Arrange items chronologically using IIIF navDate. Viewers can navigate by date automatically.',
     icon: 'view_timeline',
     previewLayout: 'timeline',
     itemCount: 5,
   },
   {
     id: 'map',
-    name: 'Geographic Layout',
-    description: 'Position items on a geographic layout. Perfect for location-based collections.',
+    name: 'Geographic Collection',
+    description: 'Position items on a map using IIIF navPlace (GeoJSON). Enable geographic browsing of your collection.',
     icon: 'map',
     previewLayout: 'map',
     itemCount: 3,
-  },
-  {
-    id: 'grid',
-    name: 'Curated Grid',
-    description: 'Organize items in a flexible grid. Great for creating thematic collections.',
-    icon: 'grid_view',
-    previewLayout: 'grid',
-    itemCount: 6,
   },
 ];
 
 const TemplatePreview: React.FC<{ layout: BoardTemplate['previewLayout']; itemCount: number; fieldMode: boolean }> = ({
   layout,
-  itemCount,
   fieldMode,
 }) => {
   const baseItemClass = `absolute w-8 h-8 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`;
@@ -110,7 +101,7 @@ const TemplatePreview: React.FC<{ layout: BoardTemplate['previewLayout']; itemCo
     comparison: (
       <div className="relative w-full h-full flex items-center justify-center gap-4">
         <div className={`w-10 h-12 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
-        <div className={`text-lg ${fieldMode ? 'text-stone-600' : 'text-stone-400'}`}>vs</div>
+        <div className={`text-lg ${fieldMode ? 'text-stone-600' : 'text-stone-400'}`}>↔</div>
         <div className={`w-10 h-12 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
       </div>
     ),
@@ -130,15 +121,6 @@ const TemplatePreview: React.FC<{ layout: BoardTemplate['previewLayout']; itemCo
         <div className={`absolute left-4 top-3 w-6 h-6 rounded-full ${fieldMode ? 'bg-amber-600' : 'bg-amber-400'}`} />
         <div className={`absolute right-6 top-8 w-5 h-5 rounded-full ${fieldMode ? 'bg-amber-700' : 'bg-amber-500'}`} />
         <div className={`absolute left-12 bottom-4 w-4 h-4 rounded-full ${fieldMode ? 'bg-amber-500' : 'bg-amber-300'}`} />
-      </div>
-    ),
-    grid: (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="grid grid-cols-3 gap-1.5">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className={`w-6 h-6 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
-          ))}
-        </div>
       </div>
     ),
   };

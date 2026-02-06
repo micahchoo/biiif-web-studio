@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { AbstractionLevel, AppSettings } from '@/src/shared/types';
+import { AppSettings } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms/Icon';
-import { getFieldsByCategory, getVisibleFields, METADATA_TEMPLATES, MetadataComplexity } from '@/src/shared/constants';
+import { getVisibleFields, MetadataComplexity } from '@/src/shared/constants';
 import { guidance } from '@/src/shared/services/guidanceService';
 
 // Admin mode key for localStorage
@@ -41,32 +41,6 @@ export const PersonaSettings: React.FC<PersonaSettingsProps> = ({ settings, onUp
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
-  const handlePersonaSelect = (lvl: AbstractionLevel) => {
-      let template = METADATA_TEMPLATES.ARCHIVIST;
-      let showTechnical = true;
-      let fieldMode = false;
-      let complexity: MetadataComplexity = 'standard';
-
-      if (lvl === 'simple') {
-          template = METADATA_TEMPLATES.RESEARCHER;
-          showTechnical = false;
-          fieldMode = true;
-          complexity = 'simple';
-      } else if (lvl === 'advanced') {
-          template = METADATA_TEMPLATES.DEVELOPER;
-          showTechnical = true;
-          fieldMode = false;
-          complexity = 'advanced';
-      }
-
-      onUpdate({
-          abstractionLevel: lvl,
-          metadataTemplate: template,
-          showTechnicalIds: showTechnical,
-          fieldMode,
-          metadataComplexity: complexity
-      });
-  };
 
   const complexityLevels: { level: MetadataComplexity; label: string; desc: string }[] = [
       { level: 'simple', label: 'Essential', desc: 'Label, summary, thumbnail only' },
@@ -93,30 +67,6 @@ export const PersonaSettings: React.FC<PersonaSettingsProps> = ({ settings, onUp
 
         <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
             <section>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Select Your Role</label>
-                <div className="grid grid-cols-1 gap-3">
-                    <PersonaOption 
-                        icon="travel_explore" title="Field Researcher" 
-                        desc="Simplified UI. Focus on GPS, high-contrast field modes, and quick capture." 
-                        active={settings.abstractionLevel === 'simple'}
-                        onClick={() => handlePersonaSelect('simple')}
-                    />
-                    <PersonaOption 
-                        icon="inventory" title="Digital Archivist" 
-                        desc="Standard UI. Emphasis on metadata precision, validation, and batching." 
-                        active={settings.abstractionLevel === 'standard'}
-                        onClick={() => handlePersonaSelect('standard')}
-                    />
-                    <PersonaOption 
-                        icon="terminal" title="IIIF Developer" 
-                        desc="Advanced UI. Raw JSON-LD access, direct ID editing, and Image API workbenches." 
-                        active={settings.abstractionLevel === 'advanced'}
-                        onClick={() => handlePersonaSelect('advanced')}
-                    />
-                </div>
-            </section>
-
-            <section className="pt-6 border-t border-slate-100">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Affordance Overrides</label>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -266,17 +216,6 @@ export const PersonaSettings: React.FC<PersonaSettingsProps> = ({ settings, onUp
     </div>
   );
 };
-
-const PersonaOption: React.FC<{ icon: string, title: string, desc: string, active: boolean, onClick: () => void }> = ({ icon, title, desc, active, onClick }) => (
-    <button onClick={onClick} className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-start gap-4 ${active ? 'border-iiif-blue bg-blue-50 shadow-md' : 'border-slate-100 hover:border-slate-200'}`}>
-        <div className={`p-3 rounded-xl ${active ? 'bg-iiif-blue text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}><Icon name={icon}/></div>
-        <div className="flex-1">
-            <h4 className={`font-black uppercase tracking-tighter text-sm ${active ? 'text-iiif-blue' : 'text-slate-700'}`}>{title}</h4>
-            <p className="text-[10px] text-slate-500 leading-tight mt-1">{desc}</p>
-        </div>
-        {active && <Icon name="check_circle" className="text-iiif-blue"/>}
-    </button>
-);
 
 const HelpResetSection: React.FC = () => {
     const [tipCount, setTipCount] = useState(guidance.getSeenCount());

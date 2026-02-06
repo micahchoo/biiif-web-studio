@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-06T18:25:21.618Z",
+  "generatedAt": "2026-02-06T18:40:53.924Z",
   "totalFiles": 373,
   "files": {
     "src/app/App.tsx": {
@@ -7125,8 +7125,8 @@
         "src/features/archive/index.ts",
         "src/features/archive/index.ts"
       ],
-      "size": 16202,
-      "lines": 444
+      "size": 16659,
+      "lines": 451
     },
     "src/features/board-design/hooks/useCanvasDrag.ts": {
       "filePath": "src/features/board-design/hooks/useCanvasDrag.ts",

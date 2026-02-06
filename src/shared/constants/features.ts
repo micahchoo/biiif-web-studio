@@ -74,8 +74,9 @@ export const FEATURE_FLAGS = {
    * Enable worker-based ingest processing
    * Moves CPU-intensive operations (createImageBitmap, generateDerivative,
    * calculateHash, extractMetadata) to web workers for improved performance
+   * NOTE: Disabled due to double-ingest bug - onIngest callback triggers second ingest
    */
-  USE_WORKER_INGEST: true,
+  USE_WORKER_INGEST: false,
 } as const;
 
 /** Phase 2 Trash System feature flag exports */

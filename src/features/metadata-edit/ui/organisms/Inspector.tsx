@@ -30,6 +30,26 @@ interface InspectorProps {
   designTab?: React.ReactNode;
   /** Annotations for this resource */
   annotations?: IIIFAnnotation[];
+  /** Whether annotation drawing mode is active */
+  annotationModeActive?: boolean;
+  /** Current annotation drawing state */
+  annotationDrawingState?: {
+    pointCount: number;
+    isDrawing: boolean;
+    canSave: boolean;
+  };
+  /** Text for new annotation */
+  annotationText?: string;
+  /** Callback when annotation text changes */
+  onAnnotationTextChange?: (text: string) => void;
+  /** Motivation for new annotation */
+  annotationMotivation?: 'commenting' | 'tagging' | 'describing';
+  /** Callback when motivation changes */
+  onAnnotationMotivationChange?: (motivation: 'commenting' | 'tagging' | 'describing') => void;
+  /** Callback to save the annotation */
+  onSaveAnnotation?: () => void;
+  /** Callback to clear the annotation drawing */
+  onClearAnnotation?: () => void;
 }
 
 
@@ -203,7 +223,15 @@ const InspectorComponent: React.FC<InspectorProps> = ({
   onClose,
   isMobile,
   designTab,
-  annotations = []
+  annotations = [],
+  annotationModeActive = false,
+  annotationDrawingState,
+  annotationText = '',
+  onAnnotationTextChange,
+  annotationMotivation = 'commenting',
+  onAnnotationMotivationChange,
+  onSaveAnnotation,
+  onClearAnnotation,
 }) => {
   // Stabilize resource reference to prevent infinite re-renders
   const resource = useMemo(() => resourceProp, [resourceProp?.id, resourceProp?.type]);
@@ -570,6 +598,113 @@ const InspectorComponent: React.FC<InspectorProps> = ({
         {/* Annotations Tab */}
         {tab === 'annotations' && (
           <div role="tabpanel" className="space-y-4">
+            {/* Annotation Creation Form - shown when annotation mode is active */}
+            {annotationModeActive && (
+              <div className={`p-4 rounded-xl border-2 ${
+                settings.fieldMode
+                  ? 'bg-yellow-900/20 border-yellow-600'
+                  : 'bg-green-50 border-green-400'
+              }`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon name="gesture" className={`${settings.fieldMode ? 'text-yellow-400' : 'text-green-600'}`} />
+                  <span className={`text-xs font-bold uppercase ${settings.fieldMode ? 'text-yellow-400' : 'text-green-700'}`}>
+                    Creating Annotation
+                  </span>
+                </div>
+
+                {/* Drawing Status */}
+                <div className={`mb-3 p-2 rounded-lg text-xs ${
+                  settings.fieldMode ? 'bg-black/40 text-stone-300' : 'bg-white text-slate-600'
+                }`}>
+                  {annotationDrawingState?.pointCount === 0
+                    ? 'Draw a shape on the image to select a region'
+                    : annotationDrawingState?.isDrawing
+                      ? `Drawing... ${annotationDrawingState.pointCount} points`
+                      : `Shape ready with ${annotationDrawingState?.pointCount || 0} points`
+                  }
+                </div>
+
+                {/* Form - only show when shape is ready */}
+                {annotationDrawingState && annotationDrawingState.pointCount >= 3 && !annotationDrawingState.isDrawing && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className={`block text-[10px] font-bold uppercase mb-1.5 ${
+                        settings.fieldMode ? 'text-stone-400' : 'text-slate-500'
+                      }`}>
+                        Purpose
+                      </label>
+                      <select
+                        value={annotationMotivation}
+                        onChange={e => onAnnotationMotivationChange?.(e.target.value as any)}
+                        className={`
+                          w-full rounded-lg px-3 py-2 text-sm outline-none border
+                          ${settings.fieldMode
+                            ? 'bg-stone-800 text-white border-yellow-900/30 focus:border-yellow-600'
+                            : 'bg-white text-slate-900 border-slate-200 focus:border-green-500'
+                          }
+                        `}
+                      >
+                        <option value="commenting">Comment</option>
+                        <option value="tagging">Tag</option>
+                        <option value="describing">Description</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className={`block text-[10px] font-bold uppercase mb-1.5 ${
+                        settings.fieldMode ? 'text-stone-400' : 'text-slate-500'
+                      }`}>
+                        Annotation Text
+                      </label>
+                      <textarea
+                        value={annotationText}
+                        onChange={e => onAnnotationTextChange?.(e.target.value)}
+                        placeholder="Enter your annotation..."
+                        rows={3}
+                        autoFocus
+                        className={`
+                          w-full rounded-lg px-3 py-2 text-sm outline-none border resize-none
+                          ${settings.fieldMode
+                            ? 'bg-stone-800 text-white placeholder-stone-500 border-yellow-900/30 focus:border-yellow-600'
+                            : 'bg-white text-slate-900 placeholder-slate-400 border-slate-200 focus:border-green-500'
+                          }
+                        `}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={onClearAnnotation}
+                        className={`
+                          flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-colors
+                          ${settings.fieldMode
+                            ? 'bg-stone-800 text-stone-300 hover:bg-stone-700'
+                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                          }
+                        `}
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={onSaveAnnotation}
+                        disabled={!annotationText.trim()}
+                        className={`
+                          flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50
+                          ${settings.fieldMode
+                            ? 'bg-yellow-600 text-white hover:bg-yellow-500'
+                            : 'bg-green-600 text-white hover:bg-green-500'
+                          }
+                        `}
+                      >
+                        <Icon name="save" className="inline mr-1" />
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className={`p-3 rounded-lg border ${settings.fieldMode ? 'bg-slate-900 border-slate-800' : 'bg-blue-50 border-blue-200'}`}>
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] font-bold uppercase ${settings.fieldMode ? 'text-blue-400' : 'text-blue-600'}`}>
@@ -584,7 +719,7 @@ const InspectorComponent: React.FC<InspectorProps> = ({
               </p>
             </div>
 
-            {annotations.length === 0 ? (
+            {annotations.length === 0 && !annotationModeActive ? (
               <div className="text-center py-12">
                 <Icon name="sticky_note_2" className={`text-4xl mb-3 mx-auto ${settings.fieldMode ? 'text-slate-700' : 'text-slate-300'}`} />
                 <p className={`text-sm ${settings.fieldMode ? 'text-slate-500' : 'text-slate-500'}`}>No annotations yet</p>

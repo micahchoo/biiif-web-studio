@@ -178,53 +178,50 @@ interface QuickRefProps {
 }
 
 export const QuickReference: React.FC<QuickRefProps> = ({ title, items, isOpen, onToggle }) => {
-  return (
-    <div className="fixed bottom-4 left-4 z-50">
-      {/* Toggle button */}
-      <button
-        onClick={onToggle}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-          isOpen
-            ? 'bg-slate-800 text-white'
-            : 'bg-white/90 text-slate-600 hover:bg-white shadow-lg border border-slate-200'
-        }`}
-      >
-        <Icon name="help_outline" className="text-sm" />
-        <span>{isOpen ? 'Close' : 'Quick Help'}</span>
-        {!isOpen && <kbd className="ml-1 px-1 py-0.5 bg-slate-100 rounded text-[9px] font-mono">?</kbd>}
-      </button>
+  // If opened from StatusBar, we don't need the toggle button here
+  // The QuickReference panel is now anchored to bottom-right, above StatusBar
+  if (!isOpen) {
+    return null; // Toggle is now in StatusBar
+  }
 
+  return (
+    <div className="fixed bottom-10 right-4 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
       {/* Panel */}
-      {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
-          <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">{title}</h3>
-          </div>
-          <div className="p-2 max-h-80 overflow-y-auto">
-            {items.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <Icon name={item.icon} className="text-slate-400 text-sm mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-700">{item.label}</span>
-                    {item.shortcut && (
-                      <kbd className="px-1 py-0.5 bg-slate-100 rounded text-[9px] font-mono text-slate-500">
-                        {item.shortcut}
-                      </kbd>
-                    )}
-                  </div>
-                  {item.description && (
-                    <p className="text-[10px] text-slate-400 mt-0.5">{item.description}</p>
+      <div className="w-72 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+        <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">{title}</h3>
+          <button
+            onClick={onToggle}
+            className="p-1 hover:bg-slate-200 rounded transition-colors"
+            aria-label="Close quick help"
+          >
+            <Icon name="close" className="text-slate-500 text-sm" />
+          </button>
+        </div>
+        <div className="p-2 max-h-80 overflow-y-auto">
+          {items.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              <Icon name={item.icon} className="text-slate-400 text-sm mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-700">{item.label}</span>
+                  {item.shortcut && (
+                    <kbd className="px-1 py-0.5 bg-slate-100 rounded text-[9px] font-mono text-slate-500">
+                      {item.shortcut}
+                    </kbd>
                   )}
                 </div>
+                {item.description && (
+                  <p className="text-[10px] text-slate-400 mt-0.5">{item.description}</p>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 };

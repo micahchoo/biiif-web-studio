@@ -10,15 +10,16 @@
  * - Views render content only, no headers/sidebars
  */
 
-import React, { useMemo } from 'react';
-import type { AppMode, IIIFItem, IIIFCanvas, IIIFManifest, IIIFCollection, AppSettings } from '@/src/shared/types';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import type { AppMode, IIIFItem, IIIFCanvas, IIIFManifest, IIIFCollection, AppSettings, IIIFAnnotation } from '@/src/shared/types';
 import type { ValidationIssue } from '@/src/entities/manifest/model/validation/validator';
 import { useAppMode } from '@/src/app/providers';
+import { Icon } from '@/src/shared/ui/atoms';
 
 // Feature views
 import { ArchiveView } from '@/src/features/archive';
 import { BoardView } from '@/src/features/board-design';
-import { MetadataView } from '@/src/features/metadata-edit';
+import { MetadataView, Inspector } from '@/src/features/metadata-edit';
 import { SearchView } from '@/src/features/search';
 import { ViewerView } from '@/src/features/viewer';
 import { MapView } from '@/src/features/map';
@@ -38,6 +39,10 @@ export interface ViewRouterProps {
   onBatchEdit?: (ids: string[]) => void;
   onCatalogSelection?: (ids: string[]) => void;
   settings?: AppSettings;
+  /** Callback to trigger folder import dialog */
+  onOpenImport?: () => void;
+  /** Callback to trigger external URL import dialog */
+  onOpenExternalImport?: () => void;
 }
 
 const findItemById = (node: any, id: string): any => {
@@ -69,6 +74,18 @@ const findFirstCanvas = (node: any): { canvas: IIIFCanvas | null; manifest: IIIF
   return { canvas: null, manifest: null };
 };
 
+// Extract annotations from a canvas (flattens annotation pages)
+const getCanvasAnnotations = (canvas: IIIFCanvas | null): IIIFAnnotation[] => {
+  if (!canvas?.annotations) return [];
+  const annotations: IIIFAnnotation[] = [];
+  for (const page of canvas.annotations) {
+    if (page.items) {
+      annotations.push(...page.items);
+    }
+  }
+  return annotations;
+};
+
 export const ViewRouter: React.FC<ViewRouterProps> = ({
   selectedId,
   selectedItem,
@@ -80,8 +97,40 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
   onBatchEdit,
   onCatalogSelection,
   settings,
+  onOpenImport,
+  onOpenExternalImport,
 }) => {
   const [currentMode, setCurrentMode] = useAppMode();
+
+  // Panel visibility state for archive split view
+  const [showViewerPanel, setShowViewerPanel] = useState(true);
+  const [showInspectorPanel, setShowInspectorPanel] = useState(false);
+
+  // Annotation state for viewer/inspector integration
+  const [showAnnotationTool, setShowAnnotationTool] = useState(false);
+  const [annotationText, setAnnotationText] = useState('');
+  const [annotationMotivation, setAnnotationMotivation] = useState<'commenting' | 'tagging' | 'describing'>('commenting');
+  const [annotationDrawingState, setAnnotationDrawingState] = useState<{ pointCount: number; isDrawing: boolean; canSave: boolean }>({
+    pointCount: 0,
+    isDrawing: false,
+    canSave: false,
+  });
+
+  // Refs for annotation controls exposed from AnnotationDrawingOverlay
+  const annotationSaveRef = useRef<(() => void) | null>(null);
+  const annotationClearRef = useRef<(() => void) | null>(null);
+
+  // Handlers for annotation actions
+  const handleSaveAnnotation = useCallback(() => {
+    annotationSaveRef.current?.();
+    setAnnotationText('');
+  }, []);
+
+  const handleClearAnnotation = useCallback(() => {
+    annotationClearRef.current?.();
+    setAnnotationText('');
+  }, []);
+
   const viewerData = useMemo(() => {
     if (!root) return { canvas: null, manifest: null };
 
@@ -116,15 +165,129 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
     return { canvas: selectedCanvas, manifest: parentManifest };
   }, [root, selectedId]);
 
+  // Get annotations from selected canvas for Inspector
+  const canvasAnnotations = useMemo(() => {
+    if (selectedItem?.type === 'Canvas') {
+      return getCanvasAnnotations(selectedItem as IIIFCanvas);
+    }
+    return [];
+  }, [selectedItem]);
+
   // Archive view
   if (currentMode === 'archive') {
     const hasSelectedItem = !!selectedId && !!selectedItem;
     const isCanvasSelected = selectedItem?.type === 'Canvas';
+    const isFieldMode = settings?.fieldMode || false;
+
+    // Should show viewer panel? Only if canvas selected AND panel not closed
+    const shouldShowViewer = hasSelectedItem && isCanvasSelected && showViewerPanel;
+
+    // Build contextual colors based on field mode
+    const filmstripCx = isFieldMode
+      ? {
+          surface: 'bg-black',
+          text: 'text-white',
+          accent: 'text-yellow-400',
+          border: 'border-yellow-900/50',
+          divider: 'border-yellow-900/30',
+          headerBg: 'bg-black',
+          textMuted: 'text-yellow-200/60',
+          input: 'bg-yellow-900/30 border-yellow-700',
+          label: 'text-yellow-200',
+          active: 'bg-yellow-500/30 text-yellow-200',
+          inactive: 'text-yellow-400/50',
+          warningBg: 'bg-orange-900/30',
+          pageBg: 'bg-black',
+        }
+      : {
+          surface: 'bg-slate-900',
+          text: 'text-slate-100',
+          accent: 'text-blue-400',
+          border: 'border-slate-700',
+          divider: 'border-slate-800',
+          headerBg: 'bg-slate-900',
+          textMuted: 'text-slate-400',
+          input: 'bg-slate-800 border-slate-600',
+          label: 'text-slate-300',
+          active: 'bg-blue-900/30 text-blue-300',
+          inactive: 'text-slate-400',
+          warningBg: 'bg-amber-900/30',
+          pageBg: 'bg-slate-950',
+        };
+
+    const viewerCx = isFieldMode
+      ? {
+          surface: 'bg-black',
+          text: 'text-white',
+          accent: 'text-yellow-400',
+          border: 'border-yellow-900/50',
+          divider: 'border-yellow-900/30',
+          headerBg: 'bg-black',
+          textMuted: 'text-yellow-200/60',
+          input: 'bg-yellow-900/30 border-yellow-700',
+          label: 'text-yellow-200',
+          active: 'bg-yellow-500/30 text-yellow-200',
+          inactive: 'text-yellow-400/50',
+          warningBg: 'bg-orange-900/30',
+          pageBg: 'bg-black',
+        }
+      : {
+          surface: 'bg-slate-900',
+          text: 'text-white',
+          accent: 'text-blue-400',
+          border: 'border-slate-700',
+          divider: 'border-slate-800',
+          headerBg: 'bg-slate-900',
+          textMuted: 'text-slate-400',
+          input: 'bg-slate-800 border-slate-600',
+          label: 'text-slate-300',
+          active: 'bg-blue-900/30 text-blue-300',
+          inactive: 'text-slate-400',
+          warningBg: 'bg-amber-900/30',
+          pageBg: 'bg-slate-950',
+        };
+
+    // Default grid cx for full archive view - respects field mode
+    const gridCx = isFieldMode
+      ? {
+          surface: 'bg-black',
+          text: 'text-white',
+          accent: 'text-yellow-400',
+          border: 'border-yellow-900/50',
+          divider: 'border-yellow-900/30',
+          headerBg: 'bg-black',
+          textMuted: 'text-yellow-200/60',
+          input: 'bg-yellow-900/30 border-yellow-700',
+          label: 'text-yellow-200',
+          active: 'bg-yellow-500/30 text-yellow-200',
+          inactive: 'text-yellow-400/50',
+          warningBg: 'bg-orange-900/30',
+          pageBg: 'bg-black',
+        }
+      : {
+          surface: 'bg-white dark:bg-slate-900',
+          text: 'text-slate-900 dark:text-slate-100',
+          accent: 'text-blue-600 dark:text-blue-400',
+          border: 'border-slate-200 dark:border-slate-700',
+          divider: 'border-slate-200 dark:border-slate-800',
+          headerBg: 'bg-white dark:bg-slate-900',
+          textMuted: 'text-slate-500 dark:text-slate-400',
+          input: 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600',
+          label: 'text-slate-700 dark:text-slate-300',
+          active: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+          inactive: 'text-slate-600 dark:text-slate-400',
+          warningBg: 'bg-amber-50 dark:bg-amber-900/30',
+          pageBg: 'bg-slate-50 dark:bg-slate-950',
+        };
 
     return (
       <div className="flex-1 flex min-h-0">
-        {/* Left: Archive Grid */}
-        <div className={`flex flex-col transition-all duration-300 ${hasSelectedItem ? 'w-80 border-r border-slate-200 dark:border-slate-800' : 'flex-1'}`}>
+        {/* Left: Archive Filmstrip when viewer shown, full grid otherwise */}
+        <div className={`flex flex-col transition-all duration-300 ${
+          shouldShowViewer
+            ? `w-72 shrink-0 ${isFieldMode ? 'bg-black border-r border-yellow-900/50' : 'bg-slate-900 border-r border-slate-700'}`
+            : 'flex-1'
+        }`}>
           <ArchiveView
             root={root}
             onSelect={(item) => {
@@ -134,60 +297,95 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
             onOpen={(item) => {
               onSelect?.(item);
               onSelectId?.(item.id);
-              setCurrentMode('viewer');
+              setShowViewerPanel(true);
             }}
             onBatchEdit={(ids) => onBatchEdit?.(ids)}
             onUpdate={(newRoot) => onUpdateRoot?.(newRoot)}
-            cx={{
-              surface: 'bg-white dark:bg-slate-900',
-              text: 'text-slate-900 dark:text-slate-100',
-              accent: 'text-blue-600 dark:text-blue-400',
-              border: 'border-slate-200 dark:border-slate-700',
-              divider: 'border-slate-200 dark:border-slate-800',
-              headerBg: 'bg-white dark:bg-slate-900',
-              textMuted: 'text-slate-500 dark:text-slate-400',
-              input: 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600',
-              label: 'text-slate-700 dark:text-slate-300',
-              active: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-              inactive: 'text-slate-600 dark:text-slate-400',
-              warningBg: 'bg-amber-50 dark:bg-amber-900/30',
-              pageBg: 'bg-slate-50 dark:bg-slate-950',
-            }}
-            fieldMode={settings?.fieldMode || false}
+            filmstripMode={shouldShowViewer}
+            onOpenImport={onOpenImport}
+            onOpenExternalImport={onOpenExternalImport}
+            cx={shouldShowViewer ? filmstripCx : gridCx}
+            fieldMode={isFieldMode}
             t={(key) => key}
-            isAdvanced={settings?.abstractionLevel === 'advanced'}
             onSwitchView={setCurrentMode}
             onCatalogSelection={onCatalogSelection}
             validationIssues={validationIssuesMap}
+            showViewerPanel={showViewerPanel}
+            showInspectorPanel={showInspectorPanel}
+            onToggleViewerPanel={() => setShowViewerPanel(!showViewerPanel)}
+            onToggleInspectorPanel={() => setShowInspectorPanel(!showInspectorPanel)}
+            hasCanvasSelected={hasSelectedItem && isCanvasSelected}
           />
         </div>
 
-        {/* Right: Viewer Panel when canvas selected */}
-        {hasSelectedItem && isCanvasSelected && (
-          <div className="flex-1 flex flex-col min-h-0 bg-slate-950">
-            <ViewerView
-              item={selectedItem as IIIFCanvas}
-              manifest={viewerData.manifest}
-              onUpdate={() => {}}
-              cx={{
-                surface: 'bg-slate-900',
-                text: 'text-white',
-                accent: 'text-blue-400',
-                border: 'border-slate-700',
-                divider: 'border-slate-800',
-                headerBg: 'bg-slate-900',
-                textMuted: 'text-slate-400',
-                input: 'bg-slate-800 border-slate-600',
-                label: 'text-slate-300',
-                active: 'bg-blue-900/30 text-blue-300',
-                inactive: 'text-slate-400',
-                warningBg: 'bg-amber-900/30',
-                pageBg: 'bg-slate-950',
-              }}
-              fieldMode={settings?.fieldMode || false}
-              t={(key) => key}
-              isAdvanced={settings?.abstractionLevel === 'advanced'}
-            />
+        {/* Right: Viewer Panel when canvas selected AND panel not closed */}
+        {shouldShowViewer && (
+          <div className={`flex-1 flex flex-col min-h-0 ${isFieldMode ? 'bg-black' : 'bg-slate-950'}`}>
+            {/* Viewer header with close + inspector buttons */}
+            <div className={`shrink-0 px-4 py-2 border-b flex items-center justify-end gap-2 ${isFieldMode ? 'bg-black border-yellow-900/50' : 'bg-slate-900 border-slate-700'}`}>
+              <button
+                onClick={() => setShowInspectorPanel(!showInspectorPanel)}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  showInspectorPanel
+                    ? isFieldMode ? 'bg-yellow-500/30 text-yellow-400' : 'bg-blue-500/30 text-blue-400'
+                    : isFieldMode ? 'text-yellow-400 hover:bg-yellow-500/20' : 'text-slate-400 hover:bg-slate-800'
+                }`}
+                title={showInspectorPanel ? 'Hide Inspector' : 'Show Inspector'}
+              >
+                <Icon name="info" className="text-lg" />
+              </button>
+              <button
+                onClick={() => setShowViewerPanel(false)}
+                className={`p-1.5 rounded-lg transition-colors ${isFieldMode ? 'text-yellow-400 hover:bg-yellow-500/20' : 'text-slate-400 hover:bg-slate-800'}`}
+                title="Close Viewer"
+              >
+                <Icon name="close" className="text-lg" />
+              </button>
+            </div>
+            <div className="flex-1 flex min-h-0">
+              <div className={`flex-1 flex flex-col min-h-0 ${showInspectorPanel ? 'w-2/3' : 'w-full'}`}>
+                <ViewerView
+                  item={selectedItem as IIIFCanvas}
+                  manifest={viewerData.manifest}
+                  onUpdate={() => {}}
+                  cx={viewerCx}
+                  fieldMode={isFieldMode}
+                  t={(key) => key}
+                  isAdvanced={settings?.abstractionLevel === 'advanced'}
+                  // Controlled annotation mode for Inspector integration
+                  annotationToolActive={showAnnotationTool}
+                  onAnnotationToolToggle={setShowAnnotationTool}
+                  annotationText={annotationText}
+                  annotationMotivation={annotationMotivation}
+                  onAnnotationDrawingStateChange={setAnnotationDrawingState}
+                  onAnnotationSaveRef={(fn) => { annotationSaveRef.current = fn; }}
+                  onAnnotationClearRef={(fn) => { annotationClearRef.current = fn; }}
+                />
+              </div>
+              {/* Inspector Panel - Full Inspector with tabs */}
+              {showInspectorPanel && settings && (
+                <div className="w-80 shrink-0 min-h-0 overflow-auto">
+                  <Inspector
+                    resource={selectedItem}
+                    onUpdateResource={(updates) => onUpdateItem?.(updates)}
+                    settings={settings}
+                    visible={true}
+                    onClose={() => setShowInspectorPanel(false)}
+                    // Annotations for display
+                    annotations={canvasAnnotations}
+                    // Annotation creation integration
+                    annotationModeActive={showAnnotationTool}
+                    annotationDrawingState={annotationDrawingState}
+                    annotationText={annotationText}
+                    onAnnotationTextChange={setAnnotationText}
+                    annotationMotivation={annotationMotivation}
+                    onAnnotationMotivationChange={setAnnotationMotivation}
+                    onSaveAnnotation={handleSaveAnnotation}
+                    onClearAnnotation={handleClearAnnotation}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -225,10 +423,24 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
 
   // Metadata view
   if (currentMode === 'metadata') {
-    return (
-      <MetadataView
-        root={root}
-        cx={{
+    const isFieldMode = settings?.fieldMode || false;
+    const metadataCx = isFieldMode
+      ? {
+          surface: 'bg-black',
+          text: 'text-white',
+          accent: 'text-yellow-400',
+          border: 'border-yellow-900/50',
+          divider: 'border-yellow-900/30',
+          headerBg: 'bg-black',
+          textMuted: 'text-yellow-200/60',
+          input: 'bg-yellow-900/30 border-yellow-700 text-white',
+          label: 'text-yellow-200',
+          active: 'bg-yellow-500/30 text-yellow-200',
+          inactive: 'text-yellow-400/50',
+          warningBg: 'bg-orange-900/30',
+          pageBg: 'bg-black',
+        }
+      : {
           surface: 'bg-white dark:bg-slate-900',
           text: 'text-slate-900 dark:text-slate-100',
           accent: 'text-blue-600 dark:text-blue-400',
@@ -242,8 +454,12 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
           inactive: 'text-slate-600 dark:text-slate-400',
           warningBg: 'bg-amber-50 dark:bg-amber-900/30',
           pageBg: 'bg-slate-50 dark:bg-slate-950',
-        }}
-        fieldMode={settings?.fieldMode || false}
+        };
+    return (
+      <MetadataView
+        root={root}
+        cx={metadataCx}
+        fieldMode={isFieldMode}
         onUpdate={(newRoot) => onUpdateRoot?.(newRoot)}
       />
     );
@@ -302,12 +518,24 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
 
   // Viewer view
   if (currentMode === 'viewer') {
-    return (
-      <ViewerView
-        item={viewerData.canvas}
-        manifest={viewerData.manifest}
-        onUpdate={() => {}}
-        cx={{
+    const isFieldMode = settings?.fieldMode || false;
+    const viewerCx = isFieldMode
+      ? {
+          surface: 'bg-black',
+          text: 'text-white',
+          accent: 'text-yellow-400',
+          border: 'border-yellow-900/50',
+          divider: 'border-yellow-900/30',
+          headerBg: 'bg-black',
+          textMuted: 'text-yellow-200/60',
+          input: 'bg-yellow-900/30 border-yellow-700',
+          label: 'text-yellow-200',
+          active: 'bg-yellow-500/30 text-yellow-200',
+          inactive: 'text-yellow-400/50',
+          warningBg: 'bg-orange-900/30',
+          pageBg: 'bg-black',
+        }
+      : {
           surface: 'bg-slate-900',
           text: 'text-white',
           accent: 'text-blue-400',
@@ -321,8 +549,15 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
           inactive: 'text-slate-400',
           warningBg: 'bg-amber-900/30',
           pageBg: 'bg-slate-950',
-        }}
-        fieldMode={settings?.fieldMode || false}
+        };
+
+    return (
+      <ViewerView
+        item={viewerData.canvas}
+        manifest={viewerData.manifest}
+        onUpdate={() => {}}
+        cx={viewerCx}
+        fieldMode={isFieldMode}
         t={(key) => key}
         isAdvanced={settings?.abstractionLevel === 'advanced'}
       />

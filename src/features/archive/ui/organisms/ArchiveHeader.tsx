@@ -50,9 +50,22 @@ export interface ArchiveHeaderProps {
     surface: string;
     text: string;
     accent: string;
+    border?: string;
+    headerBg?: string;
+    textMuted?: string;
   };
   /** Current field mode */
   fieldMode: boolean;
+  /** Whether viewer panel is visible (for split view) */
+  showViewerPanel?: boolean;
+  /** Whether inspector panel is visible */
+  showInspectorPanel?: boolean;
+  /** Toggle viewer panel visibility */
+  onToggleViewerPanel?: () => void;
+  /** Toggle inspector panel visibility */
+  onToggleInspectorPanel?: () => void;
+  /** Whether a canvas is currently selected */
+  hasCanvasSelected?: boolean;
 }
 
 /**
@@ -92,15 +105,23 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
   onComposeOnBoard,
   cx,
   fieldMode,
+  showViewerPanel = true,
+  showInspectorPanel = false,
+  onToggleViewerPanel,
+  onToggleInspectorPanel,
+  hasCanvasSelected = false,
 }) => {
   const hasSelection = selectedCount > 0;
+  // Show reorder mode indicator when viewer is closed but canvas is selected
+  const showReorderMode = hasCanvasSelected && !showViewerPanel;
 
   // Desktop selection toolbar actions - Pipeline flow
+  // Use explicit color classes (not dynamic) so Tailwind includes them
   const selectionActions = [
     {
       label: 'Group into Manifest',
       icon: 'auto_stories' as const,
-      color: 'green' as const,
+      iconClass: fieldMode ? 'text-yellow-400' : 'text-green-400',
       onClick: onGroupIntoManifest,
     },
     ...(selectionHasGPS
@@ -108,7 +129,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
           {
             label: 'View on Map',
             icon: 'explore' as const,
-            color: 'blue' as const,
+            iconClass: fieldMode ? 'text-yellow-400' : 'text-blue-400',
             onClick: onOpenMap,
           },
         ]
@@ -116,13 +137,13 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
     {
       label: 'Edit in Catalog',
       icon: 'table_chart' as const,
-      color: 'amber' as const,
+      iconClass: fieldMode ? 'text-yellow-400' : 'text-amber-400',
       onClick: onEditMetadata,
     },
     {
       label: 'Compose on Board',
       icon: 'dashboard' as const,
-      color: 'pink' as const,
+      iconClass: fieldMode ? 'text-yellow-400' : 'text-pink-400',
       onClick: onComposeOnBoard,
     },
   ];
@@ -132,7 +153,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
     {
       label: 'Group',
       icon: 'auto_stories' as const,
-      color: 'green' as const,
+      iconClass: fieldMode ? 'text-yellow-400' : 'text-green-400',
       onClick: onGroupIntoManifest,
     },
     ...(selectionHasGPS
@@ -140,7 +161,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
           {
             label: 'Map',
             icon: 'explore' as const,
-            color: 'blue' as const,
+            iconClass: fieldMode ? 'text-yellow-400' : 'text-blue-400',
             onClick: onOpenMap,
           },
         ]
@@ -148,29 +169,43 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
     {
       label: 'Catalog',
       icon: 'table_chart' as const,
-      color: 'amber' as const,
+      iconClass: fieldMode ? 'text-yellow-400' : 'text-amber-400',
       onClick: onEditMetadata,
     },
     {
       label: 'Board',
       icon: 'dashboard' as const,
-      color: 'pink' as const,
+      iconClass: fieldMode ? 'text-yellow-400' : 'text-pink-400',
       onClick: onComposeOnBoard,
     },
   ];
 
+  // Selection bar colors based on field mode
+  const selectionBarBg = fieldMode ? 'bg-yellow-900/50' : 'bg-slate-800';
+  const selectionBarBorder = fieldMode ? 'border-yellow-700' : 'border-slate-700';
+  const selectionTextColor = fieldMode ? 'text-yellow-100' : 'text-white';
+
   return (
     <>
       {/* Main header */}
-      <div className={`h-16 border-b px-6 flex items-center justify-between shadow-sm z-10 shrink-0 ${cx.surface}`}>
+      <div className={`h-16 border-b px-6 flex items-center justify-between shadow-sm z-10 shrink-0 ${cx.headerBg || cx.surface} ${cx.border || 'border-slate-200 dark:border-slate-700'}`}>
         <div className="flex items-center gap-4">
-          <h2 className={`font-bold ${cx.headingSize} ${cx.accent}`}>Archive</h2>
-          {!isMobile && !hasSelection && (
+          <h2 className={`font-bold text-lg ${cx.accent}`}>Archive</h2>
+          {!isMobile && !hasSelection && !showReorderMode && (
             <>
-              <div className="h-4 w-px bg-slate-500" />
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400">
+              <div className={`h-4 w-px ${fieldMode ? 'bg-yellow-700' : 'bg-slate-500'}`} />
+              <div className={`flex items-center gap-2 text-[10px] font-black uppercase ${cx.textMuted || 'text-slate-400'}`}>
                 Select items to begin synthesis pipeline
               </div>
+            </>
+          )}
+          {/* Reorder mode indicator - shown when viewer is closed but item selected */}
+          {!isMobile && showReorderMode && (
+            <>
+              <div className={`h-4 w-px ${fieldMode ? 'bg-yellow-700' : 'bg-slate-500'}`} />
+              <span className={`text-xs font-medium ${fieldMode ? 'text-yellow-200' : 'text-slate-400'}`}>
+                Viewer closed — reorder enabled
+              </span>
             </>
           )}
         </div>
@@ -194,14 +229,44 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
             cx={cx}
             fieldMode={fieldMode}
           />
+          {/* Viewer panel controls - shown when canvas selected */}
+          {hasCanvasSelected && onToggleInspectorPanel && onToggleViewerPanel && (
+            <>
+              <div className={`h-6 w-px ${fieldMode ? 'bg-yellow-700' : 'bg-slate-600'}`} />
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={onToggleInspectorPanel}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    showInspectorPanel
+                      ? fieldMode ? 'bg-yellow-500/30 text-yellow-400' : 'bg-blue-500/30 text-blue-400'
+                      : fieldMode ? 'text-yellow-400 hover:bg-yellow-500/20' : 'text-slate-400 hover:bg-slate-700'
+                  }`}
+                  title={showInspectorPanel ? 'Hide Inspector' : 'Show Inspector'}
+                >
+                  <Icon name="info" className="text-lg" />
+                </button>
+                <button
+                  onClick={onToggleViewerPanel}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    showViewerPanel
+                      ? fieldMode ? 'bg-yellow-500/30 text-yellow-400' : 'bg-blue-500/30 text-blue-400'
+                      : fieldMode ? 'text-yellow-400 hover:bg-yellow-500/20' : 'text-slate-400 hover:bg-slate-700'
+                  }`}
+                  title={showViewerPanel ? 'Close Viewer' : 'Open Viewer'}
+                >
+                  <Icon name={showViewerPanel ? 'visibility' : 'visibility_off'} className="text-lg" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Desktop selection bar */}
       {!isMobile && hasSelection && (
-        <div className="w-full px-6 py-2 bg-slate-800 border-b border-slate-700 z-10 animate-in slide-in-from-top-2 flex items-center gap-4">
+        <div className={`w-full px-6 py-2 ${selectionBarBg} border-b ${selectionBarBorder} ${selectionTextColor} z-10 animate-in slide-in-from-top-2 flex items-center gap-4`}>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-white">{selectedCount} selected</span>
+            <span className={`text-xs font-bold ${selectionTextColor}`}>{selectedCount} selected</span>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {selectionActions.map((action) => (
@@ -210,7 +275,8 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
                 onClick={action.onClick}
                 variant="ghost"
                 size="sm"
-                icon={<Icon name={action.icon} className={`text-${action.color}-400 text-sm`} />}
+                icon={<Icon name={action.icon} className={`${action.iconClass} text-sm`} />}
+                className={selectionTextColor}
               >
                 {action.label}
               </Button>
@@ -221,7 +287,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
             onClick={onClearSelection}
             variant="ghost"
             size="sm"
-            icon={<Icon name="close" className="text-sm" />}
+            icon={<Icon name="close" className={`text-sm ${selectionTextColor}`} />}
             title="Clear selection"
             aria-label="Clear selection"
           />
@@ -231,7 +297,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
       {/* Mobile floating selection bar */}
       {isMobile && hasSelection && (
         <div className="absolute z-[100] animate-in slide-in-from-bottom-4 duration-300 bottom-8 left-4 right-4 translate-x-0">
-          <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 shadow-2xl rounded-2xl p-1 flex items-center gap-1 ring-4 ring-black/10 overflow-x-auto no-scrollbar max-w-full">
+          <div className={`${fieldMode ? 'bg-black/95 border-yellow-700' : 'bg-slate-900/95 border-slate-700'} backdrop-blur-md border shadow-2xl rounded-2xl p-1 flex items-center gap-1 ring-4 ring-black/10 overflow-x-auto no-scrollbar max-w-full`}>
             <div className="flex p-1 gap-1 shrink-0">
               {mobileActions.map((action) => (
                 <Button
@@ -239,17 +305,18 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
                   onClick={action.onClick}
                   variant="ghost"
                   size="sm"
-                  icon={<Icon name={action.icon} className={`text-${action.color}-400`} />}
+                  icon={<Icon name={action.icon} className={action.iconClass} />}
+                  className={selectionTextColor}
                 >
                   {action.label}
                 </Button>
               ))}
-              <div className="w-px h-8 bg-slate-700 mx-1" />
+              <div className={`w-px h-8 ${fieldMode ? 'bg-yellow-700' : 'bg-slate-700'} mx-1`} />
               <Button
                 onClick={onClearSelection}
                 variant="ghost"
                 size="sm"
-                icon={<Icon name="close" />}
+                icon={<Icon name="close" className={selectionTextColor} />}
                 aria-label="Clear selection"
               />
             </div>

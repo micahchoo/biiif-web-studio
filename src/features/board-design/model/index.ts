@@ -205,26 +205,100 @@ export const getConnectionLabel = (
 
 /**
  * Export board state to IIIF Manifest format
+ * Supports navDate (timeline), navPlace (map), and linking annotations
  */
 export const exportToManifest = (
   state: BoardState,
-  title: string
+  title: string,
+  options?: {
+    includeNavDate?: boolean;
+    includeNavPlace?: boolean;
+    templateType?: 'narrative' | 'comparison' | 'timeline' | 'map';
+  }
 ): Partial<IIIFManifest> => {
-  return {
+  const manifest: Partial<IIIFManifest> = {
     type: 'Manifest',
     label: { en: [title] },
     items: state.items
       .filter((item) => !item.isNote)
-      .map((item) => ({
-        type: 'Canvas' as const,
-        id: item.resourceId,
-        label: { en: [item.label] },
-        width: 0,
-        height: 0,
-        items: [],
-      })),
-    // Annotations would be added here for connections
+      .map((item, index) => {
+        const canvas: any = {
+          type: 'Canvas' as const,
+          id: item.resourceId,
+          label: { en: [item.label] },
+          width: item.w || 1000,
+          height: item.h || 800,
+          items: [],
+        };
+
+        // Add navDate for timeline templates
+        if (options?.includeNavDate || options?.templateType === 'timeline') {
+          const baseYear = new Date().getFullYear() - state.items.length + index;
+          canvas.navDate = `${baseYear}-01-01T00:00:00Z`;
+        }
+
+        // Add navPlace for map templates
+        if (options?.includeNavPlace || options?.templateType === 'map') {
+          // Use position on board to generate approximate coordinates
+          // This is a demo - in production, users would set real coordinates
+          const normalizedX = (item.x / 1000) * 180 - 90; // -90 to 90 (lat-like)
+          const normalizedY = (item.y / 1000) * 360 - 180; // -180 to 180 (lng-like)
+          canvas.navPlace = {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [normalizedY, normalizedX], // GeoJSON is [lng, lat]
+            },
+            properties: {
+              name: item.label,
+            },
+          };
+        }
+
+        return canvas;
+      }),
   };
+
+  // Add linking annotations for connections
+  if (state.connections.length > 0) {
+    const annotations = state.connections.map((conn) => ({
+      type: 'Annotation' as const,
+      id: conn.id,
+      motivation: connectionTypeToMotivation(conn.type),
+      body: {
+        type: 'SpecificResource',
+        source: conn.toId,
+      },
+      target: conn.fromId,
+      label: conn.label ? { en: [conn.label] } : undefined,
+    }));
+
+    // Add as a top-level annotations array (IIIF Presentation 3.0)
+    (manifest as any).annotations = [
+      {
+        type: 'AnnotationPage',
+        id: `${title}-annotations`,
+        items: annotations,
+      },
+    ];
+  }
+
+  return manifest;
+};
+
+/**
+ * Map connection types to IIIF annotation motivations
+ */
+const connectionTypeToMotivation = (type: ConnectionType): string => {
+  const motivationMap: Record<ConnectionType, string> = {
+    associated: 'linking',
+    partOf: 'linking',
+    similarTo: 'comparing',
+    references: 'linking',
+    requires: 'linking',
+    sequence: 'linking',
+  };
+  return motivationMap[type] || 'linking';
 };
 
 // ============================================================================

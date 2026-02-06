@@ -122,13 +122,11 @@ export const MapView: React.FC<MapViewProps> = ({
   return (
     <div className={`flex flex-col h-full ${fieldMode ? 'bg-black' : 'bg-slate-200'}`}>
       {/* Header */}
-      <div className={`h-14 ${cx.headerBg} ${cx.border} flex items-center justify-between px-6 shadow-sm`}>
+      <div className={`h-16 ${cx.headerBg} border-b ${cx.border} flex items-center justify-between px-6 shadow-sm z-10 shrink-0`}>
         <div className="flex items-center gap-4">
-          <h2 className={`font-bold ${cx.text} flex items-center gap-2`}>
-            <Icon name="map" className="text-green-500" />
-            Map View
-          </h2>
-          <span className={`text-sm ${cx.textMuted}`}>
+          <h2 className={`font-bold text-lg ${cx.accent}`}>Map</h2>
+          <div className={`h-4 w-px ${fieldMode ? 'bg-yellow-700' : 'bg-slate-500'}`} />
+          <span className={`text-[10px] font-black uppercase ${cx.textMuted}`}>
             {geoItems.length} geotagged {t('Canvas').toLowerCase()}{geoItems.length !== 1 ? 'es' : ''}
           </span>
         </div>

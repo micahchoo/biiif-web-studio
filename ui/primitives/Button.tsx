@@ -42,7 +42,7 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
   ghost: {
     backgroundColor: 'transparent',
-    color: COLORS.text.primary,
+    color: 'inherit', // Allow color to be set via className or parent
     border: '1px solid transparent',
   },
   danger: {

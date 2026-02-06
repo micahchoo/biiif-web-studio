@@ -25,6 +25,8 @@ import { IconButton } from '@/src/shared/ui/molecules';
 import { ZoomControl } from '@/src/features/viewer/ui/atoms';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
+export type AnnotationDrawingMode = 'polygon' | 'rectangle' | 'freehand' | 'select';
+
 export interface ViewerToolbarProps {
   /** Canvas label/title to display */
   label: string;
@@ -32,6 +34,12 @@ export interface ViewerToolbarProps {
   mediaType: 'image' | 'video' | 'audio' | 'other';
   /** Current zoom level (percentage) */
   zoomLevel: number;
+  /** Current rotation in degrees */
+  rotation?: number;
+  /** Whether image is flipped */
+  isFlipped?: boolean;
+  /** Whether navigator is visible */
+  showNavigator?: boolean;
   /** Number of annotations */
   annotationCount: number;
   /** Whether search service is available */
@@ -48,6 +56,8 @@ export interface ViewerToolbarProps {
   showComposer: boolean;
   /** Whether annotation tool is open */
   showAnnotationTool: boolean;
+  /** Current drawing mode when annotation tool is active */
+  annotationDrawingMode?: AnnotationDrawingMode;
   /** Whether there are multiple canvases */
   hasMultipleCanvases: boolean;
   /** Whether filmstrip is visible */
@@ -60,6 +70,18 @@ export interface ViewerToolbarProps {
   onZoomOut: () => void;
   /** Reset view handler */
   onResetView: () => void;
+  /** Rotate clockwise handler */
+  onRotateCW?: () => void;
+  /** Rotate counter-clockwise handler */
+  onRotateCCW?: () => void;
+  /** Flip horizontal handler */
+  onFlipHorizontal?: () => void;
+  /** Screenshot handler */
+  onTakeScreenshot?: () => void;
+  /** Navigator toggle */
+  onToggleNavigator?: () => void;
+  /** Keyboard help toggle */
+  onToggleKeyboardHelp?: () => void;
   /** Search panel toggle */
   onToggleSearch: () => void;
   /** Workbench toggle */
@@ -68,6 +90,12 @@ export interface ViewerToolbarProps {
   onToggleComposer: () => void;
   /** Annotation tool toggle */
   onToggleAnnotationTool: () => void;
+  /** Change annotation drawing mode */
+  onAnnotationModeChange?: (mode: AnnotationDrawingMode) => void;
+  /** Undo annotation drawing */
+  onAnnotationUndo?: () => void;
+  /** Clear annotation drawing */
+  onAnnotationClear?: () => void;
   /** Metadata panel toggle */
   onToggleMetadata: () => void;
   /** Download handler */
@@ -102,6 +130,9 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({
   label,
   mediaType,
   zoomLevel,
+  rotation = 0,
+  isFlipped = false,
+  showNavigator = true,
   annotationCount,
   hasSearchService,
   canDownload,
@@ -116,29 +147,37 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({
   onZoomIn,
   onZoomOut,
   onResetView,
+  onRotateCW,
+  onRotateCCW,
+  onFlipHorizontal,
+  onTakeScreenshot,
+  onToggleNavigator,
+  onToggleKeyboardHelp,
   onToggleSearch,
   onToggleWorkbench,
   onToggleComposer,
   onToggleAnnotationTool,
+  onAnnotationModeChange,
+  onAnnotationUndo,
+  onAnnotationClear,
   onToggleMetadata,
   onDownload,
   onToggleFullscreen,
   onToggleFilmstrip,
   cx,
   fieldMode,
+  annotationDrawingMode,
 }) => {
   const iconName = mediaType === 'video' ? 'movie' : mediaType === 'audio' ? 'audiotrack' : 'image';
 
   return (
     <div
-      className={`h-14 border-b flex items-center justify-between px-4 shrink-0 z-20 ${
-        fieldMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-800 border-slate-700'
-      }`}
+      className={`h-14 border-b flex items-center justify-between px-4 shrink-0 z-20 ${cx.headerBg} ${cx.border}`}
     >
       {/* Left: Title */}
       <div className="flex items-center gap-3 min-w-0">
-        <Icon name={iconName} className="text-blue-400 shrink-0" />
-        <h2 className={`font-bold truncate ${fieldMode ? 'text-white' : 'text-slate-100'}`}>
+        <Icon name={iconName} className={`${cx.accent} shrink-0`} />
+        <h2 className={`font-bold truncate ${cx.text}`}>
           {label}
         </h2>
       </div>
@@ -160,16 +199,83 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({
               cx={cx}
             />
 
+            {/* Divider */}
+            <div className={`w-px h-6 ${cx.divider}`} />
+
+            {/* Rotation Controls */}
+            {onRotateCCW && (
+              <IconButton
+                icon="rotate_left"
+                ariaLabel="Rotate counter-clockwise"
+                onClick={onRotateCCW}
+                disabled={!viewerReady}
+                variant="ghost"
+                cx={cx}
+                fieldMode={fieldMode}
+              />
+            )}
+
+            {rotation !== 0 && (
+              <span className={`text-xs font-mono ${fieldMode ? 'text-yellow-400' : 'text-blue-400'}`}>
+                {rotation}°
+              </span>
+            )}
+
+            {onRotateCW && (
+              <IconButton
+                icon="rotate_right"
+                ariaLabel="Rotate clockwise"
+                onClick={onRotateCW}
+                disabled={!viewerReady}
+                variant="ghost"
+                cx={cx}
+                fieldMode={fieldMode}
+              />
+            )}
+
+            {/* Flip Button */}
+            {onFlipHorizontal && (
+              <IconButton
+                icon="flip"
+                ariaLabel="Flip horizontally"
+                onClick={onFlipHorizontal}
+                disabled={!viewerReady}
+                variant={isFlipped ? 'primary' : 'ghost'}
+                cx={cx}
+                fieldMode={fieldMode}
+              />
+            )}
+
+            {/* Navigator Toggle */}
+            {onToggleNavigator && (
+              <IconButton
+                icon="picture_in_picture"
+                ariaLabel="Toggle navigator"
+                onClick={onToggleNavigator}
+                disabled={!viewerReady}
+                variant={showNavigator ? 'primary' : 'ghost'}
+                cx={cx}
+                fieldMode={fieldMode}
+              />
+            )}
+
+            {/* Divider */}
+            <div className={`w-px h-6 ${cx.divider}`} />
+
             {/* Annotation Badge */}
             <div
-              className={`p-2 rounded-lg hover:bg-slate-800 relative cursor-pointer ${
-                annotationCount > 0 ? 'text-green-400' : 'text-slate-400'
-              } hover:text-white`}
+              className={`p-2 rounded-lg relative cursor-pointer transition-colors ${
+                annotationCount > 0
+                  ? fieldMode ? 'text-yellow-400' : 'text-green-400'
+                  : cx.textMuted
+              } ${fieldMode ? 'hover:bg-yellow-900/30' : 'hover:bg-slate-700'} hover:${cx.text}`}
               title={`${annotationCount} Annotation${annotationCount !== 1 ? 's' : ''}`}
             >
               <Icon name="sticky_note_2" />
               {annotationCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                <span className={`absolute -top-1 -right-1 w-4 h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center ${
+                  fieldMode ? 'bg-yellow-500' : 'bg-green-500'
+                }`}>
                   {annotationCount}
                 </span>
               )}
@@ -201,12 +307,12 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({
           />
         )}
 
-        {/* Canvas Composer Button */}
+        {/* Add to Board Button (replaces Canvas Composer) */}
         <IconButton
-          icon="auto_awesome_motion"
-          ariaLabel="Canvas Composer"
+          icon="dashboard"
+          ariaLabel="Add to Board"
           onClick={onToggleComposer}
-          variant={showComposer ? 'primary' : 'ghost'}
+          variant="ghost"
           cx={cx}
           fieldMode={fieldMode}
         />
@@ -223,6 +329,69 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({
           />
         )}
 
+        {/* Drawing Mode Buttons - shown when annotation tool is active */}
+        {showAnnotationTool && onAnnotationModeChange && (
+          <>
+            <div className={`w-px h-6 ${cx.divider}`} />
+
+            <IconButton
+              icon="pentagon"
+              ariaLabel="Polygon mode"
+              onClick={() => onAnnotationModeChange('polygon')}
+              variant={annotationDrawingMode === 'polygon' ? 'primary' : 'ghost'}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+            <IconButton
+              icon="crop_square"
+              ariaLabel="Rectangle mode"
+              onClick={() => onAnnotationModeChange('rectangle')}
+              variant={annotationDrawingMode === 'rectangle' ? 'primary' : 'ghost'}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+            <IconButton
+              icon="gesture"
+              ariaLabel="Freehand mode"
+              onClick={() => onAnnotationModeChange('freehand')}
+              variant={annotationDrawingMode === 'freehand' ? 'primary' : 'ghost'}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+            <IconButton
+              icon="pan_tool"
+              ariaLabel="Pan mode (disable drawing)"
+              onClick={() => onAnnotationModeChange('select')}
+              variant={annotationDrawingMode === 'select' ? 'primary' : 'ghost'}
+              cx={cx}
+              fieldMode={fieldMode}
+            />
+
+            <div className={`w-px h-6 ${cx.divider}`} />
+
+            {onAnnotationUndo && (
+              <IconButton
+                icon="undo"
+                ariaLabel="Undo last point"
+                onClick={onAnnotationUndo}
+                variant="ghost"
+                cx={cx}
+                fieldMode={fieldMode}
+              />
+            )}
+            {onAnnotationClear && (
+              <IconButton
+                icon="delete_outline"
+                ariaLabel="Clear drawing"
+                onClick={onAnnotationClear}
+                variant="ghost"
+                cx={cx}
+                fieldMode={fieldMode}
+              />
+            )}
+          </>
+        )}
+
         {/* Metadata Toggle */}
         <IconButton
           icon="info"
@@ -233,6 +402,19 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({
           fieldMode={fieldMode}
         />
 
+        {/* Screenshot */}
+        {onTakeScreenshot && mediaType === 'image' && (
+          <IconButton
+            icon="photo_camera"
+            ariaLabel="Take Screenshot"
+            onClick={onTakeScreenshot}
+            disabled={!viewerReady}
+            variant="ghost"
+            cx={cx}
+            fieldMode={fieldMode}
+          />
+        )}
+
         {/* Download */}
         {canDownload && (
           <IconButton
@@ -240,6 +422,18 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({
             ariaLabel="Download Image"
             onClick={onDownload || (() => {})}
             disabled={!onDownload}
+            variant="ghost"
+            cx={cx}
+            fieldMode={fieldMode}
+          />
+        )}
+
+        {/* Keyboard Shortcuts */}
+        {onToggleKeyboardHelp && (
+          <IconButton
+            icon="keyboard"
+            ariaLabel="Keyboard Shortcuts"
+            onClick={onToggleKeyboardHelp}
             variant="ghost"
             cx={cx}
             fieldMode={fieldMode}

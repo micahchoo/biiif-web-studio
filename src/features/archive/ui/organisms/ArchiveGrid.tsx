@@ -38,8 +38,10 @@ export interface ArchiveGridProps {
   itemSize: { width: number; height: number };
   /** Check if an item is selected */
   isSelected: (id: string) => boolean;
-  /** Click handler for an item */
+  /** Click handler for an item (normal selection) */
   onItemClick: (e: React.MouseEvent, asset: IIIFCanvas) => void;
+  /** Toggle selection for multiselect (checkmark click) */
+  onToggleSelect?: (id: string) => void;
   /** Context menu handler */
   onContextMenu: (e: React.MouseEvent, id: string) => void;
   /** Contextual styles from template */
@@ -72,6 +74,10 @@ export interface ArchiveGridProps {
   density?: GridDensity;
   /** Callback when density changes */
   onDensityChange?: (density: GridDensity) => void;
+  /** Whether reordering is enabled (when viewer is closed) */
+  reorderEnabled?: boolean;
+  /** Callback when items are reordered via drag-and-drop */
+  onReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
 /**
@@ -101,6 +107,7 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
   itemSize,
   isSelected,
   onItemClick,
+  onToggleSelect,
   onContextMenu,
   cx,
   fieldMode,
@@ -110,6 +117,8 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
   onClearFilter,
   density = 'comfortable',
   onDensityChange,
+  reorderEnabled = false,
+  onReorder,
 }) => {
   const gap = 16;
   const rowHeight = itemSize.height + gap;
@@ -123,12 +132,12 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
   const endRow = Math.ceil(visibleRange.end / columns);
   const bottomSpacer = Math.max(0, (totalRows - endRow) * rowHeight);
 
-  // Determine grid columns class
-  const gridColsClass = !isMobile && activeItem
-    ? 'grid-cols-1 lg:grid-cols-2'
-    : fieldMode
-      ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-      : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
+  // Determine grid columns class based on density
+  // Note: Previously reduced columns when activeItem was set, but now the viewer
+  // is in a separate split panel, so we keep consistent grid layout
+  const gridColsClass = fieldMode
+    ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+    : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [badgeTooltip, setBadgeTooltip] = useState<{text: string; x: number; y: number} | null>(null);
@@ -173,20 +182,31 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
           {selected && (
             <div className="absolute inset-0 bg-amber-500/10 z-10 pointer-events-none" />
           )}
-          <div className={`
-            absolute top-2 right-2 z-20
-            w-6 h-6 rounded-full flex items-center justify-center
-            transition-all duration-200
-            ${selected
-              ? 'bg-amber-500 text-white scale-100'
-              : 'bg-white/90 text-stone-400 scale-0 group-hover:scale-100'
-            }
-            shadow-sm
-          `}>
+          {/* Checkmark button - clicking this toggles multiselect */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect?.(asset.id);
+            }}
+            className={`
+              absolute top-2 right-2 z-20
+              w-6 h-6 rounded-full flex items-center justify-center
+              transition-all duration-200
+              ${selected
+                ? fieldMode
+                  ? 'bg-yellow-500 text-white scale-100'
+                  : 'bg-amber-500 text-white scale-100'
+                : 'bg-white/90 text-stone-400 scale-0 group-hover:scale-100 hover:bg-stone-100'
+              }
+              shadow-sm cursor-pointer
+            `}
+            title={selected ? 'Deselect' : 'Select (add to selection)'}
+          >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-          </div>
+          </button>
 
           <StackedThumbnail
             urls={thumbUrls}

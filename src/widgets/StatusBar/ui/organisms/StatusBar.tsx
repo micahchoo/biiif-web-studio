@@ -16,6 +16,12 @@ interface StatusBarProps {
   showSelectionCount?: boolean;
   /** Callback to clear selection */
   onClearSelection?: () => void;
+  /** Whether quick help panel is open */
+  quickHelpOpen?: boolean;
+  /** Toggle quick help panel */
+  onToggleQuickHelp?: () => void;
+  /** Open keyboard shortcuts overlay */
+  onOpenKeyboardShortcuts?: () => void;
 }
 
 const formatBytes = (bytes: number, decimals = 1) => {
@@ -36,7 +42,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   saveStatus,
   selectionCount,
   showSelectionCount = true,
-  onClearSelection
+  onClearSelection,
+  quickHelpOpen,
+  onToggleQuickHelp,
+  onOpenKeyboardShortcuts,
 }) => {
   const errorCount = validationIssues.filter(i => i.level === 'error').length;
   const warningCount = validationIssues.filter(i => i.level === 'warning').length;
@@ -107,12 +116,36 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         <div className="pl-3 border-l border-slate-800 flex items-center gap-2" title={storageUsage ? `${formatBytes(storageUsage.usage)} / ${formatBytes(storageUsage.quota)}` : 'Storage unknown'}>
              <span>Storage</span>
              <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                 <div 
-                    className={`h-full ${usagePercent > 80 ? 'bg-red-500' : usagePercent > 50 ? 'bg-amber-500' : 'bg-slate-500'}`} 
+                 <div
+                    className={`h-full ${usagePercent > 80 ? 'bg-red-500' : usagePercent > 50 ? 'bg-amber-500' : 'bg-slate-500'}`}
                     style={{ width: `${usagePercent}%` }}
                  ></div>
              </div>
              {storageUsage && <span className="text-[9px]">{formatBytes(storageUsage.usage)}</span>}
+        </div>
+
+        {/* Help Section */}
+        <div className="pl-3 border-l border-slate-800 flex items-center gap-2">
+          {onOpenKeyboardShortcuts && (
+            <button
+              onClick={onOpenKeyboardShortcuts}
+              className="flex items-center gap-1 hover:text-slate-200 transition-colors"
+              title="Keyboard Shortcuts"
+            >
+              <Icon name="keyboard" className="text-[14px]" />
+              <kbd className="px-1 py-0.5 bg-slate-800 rounded text-[9px] font-mono">?</kbd>
+            </button>
+          )}
+          {onToggleQuickHelp && (
+            <button
+              onClick={onToggleQuickHelp}
+              className={`flex items-center gap-1 transition-colors ${quickHelpOpen ? 'text-sky-400' : 'hover:text-slate-200'}`}
+              title="Quick Help"
+            >
+              <Icon name="help_outline" className="text-[14px]" />
+              <span className="hidden sm:inline">Help</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

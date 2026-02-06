@@ -78,24 +78,37 @@ const NavItem: React.FC<{
 const SIDEBAR_VISIBLE_TYPES = new Set(['Collection', 'Manifest', 'Canvas', 'Range']);
 const STOP_TRAVERSAL_TYPES = new Set(['AnnotationPage', 'Annotation', 'Choice', 'SpecificResource']);
 
-const TreeItem: React.FC<{ 
-  item: IIIFItem; level: number; selectedId: string | null; onSelect: (id: string) => void; 
+const TreeItem: React.FC<{
+  item: IIIFItem; level: number; selectedId: string | null; onSelect: (id: string) => void;
   viewType: ViewType; fieldMode: boolean; root: IIIFItem | null; onStructureUpdate?: any;
   filterText: string;
-}> = ({ item, level, selectedId, onSelect, viewType, fieldMode, root, onStructureUpdate, filterText }) => {
-  const [expanded, setExpanded] = useState(true); 
+  /** Global expand/collapse state for manifests */
+  manifestsExpanded?: boolean;
+}> = ({ item, level, selectedId, onSelect, viewType, fieldMode, root, onStructureUpdate, filterText, manifestsExpanded = false }) => {
+  // Manifests collapsed by default (showing canvases only when expanded)
+  // Collections always expanded (to show manifests)
+  const defaultExpanded = item.type === 'Collection' ? true : manifestsExpanded;
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  // Sync with global manifestsExpanded toggle
+  React.useEffect(() => {
+    if (item.type === 'Manifest') {
+      setExpanded(manifestsExpanded);
+    }
+  }, [manifestsExpanded, item.type]);
+
   const isSelected = item.id === selectedId;
-  
+
   const config = RESOURCE_TYPE_CONFIG[item.type] || RESOURCE_TYPE_CONFIG['Content'];
-  
+
   // Get children but filter out types we don't want to show
   const rawChildren = (item as any).items || (item as any).annotations || [];
   const children = rawChildren.filter((child: any) => !STOP_TRAVERSAL_TYPES.has(child.type));
   const hasChildren = children.length > 0;
-  
+
   // Stop rendering if this is a content-level type
   if (STOP_TRAVERSAL_TYPES.has(item.type)) return null;
-  
+
   const label = getIIIFValue(item.label) || 'Untitled';
   const displayLabel = viewType === 'files' ? ((item as any)._filename || item.id.split('/').pop()) : label;
 
@@ -158,12 +171,48 @@ const TreeItem: React.FC<{
 
   if (!isMatch && !hasChildren) return null;
 
-  // Visual styling based on type - Manifests and Canvases get highest priority
-  const isPriority = item.type === 'Manifest' || item.type === 'Canvas';
-  
+  // Visual hierarchy: Canvas > Manifest > Collection
+  const isCanvas = item.type === 'Canvas';
+  const isManifest = item.type === 'Manifest';
+  const isCollection = item.type === 'Collection';
+
+  // Get styling based on type priority
+  const getTypeStyles = () => {
+    if (isCanvas) {
+      // Canvas: Highest priority - prominent, bright
+      return {
+        text: fieldMode ? 'text-yellow-200' : 'text-white',
+        font: 'font-medium text-sm',
+        indicator: 'bg-emerald-500',
+        iconSize: 'text-lg',
+        py: 'py-2.5',
+      };
+    }
+    if (isManifest) {
+      // Manifest: High priority - clear, visible
+      return {
+        text: fieldMode ? 'text-yellow-400/90' : 'text-slate-200',
+        font: 'font-medium text-xs',
+        indicator: 'bg-blue-500',
+        iconSize: 'text-base',
+        py: 'py-2',
+      };
+    }
+    // Collection: Low priority - muted, de-emphasized
+    return {
+      text: fieldMode ? 'text-yellow-400/50' : 'text-slate-500',
+      font: 'text-[11px]',
+      indicator: 'bg-slate-600',
+      iconSize: 'text-sm',
+      py: 'py-1.5',
+    };
+  };
+
+  const typeStyles = getTypeStyles();
+
   return (
     <div className="select-none" role="none">
-      <div 
+      <div
         draggable onDragStart={handleDragStart} onDragOver={e => e.preventDefault()} onDrop={handleDrop}
         role="treeitem"
         aria-selected={isSelected}
@@ -171,57 +220,56 @@ const TreeItem: React.FC<{
         tabIndex={0}
         className={`
           flex items-center gap-2 cursor-pointer snappy-transition outline-none focus-visible-ring group
-          border-l-2 py-2
-          ${isSelected 
-            ? (fieldMode 
-              ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400 font-bold shadow-md' 
+          border-l-2 ${typeStyles.py}
+          ${isSelected
+            ? (fieldMode
+              ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400 font-bold shadow-md'
               : 'bg-blue-500/20 border-blue-500 text-white shadow-inner')
-            : (fieldMode 
-              ? 'border-transparent text-slate-300 hover:bg-slate-800 hover:border-slate-600' 
-              : 'border-transparent text-slate-300 hover:text-white hover:bg-slate-800/50 hover:border-slate-600')
+            : (fieldMode
+              ? `border-transparent ${typeStyles.text} hover:bg-slate-800 hover:border-slate-600`
+              : `border-transparent ${typeStyles.text} hover:text-white hover:bg-slate-800/50 hover:border-slate-600`)
           }
-          ${isPriority && !isSelected ? (fieldMode ? 'text-white' : 'text-slate-200 font-medium') : ''}
         `}
-        style={{ 
-          // Flat hierarchy - minimal or no indentation, use visual cues instead
-          paddingLeft: level === 0 ? 8 : 12 
+        style={{
+          // Indent based on level, but keep it subtle
+          paddingLeft: isCollection ? 8 : isManifest ? 12 : 20
         }}
         onClick={() => onSelect(item.id)}
       >
-        <button 
+        {/* Expand/collapse button - only for items with children */}
+        <button
           aria-label={expanded ? `Collapse ${displayLabel}` : `Expand ${displayLabel}`}
           aria-expanded={expanded}
           tabIndex={-1}
-          className={`p-0.5 rounded hover:bg-white/10 transition-transform active:scale-95 ${!hasChildren ? 'invisible' : ''}`} 
+          className={`p-0.5 rounded hover:bg-white/10 transition-transform active:scale-95 ${!hasChildren ? 'invisible' : ''}`}
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
         >
-          <Icon 
-            name={expanded ? "expand_more" : "chevron_right"} 
-            className={`transition-transform duration-200 text-base ${expanded ? 'rotate-0' : '-rotate-90'} ${fieldMode ? "text-slate-400" : "text-slate-500"}`} 
+          <Icon
+            name={expanded ? "expand_more" : "chevron_right"}
+            className={`transition-transform duration-200 ${typeStyles.iconSize} ${expanded ? 'rotate-0' : '-rotate-90'} ${fieldMode ? "text-slate-400" : "text-slate-500"}`}
           />
         </button>
-        
-        {/* Visual priority indicator */}
-        {isPriority && (
-          <div className={`w-1 h-4 rounded-full ${item.type === 'Manifest' ? 'bg-blue-500' : 'bg-emerald-500'} ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
+
+        {/* Visual priority indicator for Canvas and Manifest only */}
+        {(isCanvas || isManifest) && (
+          <div className={`w-1 h-4 rounded-full ${typeStyles.indicator} ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
         )}
-        
-        <Icon 
-          name={viewType === 'files' ? 'folder' : config.icon} 
+
+        <Icon
+          name={viewType === 'files' ? 'folder' : config.icon}
           className={`
-            transition-colors text-base
-            ${!isSelected ? config.colorClass : ''} 
+            transition-colors ${typeStyles.iconSize}
+            ${!isSelected ? (isCollection ? 'text-slate-600' : config.colorClass) : ''}
             group-hover:brightness-125
-            ${isPriority ? 'text-lg' : ''}
-          `} 
+          `}
         />
-        <span className={`text-xs truncate transition-colors flex-1 ${isPriority ? 'font-medium' : ''}`}>
+        <span className={`truncate transition-colors flex-1 ${typeStyles.font}`}>
           {displayLabel}
         </span>
-        
-        {/* Child count badge for collections */}
-        {item.type === 'Collection' && hasChildren && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${fieldMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-700 text-slate-400'}`}>
+
+        {/* Child count badge - for Manifests show canvas count */}
+        {isManifest && hasChildren && (
+          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${fieldMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-700/50 text-slate-500'}`}>
             {children.length}
           </span>
         )}
@@ -229,7 +277,7 @@ const TreeItem: React.FC<{
       {hasChildren && expanded && (
         <div role="group" className="animate-fade-in origin-top">
           {children.map((child: any) => (
-            <TreeItem key={child.id} item={child} level={level + 1} selectedId={selectedId} onSelect={onSelect} viewType={viewType} fieldMode={fieldMode} root={root} onStructureUpdate={onStructureUpdate} filterText={filterText}/>
+            <TreeItem key={child.id} item={child} level={level + 1} selectedId={selectedId} onSelect={onSelect} viewType={viewType} fieldMode={fieldMode} root={root} onStructureUpdate={onStructureUpdate} filterText={filterText} manifestsExpanded={manifestsExpanded}/>
           ))}
         </div>
       )}
@@ -247,6 +295,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(function Sidebar({
   const { changedAt, previousMode } = useAppModeState();
   const [filterText, setFilterText] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [manifestsExpanded, setManifestsExpanded] = useState(false); // Collapsed by default
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Check if we have data
@@ -329,9 +378,19 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(function Sidebar({
           <nav className="p-3">
             <div className="space-y-1">
               <NavItem icon="inventory_2" label="Archive" active={currentMode === 'archive'} onClick={() => setCurrentMode('archive')} fieldMode={settings.fieldMode} />
-              <NavItem icon="account_tree" label="Structure" active={currentMode === 'structure'} onClick={() => setCurrentMode('structure')} fieldMode={settings.fieldMode} />
               <NavItem icon="table_chart" label="Catalog" active={currentMode === 'metadata'} onClick={() => setCurrentMode('metadata')} fieldMode={settings.fieldMode} />
               <NavItem icon="dashboard" label="Boards" active={currentMode === 'boards'} onClick={() => setCurrentMode('boards')} fieldMode={settings.fieldMode} />
+            </div>
+            {/* Deprecated: Structure view - reordering now in Archive */}
+            <div className="mt-2 pt-2 border-t border-slate-800/50">
+              <NavItem
+                icon="account_tree"
+                label="Structure"
+                active={currentMode === 'structure'}
+                onClick={() => setCurrentMode('structure')}
+                fieldMode={settings.fieldMode}
+                title="Deprecated: Use drag-drop in Archive tree to reorder"
+              />
             </div>
           </nav>
 
@@ -401,28 +460,41 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(function Sidebar({
           {root && (
             <div className="flex-1 px-3 pb-3 min-h-0">
               <div className="flex items-center justify-between mb-2 px-1">
-                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+                <span className={`text-[10px] font-medium uppercase tracking-wider ${settings.fieldMode ? 'text-yellow-400/60' : 'text-slate-500'}`}>
                   Archive
                 </span>
-                <span className="text-[10px] text-slate-600">
-                  {(root as any).items?.length || 0} items
-                </span>
+                {/* Expand/Collapse Toggle */}
+                <button
+                  onClick={() => setManifestsExpanded(!manifestsExpanded)}
+                  className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors
+                    ${settings.fieldMode
+                      ? 'text-yellow-400/70 hover:text-yellow-400 hover:bg-yellow-400/10'
+                      : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700/50'
+                    }
+                  `}
+                  title={manifestsExpanded ? 'Collapse all manifests' : 'Expand all manifests'}
+                >
+                  <Icon name={manifestsExpanded ? 'unfold_less' : 'unfold_more'} className="text-sm" />
+                  {manifestsExpanded ? 'Collapse' : 'Expand'}
+                </button>
               </div>
               <div className={`
                 rounded-lg border overflow-hidden
                 ${settings.fieldMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-800/30 border-slate-800/50'}
               `}>
-                <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
-                  <TreeItem 
-                    item={root} 
-                    level={0} 
-                    selectedId={selectedId} 
-                    onSelect={onSelect} 
-                    viewType={viewType} 
-                    fieldMode={settings.fieldMode} 
-                    root={root} 
-                    onStructureUpdate={onStructureUpdate} 
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                  <TreeItem
+                    item={root}
+                    level={0}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    viewType={viewType}
+                    fieldMode={settings.fieldMode}
+                    root={root}
+                    onStructureUpdate={onStructureUpdate}
                     filterText={filterText}
+                    manifestsExpanded={manifestsExpanded}
                   />
                 </div>
               </div>
@@ -539,15 +611,6 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(function Sidebar({
                 <Icon name="tune" className="text-base" />
                 <span>App Settings</span>
               </button>
-              {onAbstractionLevelChange && (
-                <button
-                  onClick={() => onAbstractionLevelChange(settings.abstractionLevel === 'simple' ? 'standard' : 'simple')}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all text-sm"
-                >
-                  <Icon name="layers" className="text-base" />
-                  <span>Mode: {settings.abstractionLevel === 'simple' ? 'Simple' : settings.abstractionLevel === 'advanced' ? 'Advanced' : 'Standard'}</span>
-                </button>
-              )}
               {onToggleQuickHelp && (
                 <button
                   onClick={onToggleQuickHelp}

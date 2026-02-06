@@ -106,6 +106,14 @@ const MainApp: React.FC = () => {
   showToastRef.current = showToast;
   const initRef = useRef(false);
   const touchCheckRef = useRef(false);
+  const mainFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handler to trigger file input from empty state
+  const handleOpenImport = useCallback(() => {
+    if (mainFileInputRef.current) {
+      mainFileInputRef.current.click();
+    }
+  }, []);
 
   // ============================================================================
   // URL Deep Linking
@@ -521,10 +529,27 @@ const MainApp: React.FC = () => {
 
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors duration-300 ${settings.fieldMode ? 'bg-black text-white' : settings.theme === 'dark' ? 'dark text-slate-100 bg-slate-950' : 'text-slate-900 bg-slate-50'}`}>
-      {/* Skip Links for Accessibility */}
+      {/* Skip Links for Accessibility - screen reader only, visible on focus */}
       <SkipLink targetId="main-content" label="Skip to main content" />
-      <SkipLink targetId="sidebar" label="Skip to sidebar navigation" position="top-left" className="mt-14" />
-      <SkipLink targetId="command-palette-trigger" label="Skip to Command Palette" shortcut="⌘K" position="top-left" className="mt-24" />
+      <SkipLink targetId="sidebar" label="Skip to sidebar" />
+      <SkipLink targetId="command-palette-trigger" label="Command Palette" shortcut="⌘K" />
+
+      {/* Hidden file input for folder import from empty state */}
+      <input
+        ref={mainFileInputRef}
+        type="file"
+        // @ts-expect-error webkitdirectory is non-standard but widely supported
+        webkitdirectory="true"
+        directory=""
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            setStagingTree(buildTree(Array.from(e.target.files)));
+            e.target.value = ''; // Reset for re-selection
+          }
+        }}
+      />
 
       {/* Saving Indicator */}
       <div className={`fixed top-4 right-4 z-[2000] pointer-events-none transition-all duration-300 ${saveStatus === 'saving' ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}>
@@ -586,22 +611,27 @@ const MainApp: React.FC = () => {
             onBatchEdit={(ids) => { setBatchIds(ids); batchEditor.open(); }}
             onCatalogSelection={handleArchiveCatalog}
             settings={settings}
+            onOpenImport={handleOpenImport}
+            onOpenExternalImport={externalImport.open}
           />
           <ContextualHelp mode={currentMode} isInspectorOpen={showInspector && !!selectedItem && !settings.fieldMode} />
         </main>
 
-        <Inspector
-          key={selectedId || 'none'}
-          resource={selectedItem}
-          onUpdateResource={handleItemUpdate}
-          settings={settings}
-          visible={showInspector && !!selectedId && !(currentMode === 'archive' && isCanvas(selectedItem))}
-          isMobile={isMobile}
-          onClose={() => { setShowInspector(false); setSelectedId(null); }}
-          annotations={selectedItem && isCanvas(selectedItem)
-            ? selectedItem.annotations?.flatMap(page => page.items) || []
-            : []}
-        />
+        {/* Inspector - Hidden in archive mode (ViewRouter handles split view) */}
+        {currentMode !== 'archive' && (
+          <Inspector
+            key={selectedId || 'none'}
+            resource={selectedItem}
+            onUpdateResource={handleItemUpdate}
+            settings={settings}
+            visible={showInspector && !!selectedId}
+            isMobile={isMobile}
+            onClose={() => { setShowInspector(false); setSelectedId(null); }}
+            annotations={selectedItem && isCanvas(selectedItem)
+              ? selectedItem.annotations?.flatMap(page => page.items) || []
+              : []}
+          />
+        )}
       </div>
 
       {!isMobile && (
@@ -612,6 +642,9 @@ const MainApp: React.FC = () => {
           storageUsage={storageUsage}
           onOpenQC={qcDashboard.open}
           saveStatus={saveStatus}
+          quickHelpOpen={showQuickRef}
+          onToggleQuickHelp={() => setShowQuickRef(prev => !prev)}
+          onOpenKeyboardShortcuts={keyboardShortcuts.open}
         />
       )}
 

@@ -76,8 +76,8 @@ export const IconButton: React.FC<IconButtonProps> = ({
   disabled = false,
   className = '',
   title,
-  cx: _cx = {},
-  fieldMode: _fieldMode = false,
+  cx = {},
+  fieldMode = false,
   isActive = false,
   shortcut,
   id,
@@ -90,7 +90,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
     danger: 'danger',
     ghost: isActive ? 'primary' : 'ghost',
   };
-  
+
   // Build title with shortcut if provided
   const fullTitle = shortcut ? `${title || ariaLabel} (${shortcut})` : (title || ariaLabel);
 
@@ -109,6 +109,19 @@ export const IconButton: React.FC<IconButtonProps> = ({
     aspectRatio: '1',
   };
 
+  // Determine icon color based on variant and fieldMode
+  // Ghost variant on dark backgrounds needs light colors
+  const getIconColor = () => {
+    if (isActive) return ''; // Primary variant handles color
+    if (variant === 'ghost') {
+      return fieldMode ? 'text-yellow-400' : 'text-slate-300';
+    }
+    if (variant === 'danger') return 'text-white';
+    return ''; // Let Button handle color for other variants
+  };
+
+  const iconColor = getIconColor();
+
   return (
     <Button
       id={id}
@@ -121,9 +134,9 @@ export const IconButton: React.FC<IconButtonProps> = ({
       size={sizeMap[size]}
       minimal={variant === 'ghost' && !isActive}
       style={customStyle}
-      className={className}
+      className={`${className} ${iconColor}`}
     >
-      <Icon name={icon} className={sizeClasses[size]} aria-hidden="true" />
+      <Icon name={icon} className={`${sizeClasses[size]} ${iconColor}`} aria-hidden="true" />
     </Button>
   );
 };

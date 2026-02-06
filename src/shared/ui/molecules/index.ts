@@ -178,3 +178,7 @@ export type { CollectionCardEditFormProps } from './CollectionCardEditForm';
 
 export { CollectionCardMenu } from './CollectionCardMenu';
 export type { CollectionCardMenuProps } from './CollectionCardMenu';
+
+// Pipeline Navigation
+export { PipelineBanner } from './PipelineBanner';
+export type { PipelineBannerProps } from './PipelineBanner';

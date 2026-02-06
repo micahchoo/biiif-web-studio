@@ -48,14 +48,16 @@ export interface ViewerState {
   resolvedImageUrl: string | null;
   rotation: number;
   zoomLevel: number;
+  isFlipped: boolean;
+  showNavigator: boolean;
   isFullscreen: boolean;
   showTranscriptionPanel: boolean;
   showSearchPanel: boolean;
   showMetadataPanel: boolean;
   showWorkbench: boolean;
-  showComposer: boolean;
   showAnnotationTool: boolean;
   showFilmstrip: boolean;
+  showKeyboardHelp: boolean;
   selectedAnnotationId: string | null;
   isOcring: boolean;
 }
@@ -65,16 +67,20 @@ export interface UseViewerReturn extends ViewerState {
   viewerRef: React.MutableRefObject<any>;
   osdContainerRef: React.RefObject<HTMLDivElement>;
   containerRef: React.RefObject<HTMLDivElement>;
-  
+
   // OSD Actions
   zoomIn: () => void;
   zoomOut: () => void;
   resetView: () => void;
   rotateCW: () => void;
   rotateCCW: () => void;
-  
+  setRotation: (degrees: number) => void;
+  flipHorizontal: () => void;
+  takeScreenshot: () => Promise<Blob | null>;
+
   // Panel Toggles
   toggleFullscreen: () => void;
+  toggleNavigator: () => void;
   toggleTranscriptionPanel: () => void;
   toggleSearchPanel: () => void;
   toggleMetadataPanel: () => void;
@@ -82,12 +88,13 @@ export interface UseViewerReturn extends ViewerState {
   toggleComposer: () => void;
   toggleAnnotationTool: () => void;
   toggleFilmstrip: () => void;
-  
+  toggleKeyboardHelp: () => void;
+
   // Annotation Actions
   selectAnnotation: (id: string | null) => void;
   addAnnotation: (annotation: IIIFAnnotation) => void;
   removeAnnotation: (id: string) => void;
-  
+
   // Utility
   hasSearchService: boolean;
   canDownload: boolean;
@@ -139,9 +146,7 @@ const _resolveImageUrl = (item: IIIFCanvas | null): string | null => {
 
 export const useViewer = (
   item: IIIFCanvas | null,
-  manifest: IIIFManifest | null,
-  autoOpenComposer?: boolean,
-  onComposerOpened?: () => void
+  manifest: IIIFManifest | null
 ): UseViewerReturn => {
   // Refs
   const viewerRef = useRef<any>(null);
@@ -154,16 +159,18 @@ export const useViewer = (
   const [mediaType, setMediaType] = useState<MediaType>('other');
   const [annotations, setAnnotations] = useState<IIIFAnnotation[]>([]);
   const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotationState] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [showNavigator, setShowNavigator] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTranscriptionPanel, setShowTranscriptionPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showMetadataPanel, setShowMetadataPanel] = useState(false);
   const [showWorkbench, setShowWorkbench] = useState(false);
-  const [showComposer, setShowComposer] = useState(false);
   const [showAnnotationTool, setShowAnnotationTool] = useState(false);
   const [showFilmstrip, setShowFilmstrip] = useState(true);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [isOcring, _setIsOcring] = useState(false);
 
@@ -188,14 +195,6 @@ export const useViewer = (
       }
     };
   }, []);
-
-  // Auto-open composer effect
-  useEffect(() => {
-    if (autoOpenComposer && item) {
-      setShowComposer(true);
-      onComposerOpened?.();
-    }
-  }, [autoOpenComposer, item, onComposerOpened]);
 
   // Detect media type and extract annotations when item changes
   useEffect(() => {
@@ -343,13 +342,42 @@ export const useViewer = (
           element: container,
           prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
           tileSources: tileSource,
-          gestureSettingsMouse: { clickToZoom: false },
-          showNavigationControl: false,
+          // Gesture settings
+          gestureSettingsMouse: {
+            clickToZoom: false,
+            dblClickToZoom: true,
+            pinchToZoom: true,
+            flickEnabled: true,
+          },
+          gestureSettingsTouch: {
+            pinchToZoom: true,
+            flickEnabled: true,
+          },
+          // Navigation controls
+          showNavigationControl: false, // We use custom toolbar
+          showNavigator: true,
+          navigatorPosition: 'BOTTOM_RIGHT',
+          navigatorSizeRatio: 0.15,
+          navigatorAutoFade: true,
+          navigatorRotate: true,
+          // Performance
           blendTime: 0.1,
           immediateRender: true,
-          imageLoaderLimit: 2,
-          maxImageCacheCount: 50,
+          imageLoaderLimit: 4,
+          maxImageCacheCount: 100,
+          // Viewport constraints
+          minZoomLevel: 0.1,
+          maxZoomLevel: 20,
+          visibilityRatio: 0.5,
+          constrainDuringPan: true,
+          // Animation
+          animationTime: 0.5,
+          springStiffness: 10,
+          // Rotation & Flip support
+          degrees: 0,
+          // Misc
           debugMode: false,
+          crossOriginPolicy: 'Anonymous',
         });
 
         console.log('[useViewer] OSD viewer initialized successfully');
@@ -452,17 +480,74 @@ export const useViewer = (
   const resetView = useCallback(() => {
     if (viewerRef.current) {
       viewerRef.current.viewport.goHome();
-      setRotation(0);
+      viewerRef.current.viewport.setRotation(0);
+      viewerRef.current.viewport.setFlip(false);
+      setRotationState(0);
+      setIsFlipped(false);
       setZoomLevel(100);
     }
   }, []);
 
   const rotateCW = useCallback(() => {
-    setRotation(prev => (prev + 90) % 360);
-  }, []);
+    if (viewerRef.current) {
+      const newRotation = (rotation + 90) % 360;
+      viewerRef.current.viewport.setRotation(newRotation);
+      setRotationState(newRotation);
+    } else {
+      setRotationState(prev => (prev + 90) % 360);
+    }
+  }, [rotation]);
 
   const rotateCCW = useCallback(() => {
-    setRotation(prev => (prev - 90 + 360) % 360);
+    if (viewerRef.current) {
+      const newRotation = (rotation - 90 + 360) % 360;
+      viewerRef.current.viewport.setRotation(newRotation);
+      setRotationState(newRotation);
+    } else {
+      setRotationState(prev => (prev - 90 + 360) % 360);
+    }
+  }, [rotation]);
+
+  const setRotation = useCallback((degrees: number) => {
+    const normalized = ((degrees % 360) + 360) % 360;
+    if (viewerRef.current) {
+      viewerRef.current.viewport.setRotation(normalized);
+    }
+    setRotationState(normalized);
+  }, []);
+
+  const flipHorizontal = useCallback(() => {
+    if (viewerRef.current) {
+      const currentFlip = viewerRef.current.viewport.getFlip();
+      viewerRef.current.viewport.setFlip(!currentFlip);
+      setIsFlipped(!currentFlip);
+    } else {
+      setIsFlipped(prev => !prev);
+    }
+  }, []);
+
+  const takeScreenshot = useCallback(async (): Promise<Blob | null> => {
+    if (!viewerRef.current?.drawer?.canvas) {
+      console.warn('[useViewer] No canvas available for screenshot');
+      return null;
+    }
+
+    try {
+      const canvas = viewerRef.current.drawer.canvas as HTMLCanvasElement;
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            console.log('[useViewer] Screenshot captured:', blob.size, 'bytes');
+            resolve(blob);
+          } else {
+            resolve(null);
+          }
+        }, 'image/png');
+      });
+    } catch (e) {
+      console.error('[useViewer] Screenshot failed:', e);
+      return null;
+    }
   }, []);
 
   // Panel Toggles
@@ -490,8 +575,10 @@ export const useViewer = (
     setShowWorkbench(prev => !prev);
   }, []);
 
+  // Note: Canvas Composer has been phased out in favor of Board View
+  // This is kept as a no-op for backward compatibility
   const toggleComposer = useCallback(() => {
-    setShowComposer(prev => !prev);
+    console.log('[useViewer] Canvas Composer phased out - use Board View instead');
   }, []);
 
   const toggleAnnotationTool = useCallback(() => {
@@ -500,6 +587,20 @@ export const useViewer = (
 
   const toggleFilmstrip = useCallback(() => {
     setShowFilmstrip(prev => !prev);
+  }, []);
+
+  const toggleNavigator = useCallback(() => {
+    if (viewerRef.current?.navigator) {
+      const newState = !showNavigator;
+      viewerRef.current.navigator.element.style.display = newState ? 'block' : 'none';
+      setShowNavigator(newState);
+    } else {
+      setShowNavigator(prev => !prev);
+    }
+  }, [showNavigator]);
+
+  const toggleKeyboardHelp = useCallback(() => {
+    setShowKeyboardHelp(prev => !prev);
   }, []);
 
   // Annotation Actions
@@ -522,29 +623,37 @@ export const useViewer = (
     resolvedImageUrl,
     rotation,
     zoomLevel,
+    isFlipped,
+    showNavigator,
     isFullscreen,
     showTranscriptionPanel,
     showSearchPanel,
     showMetadataPanel,
     showWorkbench,
-    showComposer,
     showAnnotationTool,
     showFilmstrip,
+    showKeyboardHelp,
     selectedAnnotationId,
     isOcring,
-    
+
     // Refs
     viewerRef,
     osdContainerRef,
     containerRef,
-    
-    // Actions
+
+    // OSD Actions
     zoomIn,
     zoomOut,
     resetView,
     rotateCW,
     rotateCCW,
+    setRotation,
+    flipHorizontal,
+    takeScreenshot,
+
+    // Panel Toggles
     toggleFullscreen,
+    toggleNavigator,
     toggleTranscriptionPanel,
     toggleSearchPanel,
     toggleMetadataPanel,
@@ -552,10 +661,13 @@ export const useViewer = (
     toggleComposer,
     toggleAnnotationTool,
     toggleFilmstrip,
+    toggleKeyboardHelp,
+
+    // Annotation Actions
     selectAnnotation,
     addAnnotation,
     removeAnnotation,
-    
+
     // Computed
     hasSearchService,
     canDownload: !!resolvedImageUrl && mediaType === 'image',

@@ -14,13 +14,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type IIIFCanvas, type IIIFCollection, type IIIFItem, isCanvas } from '@/src/shared/types';
 import { ValidationIssue } from '@/src/entities/manifest/model/validation/validator';
 import { useToast } from '@/src/shared/ui/molecules/Toast';
-import { useGridVirtualization, useIIIFTraversal, useResponsive, useSharedSelection } from '@/src/shared/lib/hooks';
+import { useGridVirtualization, useIIIFTraversal, usePipeline, useResponsive, useSharedSelection } from '@/src/shared/lib/hooks';
 import { IIIF_CONFIG, IIIF_SPEC } from '@/src/shared/constants';
 import { isValidChildType } from '@/utils/iiifHierarchy';
-import { ContextMenu, type ContextMenuSection, FloatingSelectionToolbar, BreadcrumbNav, type BreadcrumbItem, GuidedEmptyState } from '@/src/shared/ui/molecules';
+import { ContextMenu, type ContextMenuSection, FloatingSelectionToolbar, BreadcrumbNav, type BreadcrumbItem, GuidedEmptyState, PipelineBanner } from '@/src/shared/ui/molecules';
 import { createLanguageMap, generateUUID } from '@/utils/iiifTypes';
 import { ArchiveHeader } from './ArchiveHeader';
 import { ArchiveGrid } from './ArchiveGrid';
+import { ArchiveList } from './ArchiveList';
 import { type ArchiveViewMode, filterByTerm, getSelectionDNA, loadViewMode, saveViewMode, sortCanvases, type SortMode } from '../../model';
 import { Button } from '@/src/shared/ui/atoms';
 
@@ -34,6 +35,12 @@ export interface ArchiveViewProps {
   onReveal?: (id: string, mode: 'collections' | 'viewer' | 'archive') => void;
   onCatalogSelection?: (ids: string[]) => void;
   onSwitchView?: (mode: string) => void;
+  /** When true, renders as a compact filmstrip for sidebar use */
+  filmstripMode?: boolean;
+  /** Callback to open folder import dialog */
+  onOpenImport?: () => void;
+  /** Callback to open external URL import dialog */
+  onOpenExternalImport?: () => void;
   cx: {
     surface: string;
     text: string;
@@ -51,7 +58,16 @@ export interface ArchiveViewProps {
   };
   fieldMode: boolean;
   t: (key: string) => string;
-  isAdvanced: boolean;
+  /** Whether viewer panel is visible (for split view controls) */
+  showViewerPanel?: boolean;
+  /** Whether inspector panel is visible */
+  showInspectorPanel?: boolean;
+  /** Toggle viewer panel visibility */
+  onToggleViewerPanel?: () => void;
+  /** Toggle inspector panel visibility */
+  onToggleInspectorPanel?: () => void;
+  /** Whether a canvas is currently selected (for showing panel controls) */
+  hasCanvasSelected?: boolean;
 }
 
 /**
@@ -128,13 +144,22 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   onReveal: _onReveal,
   onCatalogSelection,
   onSwitchView,
+  filmstripMode = false,
+  onOpenImport,
+  onOpenExternalImport,
   cx,
   fieldMode,
   t: _t,
-  isAdvanced: _isAdvanced,
+  // Viewer panel controls for split view
+  showViewerPanel,
+  showInspectorPanel,
+  onToggleViewerPanel,
+  onToggleInspectorPanel,
+  hasCanvasSelected,
 }) => {
   const { showToast } = useToast();
   const { isMobile } = useResponsive();
+  const { archiveToMetadata, archiveToBoard, archiveToMap, hasPipeline, origin } = usePipeline();
 
   // Load persisted view mode
   const [view, setView] = useState<ArchiveViewMode>(loadViewMode);
@@ -147,10 +172,9 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   useEffect(() => { console.log('[ArchiveView] Density changed to:', density); }, [density]);
   const [activeItem, setActiveItem] = useState<IIIFCanvas | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string; isMulti?: boolean } | null>(null);
-  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Selection
-  const { selectedIds, handleSelectWithModifier, select, clear: clearSelection, isSelected } = useSharedSelection();
+  const { selectedIds, handleSelectWithModifier, select, toggle, clear: clearSelection, isSelected } = useSharedSelection();
   const { getAllCanvases } = useIIIFTraversal(root);
   const allCanvases = useMemo(() => getAllCanvases(), [getAllCanvases]);
 
@@ -179,10 +203,11 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const gridItemSize = useMemo(() => {
-    if (activeItem && !isMobile) return { width: 160, height: 180 };
+    // Filmstrip mode: small thumbnails in single column
+    if (filmstripMode) return { width: 240, height: 80 };
     if (fieldMode) return { width: 200, height: 220 };
     return { width: 140, height: 160 };
-  }, [activeItem, isMobile, fieldMode]);
+  }, [filmstripMode, fieldMode]);
 
   const { visibleRange: gridVisibleRange, columns: gridColumns } = useGridVirtualization({
     totalItems: filteredCanvases.length,
@@ -266,24 +291,32 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
     }
   }, [root, onUpdate, selectedIds, select, showToast]);
 
-  const handleOpenMap = useCallback(() => onSwitchView?.('map'), [onSwitchView]);
-  
+  // Pipeline: Archive -> Map with selected items
+  const handleOpenMap = useCallback(() => {
+    if (selectedIds.size > 0) {
+      archiveToMap(Array.from(selectedIds));
+    }
+    onSwitchView?.('map');
+  }, [selectedIds, archiveToMap, onSwitchView]);
+
   // Pipeline: Archive -> Catalog with selected items
   const handleEditMetadata = useCallback(() => {
-    onCatalogSelection?.(Array.from(selectedIds));
+    const ids = Array.from(selectedIds);
+    archiveToMetadata(ids);
+    onCatalogSelection?.(ids);
     onSwitchView?.('metadata');
-  }, [selectedIds, onCatalogSelection, onSwitchView]);
-  
+  }, [selectedIds, archiveToMetadata, onCatalogSelection, onSwitchView]);
+
   const handleBatchEdit = useCallback(() => onBatchEdit(Array.from(selectedIds)), [selectedIds, onBatchEdit]);
-  
+
   // Pipeline: Archive -> Board with selected items
   const handleComposeOnBoard = useCallback(() => {
-    // Store selected IDs for the board to pick up
     if (selectedIds.size > 0) {
-      sessionStorage.setItem('board-selected-items', JSON.stringify(Array.from(selectedIds)));
+      const ids = Array.from(selectedIds);
+      archiveToBoard(ids);
       onSwitchView?.('boards');
     }
-  }, [selectedIds, onSwitchView]);
+  }, [selectedIds, archiveToBoard, onSwitchView]);
 
   // Render content view
   const renderContentView = () => {
@@ -297,6 +330,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
             itemSize={gridItemSize}
             isSelected={isSelected}
             onItemClick={handleItemClick}
+            onToggleSelect={toggle}
             onContextMenu={handleContextMenu}
             cx={cx}
             fieldMode={fieldMode}
@@ -310,9 +344,16 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
         );
       case 'list':
         return (
-          <div className="p-6">
-            <div className="text-center text-slate-500">List view not yet implemented</div>
-          </div>
+          <ArchiveList
+            items={filteredCanvases}
+            isSelected={isSelected}
+            onItemClick={handleItemClick}
+            onItemDoubleClick={(canvas) => onOpen(canvas)}
+            onContextMenu={handleContextMenu}
+            cx={cx}
+            fieldMode={fieldMode}
+            activeItem={activeItem}
+          />
         );
       case 'map':
       case 'timeline':
@@ -322,14 +363,95 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
     }
   };
 
+  // Render filmstrip view for sidebar mode
+  const renderFilmstripView = () => {
+    return (
+      <div className="flex flex-col gap-1">
+        {filteredCanvases.map((canvas) => {
+          const selected = isSelected(canvas.id);
+          const active = activeItem?.id === canvas.id;
+
+          // Get thumbnail URL
+          const thumbnail = canvas.thumbnail?.[0];
+          const thumbnailUrl = thumbnail?.id || '';
+
+          // Get label
+          const label = typeof canvas.label === 'string'
+            ? canvas.label
+            : canvas.label?.en?.[0] || canvas.label?.none?.[0] || 'Untitled';
+
+          return (
+            <button
+              key={canvas.id}
+              onClick={(e) => handleItemClick(e, canvas)}
+              onDoubleClick={() => onOpen(canvas)}
+              onContextMenu={(e) => handleContextMenu(e, canvas.id)}
+              className={`
+                flex items-center gap-2 p-2 rounded-lg text-left w-full
+                transition-all duration-150
+                ${active
+                  ? fieldMode
+                    ? 'bg-yellow-500/30 ring-2 ring-yellow-400'
+                    : 'bg-blue-500/30 ring-2 ring-blue-400'
+                  : selected
+                    ? fieldMode
+                      ? 'bg-yellow-500/20'
+                      : 'bg-blue-500/20'
+                    : fieldMode
+                      ? 'hover:bg-white/10'
+                      : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                }
+              `}
+            >
+              {/* Thumbnail */}
+              <div className="w-14 h-14 rounded overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0">
+                {thumbnailUrl ? (
+                  <img
+                    src={thumbnailUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className={`material-icons text-xl ${cx.textMuted}`}>image</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Label */}
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-medium truncate ${cx.text}`}>
+                  {label}
+                </div>
+                {canvas.width && canvas.height && (
+                  <div className={`text-xs ${cx.textMuted}`}>
+                    {canvas.width} × {canvas.height}
+                  </div>
+                )}
+              </div>
+
+              {/* Selection indicator */}
+              {selected && (
+                <div className={`shrink-0 ${fieldMode ? 'text-yellow-400' : 'text-blue-400'}`}>
+                  <span className="material-icons text-lg">check_circle</span>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   // EMPTY STATE - When no root/archive loaded
   if (!root) {
     return (
       <ArchiveEmptyState
         fieldMode={fieldMode}
         cx={cx}
-        onImport={() => setShowImportDialog(true)}
-        onOpenExternal={() => onSwitchView?.('collections')}
+        onImport={() => onOpenImport?.()}
+        onOpenExternal={() => onOpenExternalImport?.()}
         t={_t}
       />
     );
@@ -337,29 +459,61 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
 
   return (
     <div className={`flex-1 flex flex-col h-full relative overflow-hidden ${cx.pageBg}`}>
-      <ArchiveHeader
-        filter={filter}
-        onFilterChange={handleFilterChange}
-        view={view}
-        onViewChange={handleViewChange}
-        isMobile={isMobile}
-        selectedCount={selectedIds.size}
-        selectionHasGPS={selectionDNA.hasGPS}
-        onClearSelection={clearSelection}
-        onGroupIntoManifest={handleCreateManifestFromSelection}
-        onOpenMap={handleOpenMap}
-        onEditMetadata={handleEditMetadata}
-        onBatchEdit={handleBatchEdit}
-        onComposeOnBoard={handleComposeOnBoard}
-        cx={cx}
-        fieldMode={fieldMode}
-      />
+      {/* Pipeline Banner - show when coming from another view */}
+      {!filmstripMode && hasPipeline && origin === 'search' && (
+        <PipelineBanner
+          onBack={(mode) => onSwitchView?.(mode)}
+          cx={cx}
+          fieldMode={fieldMode}
+        />
+      )}
+
+      {/* Header - hide in filmstrip mode for compact sidebar */}
+      {!filmstripMode && (
+        <ArchiveHeader
+          filter={filter}
+          onFilterChange={handleFilterChange}
+          view={view}
+          onViewChange={handleViewChange}
+          isMobile={isMobile}
+          selectedCount={selectedIds.size}
+          selectionHasGPS={selectionDNA.hasGPS}
+          onClearSelection={clearSelection}
+          onGroupIntoManifest={handleCreateManifestFromSelection}
+          onOpenMap={handleOpenMap}
+          onEditMetadata={handleEditMetadata}
+          onBatchEdit={handleBatchEdit}
+          onComposeOnBoard={handleComposeOnBoard}
+          showViewerPanel={showViewerPanel}
+          showInspectorPanel={showInspectorPanel}
+          onToggleViewerPanel={onToggleViewerPanel}
+          onToggleInspectorPanel={onToggleInspectorPanel}
+          hasCanvasSelected={hasCanvasSelected}
+          cx={cx}
+          fieldMode={fieldMode}
+        />
+      )}
+
+      {/* Filmstrip mode: compact header with just count */}
+      {filmstripMode && (
+        <div className={`px-3 py-2 border-b ${cx.border} ${cx.headerBg} shrink-0`}>
+          <div className={`text-xs font-medium ${cx.textMuted}`}>
+            {filteredCanvases.length} items
+          </div>
+        </div>
+      )}
 
       <div
         ref={scrollContainerRef}
-        className={`flex-1 overflow-y-auto custom-scrollbar pb-24 ${view === 'map' || view === 'timeline' ? 'p-0' : 'p-6'} transition-all duration-300 ${!isMobile && activeItem ? 'w-1/3 max-w-sm border-r border-slate-200' : ''}`}
+        className={`flex-1 overflow-y-auto custom-scrollbar ${
+          filmstripMode
+            ? 'p-2'
+            : view === 'map' || view === 'timeline'
+              ? 'p-0'
+              : 'p-6 pb-24'
+        }`}
       >
-        {renderContentView()}
+        {filmstripMode ? renderFilmstripView() : renderContentView()}
       </div>
 
       {/* Context Menu - Enhanced with pipeline actions */}
@@ -426,8 +580,8 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
         );
       })()}
 
-      {/* Floating Selection Toolbar - appears near selection */}
-      {selectedIds.size > 0 && (
+      {/* Mobile-only floating selection toolbar (desktop uses header toolbar) */}
+      {selectedIds.size > 0 && !filmstripMode && isMobile && (
         <FloatingSelectionToolbar
           selectedItems={selectedCanvases}
           onClear={clearSelection}

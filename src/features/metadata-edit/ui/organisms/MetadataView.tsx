@@ -26,8 +26,10 @@ import { ViewContainer } from '@/src/shared/ui/molecules/ViewContainer';
 import { FilterInput } from '@/src/shared/ui/molecules/FilterInput';
 import { Toolbar } from '@/src/shared/ui/molecules/Toolbar';
 import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
+import { PipelineBanner } from '@/src/shared/ui/molecules/PipelineBanner';
 import { Button } from '@/ui/primitives/Button';
 import { Icon } from '@/src/shared/ui/atoms';
+import { usePipeline } from '@/src/shared/lib/hooks';
 import {
   extractColumns,
   filterByTerm,
@@ -97,10 +99,28 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
   root,
   cx,
   fieldMode,
-  onUpdate: _onUpdate,
-  filterIds,
+  onUpdate,
+  filterIds: filterIdsProp,
   onClearFilter,
 }) => {
+  // Pipeline state - provides cross-view selection
+  const pipeline = usePipeline();
+
+  // Use pipeline selectedIds if no filterIds prop
+  const filterIds = useMemo(() => {
+    if (filterIdsProp && filterIdsProp.length > 0) return filterIdsProp;
+    if (pipeline.intent === 'edit-metadata' && pipeline.selectedIds.length > 0) {
+      return pipeline.selectedIds;
+    }
+    return null;
+  }, [filterIdsProp, pipeline.intent, pipeline.selectedIds]);
+
+  // Handle pipeline clear
+  const handleClearPipeline = useCallback(() => {
+    pipeline.clearPipeline();
+    onClearFilter?.();
+  }, [pipeline, onClearFilter]);
+
   // Local UI state
   const [filter, setFilter] = useState('');
   const [activeTab, setActiveTab] = useState<ResourceTab>('All');
@@ -114,7 +134,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
   // Flatten items from root
   const allItems = useMemo(() => flattenTree(root, activeTab), [root, activeTab]);
 
-  // Apply ID filter if present
+  // Apply ID filter if present (from props or pipeline)
   const idFilteredItems = useMemo(() => {
     if (!filterIds || filterIds.length === 0) return allItems;
     return allItems.filter((item) => filterIds.includes(item.id));
@@ -169,12 +189,64 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
     fileInputRef.current?.click();
   }, []);
 
-  // Handle cell edit
-  const handleCellEdit = (itemId: string, column: string, value: string) => {
+  // Handle cell edit - updates the item in the tree and calls onUpdate
+  const handleCellEdit = useCallback((itemId: string, column: string, value: string) => {
+    if (!root) return;
+
+    // Helper to recursively find and update item in tree
+    const updateItemInTree = (node: IIIFItem): IIIFItem => {
+      if (node.id === itemId) {
+        // Found the item - update the specific field
+        const updated = { ...node };
+
+        if (column === 'label') {
+          updated.label = { en: [value] };
+        } else if (column === 'summary') {
+          updated.summary = { en: [value] };
+        } else if (column === 'rights') {
+          (updated as any).rights = value || undefined;
+        } else if (column === 'navDate') {
+          (updated as any).navDate = value || undefined;
+        } else {
+          // Custom metadata field
+          const metadata = [...((updated as any).metadata || [])];
+          const existingIndex = metadata.findIndex((m: any) => {
+            const mLabel = m.label?.en?.[0] || m.label?.none?.[0] || '';
+            return mLabel.toLowerCase() === column.toLowerCase();
+          });
+
+          if (existingIndex >= 0) {
+            metadata[existingIndex] = {
+              label: { en: [column] },
+              value: { en: [value] }
+            };
+          } else if (value) {
+            metadata.push({
+              label: { en: [column] },
+              value: { en: [value] }
+            });
+          }
+          (updated as any).metadata = metadata;
+        }
+
+        return updated;
+      }
+
+      // Recurse into children
+      if ((node as any).items) {
+        return {
+          ...node,
+          items: (node as any).items.map(updateItemInTree)
+        };
+      }
+
+      return node;
+    };
+
+    const updatedRoot = updateItemInTree(root);
     setHasUnsavedChanges(true);
-    // TODO: Implement actual update logic
-    console.log('Edit:', itemId, column, value);
-  };
+    onUpdate(updatedRoot);
+  }, [root, onUpdate]);
 
   // Tab configuration
   const tabs: { value: ResourceTab; label: string; icon: string }[] = [
@@ -197,17 +269,34 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
     );
   }
 
+  // Has pipeline filter active?
+  const hasPipelineFilter = pipeline.intent === 'edit-metadata' && pipeline.selectedIds.length > 0;
+
   return (
-    <ViewContainer
-      title="Metadata Catalog"
-      icon="table_chart"
-      className={cx.surface}
-      cx={cx}
-      fieldMode={fieldMode}
-      header={
-        <div className="flex items-center gap-4 flex-wrap">
+    <div className={`flex-1 flex flex-col h-full ${cx.surface}`}>
+      {/* Pipeline Banner - shows when editing from Archive */}
+      {hasPipelineFilter && (
+        <PipelineBanner
+          onBack={() => {
+            const prev = pipeline.goBack();
+            // Navigation handled by parent
+          }}
+          onClear={handleClearPipeline}
+          cx={cx}
+          fieldMode={fieldMode}
+        />
+      )}
+
+      <ViewContainer
+        title="Metadata Catalog"
+        icon="table_chart"
+        className="flex-1"
+        cx={cx}
+        fieldMode={fieldMode}
+        header={
+          <div className="flex items-center gap-4 flex-wrap">
           {/* Resource type tabs */}
-          <div className={`flex rounded-lg ${fieldMode ? 'bg-slate-900' : 'bg-slate-100'} p-1`}>
+          <div className={`flex rounded-lg ${fieldMode ? 'bg-yellow-900/40' : 'bg-slate-100'} p-1`}>
             {tabs.map((tab) => (
               <Button
                 key={tab.value}
@@ -297,7 +386,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
           />
         ) : (
           <table className="w-full text-sm border-collapse">
-            <thead className={`sticky top-0 z-10 ${fieldMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+            <thead className={`sticky top-0 z-10 ${fieldMode ? 'bg-yellow-900/40' : 'bg-slate-50'}`}>
               <tr>
                 {/* Row number column */}
                 <th 
@@ -317,9 +406,9 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                     <th
                       key={col}
                       className={`
-                        px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider 
+                        px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider
                         ${cx.textMuted} border-b ${cx.border}
-                        ${col === 'label' ? (fieldMode ? 'bg-slate-800/50' : 'bg-slate-100') : ''}
+                        ${col === 'label' ? (fieldMode ? 'bg-yellow-900/30' : 'bg-slate-100') : ''}
                       `}
                       style={{ width: config.width, minWidth: config.minWidth }}
                     >
@@ -327,39 +416,39 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                     </th>
                   );
                 })}
-                
+
                 {/* Descriptive columns group */}
                 {columnGroups.descriptive.length > 0 && (
-                  <th 
+                  <th
                     colSpan={columnGroups.descriptive.length}
                     className={`
-                      px-4 py-2 text-left text-[9px] font-semibold uppercase tracking-wider 
+                      px-4 py-2 text-left text-[9px] font-semibold uppercase tracking-wider
                       ${cx.textMuted} border-b ${cx.border}
-                      ${fieldMode ? 'bg-slate-800/30' : 'bg-slate-100/50'}
+                      ${fieldMode ? 'bg-yellow-900/20' : 'bg-slate-100/50'}
                     `}
                   >
                     Descriptive Metadata
                   </th>
                 )}
-                
+
                 {/* Custom metadata columns group */}
                 {columnGroups.custom.length > 0 && (
-                  <th 
+                  <th
                     colSpan={columnGroups.custom.length}
                     className={`
-                      px-4 py-2 text-left text-[9px] font-semibold uppercase tracking-wider 
+                      px-4 py-2 text-left text-[9px] font-semibold uppercase tracking-wider
                       ${cx.textMuted} border-b ${cx.border}
-                      ${fieldMode ? 'bg-slate-800/30' : 'bg-slate-100/50'}
+                      ${fieldMode ? 'bg-yellow-900/20' : 'bg-slate-100/50'}
                     `}
                   >
                     Custom Fields ({columnGroups.custom.length})
                   </th>
                 )}
               </tr>
-              
+
               {/* Second header row for individual column names in groups */}
               {(columnGroups.descriptive.length > 0 || columnGroups.custom.length > 0) && (
-                <tr className={`${fieldMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+                <tr className={`${fieldMode ? 'bg-yellow-900/20' : 'bg-slate-50'}`}>
                   <th colSpan={columnGroups.core.length + 1}></th>
                   {columnGroups.descriptive.map((col) => {
                     const config = getColumnConfig(col);
@@ -400,7 +489,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                   key={item.id}
                   className={`
                     border-b ${cx.border} 
-                    ${fieldMode ? 'hover:bg-slate-900' : 'hover:bg-slate-50'} 
+                    ${fieldMode ? 'hover:bg-yellow-900/30' : 'hover:bg-slate-50'} 
                     transition-colors
                   `}
                 >
@@ -417,7 +506,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                     return (
                       <td
                         key={col}
-                        className={`px-4 py-2 ${col === 'label' ? (fieldMode ? 'bg-slate-800/20' : 'bg-slate-50/50') : ''}`}
+                        className={`px-4 py-2 ${col === 'label' ? (fieldMode ? 'bg-yellow-900/20' : 'bg-slate-50/50') : ''}`}
                         style={{ width: config.width, minWidth: config.minWidth }}
                         onClick={() => setEditingCell({ itemId: item.id, column: col })}
                       >
@@ -432,10 +521,16 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
                         {col === 'type' && (
                           <span className={`
                             inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium uppercase
-                            ${item.type === 'Collection' ? 'bg-purple-100 text-purple-700' : ''}
-                            ${item.type === 'Manifest' ? 'bg-blue-100 text-blue-700' : ''}
-                            ${item.type === 'Canvas' ? 'bg-green-100 text-green-700' : ''}
-                            ${fieldMode ? 'bg-opacity-20' : ''}
+                            ${fieldMode
+                              ? item.type === 'Collection' ? 'bg-purple-900/50 text-purple-300'
+                                : item.type === 'Manifest' ? 'bg-blue-900/50 text-blue-300'
+                                : item.type === 'Canvas' ? 'bg-green-900/50 text-green-300'
+                                : ''
+                              : item.type === 'Collection' ? 'bg-purple-100 text-purple-700'
+                                : item.type === 'Manifest' ? 'bg-blue-100 text-blue-700'
+                                : item.type === 'Canvas' ? 'bg-green-100 text-green-700'
+                                : ''
+                            }
                           `}>
                             {item.type}
                           </span>
@@ -535,7 +630,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
       <div className={`
         flex items-center justify-between px-4 py-3 
         border-t ${cx.border}
-        ${fieldMode ? 'bg-slate-900' : 'bg-slate-50'}
+        ${fieldMode ? 'bg-yellow-900/30' : 'bg-slate-50'}
       `}>
         <div className={`text-xs ${cx.textMuted}`}>
           {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
@@ -558,6 +653,7 @@ export const MetadataView: React.FC<MetadataViewProps> = ({
         )}
       </div>
     </ViewContainer>
+    </div>
   );
 };
 
@@ -615,8 +711,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
         }}
         className={`
           w-full px-2 py-1 text-sm rounded
-          ${fieldMode 
-            ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500' 
+          ${fieldMode
+            ? 'bg-yellow-900/30 border-yellow-700 text-white focus:border-yellow-500'
             : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
           }
           border outline-none focus:ring-2 focus:ring-blue-500/20
