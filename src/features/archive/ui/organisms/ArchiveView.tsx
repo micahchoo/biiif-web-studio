@@ -357,6 +357,31 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   // Reorder is enabled when viewer panel is closed (full grid mode)
   const reorderEnabled = !filmstripMode && showViewerPanel === false;
 
+  // Keyboard-based reordering with Alt+Arrow keys
+  useEffect(() => {
+    if (!reorderEnabled || !activeItem || selectedIds.size !== 1) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt+Up or Alt+Down to move selected item
+      if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+
+      e.preventDefault();
+      const currentIndex = filteredCanvases.findIndex(c => c.id === activeItem.id);
+      if (currentIndex === -1) return;
+
+      const targetIndex = e.key === 'ArrowUp'
+        ? Math.max(0, currentIndex - 1)
+        : Math.min(filteredCanvases.length - 1, currentIndex + 1);
+
+      if (targetIndex !== currentIndex) {
+        handleReorder(currentIndex, targetIndex);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [reorderEnabled, activeItem, selectedIds.size, filteredCanvases, handleReorder]);
+
   // Render content view
   const renderContentView = () => {
     switch (view) {
@@ -394,6 +419,8 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
             cx={cx}
             fieldMode={fieldMode}
             activeItem={activeItem}
+            reorderEnabled={reorderEnabled}
+            onReorder={handleReorder}
           />
         );
       case 'map':

@@ -51,6 +51,10 @@ export interface ArchiveListProps {
   fieldMode: boolean;
   /** Active item for detail panel */
   activeItem: IIIFCanvas | null;
+  /** Whether reordering is enabled */
+  reorderEnabled?: boolean;
+  /** Callback when items are reordered */
+  onReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
 // Column configuration
@@ -90,12 +94,57 @@ export const ArchiveList: React.FC<ArchiveListProps> = ({
   cx,
   fieldMode,
   activeItem,
+  reorderEnabled = false,
+  onReorder,
 }) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('label');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  // Sort items
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (!reorderEnabled || !onReorder) return;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (!reorderEnabled || draggedIndex === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dropTargetIndex !== index) {
+      setDropTargetIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    // Don't clear immediately to prevent flickering
+  };
+
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    if (!reorderEnabled || draggedIndex === null || !onReorder) return;
+    if (draggedIndex !== toIndex) {
+      onReorder(draggedIndex, toIndex);
+    }
+    setDraggedIndex(null);
+    setDropTargetIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDropTargetIndex(null);
+  };
+
+  // Sort items (disabled when reordering to preserve manual order)
   const sortedItems = useMemo(() => {
+    // Don't sort when reorder mode is enabled - preserve original order
+    if (reorderEnabled) return items;
+
     const sorted = [...items].sort((a, b) => {
       const aVal = getSortValue(a, sortColumn);
       const bVal = getSortValue(b, sortColumn);
@@ -113,7 +162,7 @@ export const ArchiveList: React.FC<ArchiveListProps> = ({
       return 0;
     });
     return sorted;
-  }, [items, sortColumn, sortDirection]);
+  }, [items, sortColumn, sortDirection, reorderEnabled]);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -142,6 +191,10 @@ export const ArchiveList: React.FC<ArchiveListProps> = ({
         {/* Header */}
         <thead className={`sticky top-0 z-10 ${fieldMode ? 'bg-yellow-900/40' : 'bg-slate-100 dark:bg-slate-800'}`}>
           <tr>
+            {/* Drag handle column (only when reorder enabled) */}
+            {reorderEnabled && (
+              <th className={`w-8 px-1 py-3 border-b ${cx.border}`} />
+            )}
             {/* Thumbnail column */}
             <th className={`w-16 px-3 py-3 border-b ${cx.border}`} />
 
@@ -178,22 +231,38 @@ export const ArchiveList: React.FC<ArchiveListProps> = ({
 
         {/* Body */}
         <tbody>
-          {sortedItems.map((canvas) => {
+          {sortedItems.map((canvas, index) => {
             const selected = isSelected(canvas.id);
             const active = activeItem?.id === canvas.id;
             const label = getIIIFValue(canvas.label, 'en') || 'Untitled';
             const thumbUrls = resolveHierarchicalThumbs(canvas);
             const thumbUrl = thumbUrls[0] || '';
             const dna = getFileDNA(canvas);
+            const isDragging = draggedIndex === index;
+            const isDropTarget = dropTargetIndex === index && draggedIndex !== null && draggedIndex !== index;
 
             return (
               <tr
                 key={canvas.id}
+                draggable={reorderEnabled && !!onReorder}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
                 onClick={(e) => onItemClick(e, canvas)}
                 onDoubleClick={() => onItemDoubleClick?.(canvas)}
                 onContextMenu={(e) => onContextMenu(e, canvas.id)}
                 className={`
-                  border-b ${cx.border} cursor-pointer transition-colors
+                  border-b ${cx.border} transition-colors
+                  ${reorderEnabled ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
+                  ${isDragging ? 'opacity-50' : ''}
+                  ${isDropTarget
+                    ? fieldMode
+                      ? 'ring-2 ring-inset ring-yellow-400 bg-yellow-500/10'
+                      : 'ring-2 ring-inset ring-blue-500 bg-blue-500/10'
+                    : ''
+                  }
                   ${active
                     ? fieldMode
                       ? 'bg-yellow-500/30'
@@ -208,6 +277,17 @@ export const ArchiveList: React.FC<ArchiveListProps> = ({
                   }
                 `}
               >
+                {/* Drag handle (only when reorder enabled) */}
+                {reorderEnabled && (
+                  <td className="px-1 py-2">
+                    <div className={`
+                      flex items-center justify-center cursor-grab active:cursor-grabbing
+                      ${fieldMode ? 'text-yellow-400/60' : 'text-slate-400'}
+                    `}>
+                      <Icon name="drag_indicator" className="text-lg" />
+                    </div>
+                  </td>
+                )}
                 {/* Thumbnail */}
                 <td className="px-3 py-2">
                   <div className={`
