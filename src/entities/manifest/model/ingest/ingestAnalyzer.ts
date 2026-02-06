@@ -19,7 +19,7 @@
 import { FileTree } from '@/src/shared/types';
 import { MIME_TYPE_MAP } from '@/src/shared/constants';
 import { load } from 'js-yaml';
-import { traverse } from '../utils';
+import { traverse } from '@/utils';
 
 // ============================================================================
 // Types

@@ -21,18 +21,18 @@ import {
   isCollection,
   LegacyProgressCallback
 } from '@/src/shared/types';
-import { storage } from './storage';
+import { storage } from '@/src/shared/services/storage';
 import { DEFAULT_INGEST_PREFS, getDerivativePreset, IIIF_CONFIG, IIIF_SPEC, IMAGE_QUALITY, MIME_TYPE_MAP } from '@/src/shared/constants';
 import { load } from 'js-yaml';
-import { extractMetadata } from './metadataHarvester';
+import { extractMetadata } from '@/src/shared/services/metadataHarvester';
 import { generateDerivativeAsync, getTileWorkerPool } from './tileWorker';
-import { fileIntegrity, HashLookupResult } from './fileIntegrity';
+import { fileIntegrity, HashLookupResult } from '@/src/entities/canvas/model/fileIntegrity';
 import {
   generateId,
   getRelationshipType,
   isStandaloneType,
   isValidChildType
-} from '../utils/iiifHierarchy';
+} from '@/utils/iiifHierarchy';
 import {
   createImageServiceReference,
   DEFAULT_VIEWING_DIRECTION,
@@ -43,8 +43,8 @@ import {
   isTimeBasedMime,
   suggestBehaviors,
   validateResource
-} from '../utils';
-import { FEATURE_FLAGS, USE_ENHANCED_PROGRESS, USE_WORKER_INGEST } from '../constants/features';
+} from '@/utils';
+import { FEATURE_FLAGS, USE_ENHANCED_PROGRESS, USE_WORKER_INGEST } from '@/src/shared/constants';
 import { getFileLifecycleManager } from './fileLifecycle';
 
 // ============================================================================

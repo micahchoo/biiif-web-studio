@@ -15,7 +15,7 @@ import { IIIF_SPEC } from '@/src/shared/constants';
 import {
   getExtension,
   getMimeType
-} from '../utils';
+} from '@/utils';
 
 // Extension arrays - keep local to avoid conflicts with centralized utils naming
 const LOCAL_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'tif', 'bmp', 'svg'];

@@ -9,7 +9,7 @@
  */
 
 import { getIIIFValue, IIIFCanvas, IIIFCollection, IIIFItem, IIIFManifest, isCanvas, isCollection, isManifest } from '@/src/shared/types';
-import { storage } from './storage';
+import { storage } from '@/src/shared/services/storage';
 import { LunrDocument, searchService } from './searchService';
 import { DEFAULT_SEARCH_CONFIG, fieldRegistry } from './fieldRegistry';
 import {
@@ -20,7 +20,7 @@ import {
   getAllManifests,
   ImageApiProfile,
   isPaintingMotivation
-} from '../utils';
+} from '@/utils';
 import { DEFAULT_DERIVATIVE_SIZES, getDerivativePreset, IIIF_SPEC } from '@/src/shared/constants';
 
 // ============================================================================

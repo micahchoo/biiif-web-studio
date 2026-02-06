@@ -30,7 +30,7 @@
  * ```
  */
 
-import { FEATURE_FLAGS } from '../constants/features';
+import { FEATURE_FLAGS } from '@/src/shared/constants';
 
 import type {
   IIIFAnnotation,

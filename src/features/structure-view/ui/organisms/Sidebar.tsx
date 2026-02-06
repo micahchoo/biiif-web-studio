@@ -7,7 +7,7 @@ import {
   getRelationshipType,
   getValidChildTypes,
   isValidChildType
-} from '../utils/iiifHierarchy';
+} from '@/utils/iiifHierarchy';
 import { useResizablePanel } from '@/src/shared/lib/hooks/useResizablePanel';
 import { useAppSettings } from '@/src/app/providers/useAppSettings';
 

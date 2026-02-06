@@ -9,7 +9,7 @@ import {
   generateStandardTiles,
   getAllManifests,
   ImageApiProfile
-} from '../utils';
+} from '@/utils';
 import { DEFAULT_DERIVATIVE_SIZES, DEFAULT_INGEST_PREFS, getDerivativePreset, IIIF_SPEC } from '@/src/shared/constants';
 import {
   CANOPY_BUILD_SCRIPT,

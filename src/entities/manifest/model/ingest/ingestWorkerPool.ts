@@ -30,9 +30,9 @@ import {
   IngestReport,
   IngestResult
 } from '@/src/shared/types';
-import { FEATURE_FLAGS } from '../constants/features';
+import { FEATURE_FLAGS } from '@/src/shared/constants';
 import { getTileWorkerPool } from './tileWorker';
-import { storage } from './storage';
+import { storage } from '@/src/shared/services/storage';
 
 // ============================================================================
 // Constants

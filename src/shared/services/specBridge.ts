@@ -28,7 +28,7 @@ import {
   isImageService3,
   isValidHttpUri,
   isValidViewingDirection
-} from '../utils';
+} from '@/utils';
 import { IIIF_SPEC } from '@/src/shared/constants';
 
 // ============================================================================

@@ -10,7 +10,7 @@
  */
 
 import { getIIIFValue, IIIFCanvas, IIIFItem, IIIFManifest, isCanvas } from '@/src/shared/types';
-import { storage } from './storage';
+import { storage } from '@/src/shared/services/storage';
 
 // ============================================================================
 // Types

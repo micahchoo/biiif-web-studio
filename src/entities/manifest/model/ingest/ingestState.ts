@@ -12,7 +12,7 @@
  * - Progress tracking with file hashes
  */
 
-import { storage } from './storage';
+import { storage } from '@/src/shared/services/storage';
 
 const CHECKPOINTS_STORE = 'checkpoints';
 const CHECKPOINT_PREFIX = 'ingest_checkpoint_';

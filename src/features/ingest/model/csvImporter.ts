@@ -4,7 +4,7 @@ import {
   formatNavDate,
   isValidNavDate,
   isValidRightsUri
-} from '../utils';
+} from '@/utils';
 import { CSV_COLUMN_ALIASES, CSV_SUPPORTED_PROPERTIES } from '@/src/shared/constants';
 
 export interface CSVColumnMapping {
