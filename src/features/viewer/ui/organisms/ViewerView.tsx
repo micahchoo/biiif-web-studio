@@ -30,8 +30,8 @@ import {
 import { useViewer } from '../../model';
 
 // LEGACY: Pending migration to FSD structure
-import { CanvasComposer } from '@/components/CanvasComposer';
-import { PolygonAnnotationTool } from '@/components/PolygonAnnotationTool';
+import { CanvasComposer } from './CanvasComposer';
+import { PolygonAnnotationTool } from './PolygonAnnotationTool';
 
 export interface ViewerViewProps {
   item: IIIFCanvas | null;

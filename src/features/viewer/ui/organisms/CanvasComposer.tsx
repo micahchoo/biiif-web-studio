@@ -5,7 +5,7 @@ import { DEFAULT_INGEST_PREFS } from '@/src/shared/constants';
 import { Icon } from '@/src/shared/ui/atoms/Icon';
 import { useToast } from '@/src/shared/ui/molecules/Toast';
 import { usePanZoomGestures, useViewport, useViewportKeyboard } from '../hooks';
-import { buildCanvasFromLayers, PlacedResource, useLayerHistory } from '../hooks/useLayerHistory';
+import { buildCanvasFromLayers, PlacedResource, useLayerHistory } from '@/src/shared/lib/hooks/useLayerHistory';
 
 interface CanvasComposerProps {
   canvas: IIIFCanvas;

@@ -3,8 +3,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './src/app/App';
 import { ErrorBoundary } from '@/src/shared/ui/molecules/ErrorBoundary';
-import { searchService } from './services/searchService';
-import { storage } from './services/storage';
+import { searchService } from '@/src/shared/services/searchService';
+import { storage } from '@/src/shared/services/storage';
 import { FEATURE_FLAGS, IIIF_SPEC } from '@/src/shared/constants';
 import { initializeI18n } from './i18n';
 

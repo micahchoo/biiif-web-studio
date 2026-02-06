@@ -6,7 +6,7 @@
  * Organized by view/context for screen-relevant help.
  */
 
-import { TooltipContent } from '@/components/Tooltip';
+import { TooltipContent } from '@/src/shared/ui/molecules/Tooltip';
 
 // ============================================================================
 // Quick Reference Items (per-view keyboard shortcuts & actions)
