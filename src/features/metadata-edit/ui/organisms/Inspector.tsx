@@ -16,7 +16,7 @@ import { suggestBehaviors } from '@/utils/iiifBehaviors';
 import { resolvePreviewUrl } from '@/utils/imageSourceResolver';
 import { useDebouncedValue } from '@/src/shared/lib/hooks/useDebouncedValue';
 import { usePersistedTab } from '@/src/shared/lib/hooks/usePersistedTab';
-import { useInspectorValidation } from '../model/useInspectorValidation';
+import { useInspectorValidation } from '../../model/useInspectorValidation';
 // TODO: Migrate this hook or remove if unused
 // import { useMetadataEditor } from '../hooks/useMetadataEditor';
 import { useContextualStyles } from '@/src/shared/lib/hooks/useContextualStyles';
