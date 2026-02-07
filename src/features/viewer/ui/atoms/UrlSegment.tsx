@@ -14,8 +14,6 @@
  */
 
 import React from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export type SegmentColor = 'green' | 'blue' | 'orange' | 'purple' | 'yellow' | 'default';
 
 export interface UrlSegmentProps {
@@ -25,10 +23,6 @@ export interface UrlSegmentProps {
   label: string;
   /** Color theme for the segment */
   color: SegmentColor;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames;
-  /** Field mode flag (unused but required for API consistency) */
-  fieldMode?: boolean;
 }
 
 const colorClasses: Record<SegmentColor, string> = {
@@ -44,8 +38,6 @@ export const UrlSegment: React.FC<UrlSegmentProps> = ({
   value,
   label,
   color,
-  cx: _cx,
-  fieldMode: _fieldMode,
 }) => {
   return (
     <span

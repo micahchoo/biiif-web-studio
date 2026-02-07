@@ -204,7 +204,6 @@ export const StructureTreeView: React.FC<StructureTreeViewProps> = ({
             onQueryChange={setFilterQuery}
             matchCount={matchCount}
             totalCount={flattenedNodes.length}
-            fieldMode={fieldMode}
           />
         </div>
       )}

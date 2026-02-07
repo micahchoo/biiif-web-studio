@@ -63,15 +63,15 @@ export const UrlBar: React.FC<UrlBarProps> = ({
     <div className="p-3 bg-slate-950 font-mono text-xs border-t border-white/10 shrink-0">
       <div className="flex items-center gap-1">
         <span className={`${mutedTextClass} truncate max-w-[150px]`}>{imageId}/</span>
-        <UrlSegment value={region} label="Region" color="green" fieldMode={fieldMode} />
+        <UrlSegment value={region} label="Region" color="green" />
         <span className={mutedTextClass}>/</span>
-        <UrlSegment value={size} label="Size" color="blue" fieldMode={fieldMode} />
+        <UrlSegment value={size} label="Size" color="blue" />
         <span className={mutedTextClass}>/</span>
-        <UrlSegment value={rotation} label="Rotation" color="orange" fieldMode={fieldMode} />
+        <UrlSegment value={rotation} label="Rotation" color="orange" />
         <span className={mutedTextClass}>/</span>
-        <UrlSegment value={quality} label="Quality" color="purple" fieldMode={fieldMode} />
+        <UrlSegment value={quality} label="Quality" color="purple" />
         <span className={mutedTextClass}>.</span>
-        <UrlSegment value={format} label="Format" color="yellow" fieldMode={fieldMode} />
+        <UrlSegment value={format} label="Format" color="yellow" />
         <div className="flex-1" />
         <IconButton
           icon="content_copy"

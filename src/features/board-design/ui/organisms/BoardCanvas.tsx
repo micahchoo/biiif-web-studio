@@ -143,7 +143,7 @@ export const BoardCanvas = forwardRef<HTMLDivElement, BoardCanvasProps>(
           className="absolute inset-0"
         >
           {/* Grid background (only in grid mode) */}
-          {bgMode === 'grid' && <CanvasGrid cx={cx} fieldMode={fieldMode} />}
+          {bgMode === 'grid' && <CanvasGrid cx={cx} />}
 
           {/* Connections layer */}
           <ConnectionLayer

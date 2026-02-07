@@ -16,8 +16,6 @@
 import React from 'react';
 import { Button } from '@/ui/primitives/Button';
 import { Icon } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export type MediaErrorType =
   | 'aborted'
   | 'network'
@@ -34,8 +32,6 @@ export interface MediaErrorOverlayProps {
   onRetry?: () => void;
   /** Additional CSS classes */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -61,7 +57,6 @@ export const MediaErrorOverlay: React.FC<MediaErrorOverlayProps> = ({
   errorType = 'unknown',
   onRetry,
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const displayMessage = message || defaultMessages[errorType];

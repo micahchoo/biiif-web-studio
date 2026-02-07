@@ -2,6 +2,7 @@
 import { DBSchema, IDBPDatabase, openDB } from 'idb';
 import { IIIFItem } from '@/src/shared/types';
 import { IngestCheckpoint } from '@/src/entities/manifest/model/ingest/ingestState';
+import { OPFSStorage } from './opfsStorage';
 
 export const DB_NAME = 'biiif-archive-db';
 export const FILES_STORE = 'files';
@@ -65,7 +66,7 @@ interface BiiifDB extends DBSchema {
   };
   project: {
     key: string;
-    value: IIIFItem;
+    value: IIIFItem | Blob; // Blob for gzip-compressed JSON, IIIFItem for legacy uncompressed
   };
   checkpoints: {
     key: string;
@@ -84,7 +85,12 @@ interface BiiifDB extends DBSchema {
 export interface StorageEstimate {
   usage: number;
   quota: number;
-  usageDetails?: any;
+  usageDetails?: Record<string, number>;
+}
+
+export interface DetailedStorageEstimate extends StorageEstimate {
+  persistent: boolean;
+  stores: Record<string, { keys: number; estimatedSize?: number }>;
 }
 
 export interface StorageWarning {
@@ -97,14 +103,43 @@ export interface StorageWarning {
 const STORAGE_WARNING_THRESHOLD = 0.9;
 const STORAGE_CRITICAL_THRESHOLD = 0.95;
 
+// Files larger than this go to OPFS instead of IndexedDB
+const OPFS_THRESHOLD = 10 * 1024 * 1024; // 10MB
+
 class StorageService {
   private _dbPromise: Promise<IDBPDatabase<BiiifDB>> | null = null;
   private _warningCallback: ((warning: StorageWarning) => void) | null = null;
   private _lastWarningTime = 0;
   private _warningCooldown = 60000; // Only warn once per minute
+  private _opfs: OPFSStorage | null = null;
 
   constructor() {
     this._initDB();
+    this._initOPFS();
+  }
+
+  private _initOPFS(): void {
+    if (!OPFSStorage.isSupported()) return;
+    const opfs = new OPFSStorage();
+    opfs.initialize().then((ok) => {
+      if (ok) this._opfs = opfs;
+    }).catch(() => {});
+  }
+
+  /**
+   * Request persistent storage to prevent browser from evicting data under storage pressure.
+   * Fire-and-forget during initialization.
+   */
+  async requestPersistentStorage(): Promise<boolean> {
+    if (!navigator.storage?.persist) return false;
+    const isPersisted = await navigator.storage.persisted();
+    if (isPersisted) {
+      console.log('[Storage] Persistent storage already granted');
+      return true;
+    }
+    const granted = await navigator.storage.persist();
+    console.log(`[Storage] Persistent storage ${granted ? 'granted' : 'denied'}`);
+    return granted;
   }
 
   // Set a callback to receive storage warnings
@@ -189,6 +224,24 @@ class StorageService {
   }
 
   /**
+   * Compress project JSON to a gzip Blob for efficient storage.
+   */
+  private async _compressProject(root: IIIFItem): Promise<Blob> {
+    const json = JSON.stringify(root);
+    const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Response(stream).blob();
+  }
+
+  /**
+   * Decompress a gzip Blob back to a project object.
+   */
+  private async _decompressProject(blob: Blob): Promise<IIIFItem> {
+    const stream = blob.stream().pipeThrough(new DecompressionStream('gzip'));
+    const text = await new Response(stream).text();
+    return JSON.parse(text);
+  }
+
+  /**
    * Wraps a save operation with storage quota checking and error handling
    */
   private async saveWithQuotaCheck<T>(
@@ -239,6 +292,11 @@ class StorageService {
 
   async saveAsset(file: File | Blob, id: string): Promise<void> {
     return this.saveWithQuotaCheck('save asset', async () => {
+      // Route large files to OPFS for better performance
+      if (this._opfs?.isReady && file.size >= OPFS_THRESHOLD) {
+        await this._opfs.storeFile(id, file);
+        return;
+      }
       const db = await this.getDB();
       await db.put(FILES_STORE, file, id);
     });
@@ -250,6 +308,12 @@ class StorageService {
   }
 
   async getAsset(id: string): Promise<Blob | undefined> {
+    // Try OPFS first (large files)
+    if (this._opfs?.isReady) {
+      const file = await this._opfs.getFile(id);
+      if (file) return file;
+    }
+    // Fall back to IndexedDB
     const db = await this.getDB();
     return await db.get(FILES_STORE, id);
   }
@@ -263,7 +327,9 @@ class StorageService {
     return this.saveWithQuotaCheck('save project', async () => {
       const db = await this.getDB();
       try {
-        await db.put(PROJECT_STORE, root, 'root');
+        // Compress project JSON with gzip for storage savings
+        const compressed = await this._compressProject(root);
+        await db.put(PROJECT_STORE, compressed, 'root');
       } catch (error) {
         // Handle read-only mode error
         if (error instanceof DOMException && error.name === 'ReadOnlyError') {
@@ -281,8 +347,15 @@ class StorageService {
   async loadProject(): Promise<IIIFItem | undefined> {
     const db = await this.getDB();
     try {
-        const root = await db.get(PROJECT_STORE, 'root');
-        return root;
+        const stored = await db.get(PROJECT_STORE, 'root');
+        if (!stored) return undefined;
+
+        // Handle compressed (Blob) vs legacy uncompressed (plain object)
+        if (stored instanceof Blob) {
+          return await this._decompressProject(stored);
+        }
+        // Legacy uncompressed - return as-is
+        return stored as IIIFItem;
     } catch (e) {
         console.error("Failed to load project from IDB", e);
         return undefined;
@@ -303,6 +376,13 @@ class StorageService {
     await db.clear(FILES_STORE);
     await db.clear(DERIVATIVES_STORE);
     await db.clear(PROJECT_STORE);
+    // Clear OPFS files too
+    if (this._opfs?.isReady) {
+      const ids = await this._opfs.listFiles();
+      for (const id of ids) {
+        await this._opfs.deleteFile(id);
+      }
+    }
   }
 
   async getEstimate(): Promise<StorageEstimate | null> {
@@ -318,6 +398,57 @@ class StorageService {
       }
     }
     return null;
+  }
+
+  /**
+   * Get the number of keys in a given object store.
+   */
+  async getStoreKeyCount(storeName: 'files' | 'derivatives' | 'project' | 'checkpoints' | 'tiles' | 'tileManifests'): Promise<number> {
+    const db = await this.getDB();
+    const keys = await db.getAllKeys(storeName as any);
+    return keys.length;
+  }
+
+  /**
+   * Get a detailed storage breakdown including per-store key counts,
+   * persistent storage status, and browser-provided usage details.
+   */
+  async getDetailedEstimate(): Promise<DetailedStorageEstimate | null> {
+    const base = await this.getEstimate();
+    if (!base) return null;
+
+    const persistent = navigator.storage?.persisted
+      ? await navigator.storage.persisted()
+      : false;
+
+    // Fetch browser-provided usageDetails if available
+    let usageDetails: Record<string, number> | undefined;
+    try {
+      const raw = await navigator.storage.estimate();
+      if ((raw as any).usageDetails) {
+        usageDetails = (raw as any).usageDetails;
+      }
+    } catch {
+      // Not supported in all browsers
+    }
+
+    // Per-store key counts (lightweight - just counting keys, not reading blobs)
+    const storeNames = [FILES_STORE, DERIVATIVES_STORE, PROJECT_STORE, CHECKPOINTS_STORE, TILES_STORE, TILE_MANIFESTS_STORE] as const;
+    const stores: Record<string, { keys: number }> = {};
+    for (const name of storeNames) {
+      try {
+        stores[name] = { keys: await this.getStoreKeyCount(name as any) };
+      } catch {
+        stores[name] = { keys: 0 };
+      }
+    }
+
+    return {
+      ...base,
+      usageDetails,
+      persistent,
+      stores,
+    };
   }
 
   /**
@@ -377,13 +508,25 @@ class StorageService {
    */
   async getAllAssetIds(): Promise<string[]> {
     const db = await this.getDB();
-    return await db.getAllKeys(FILES_STORE);
+    const idbKeys = await db.getAllKeys(FILES_STORE);
+    // Merge in OPFS file IDs (deduped)
+    if (this._opfs?.isReady) {
+      const opfsIds = await this._opfs.listFiles();
+      const all = new Set([...idbKeys, ...opfsIds]);
+      return [...all];
+    }
+    return idbKeys;
   }
 
   /**
    * Delete a specific asset
    */
   async deleteAsset(id: string): Promise<void> {
+    // Delete from OPFS (no-op if not there)
+    if (this._opfs?.isReady) {
+      await this._opfs.deleteFile(id);
+    }
+    // Delete from IndexedDB
     const db = await this.getDB();
     await db.delete(FILES_STORE, id);
     // Also delete derivatives

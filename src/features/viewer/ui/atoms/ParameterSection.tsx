@@ -15,8 +15,6 @@
 
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface ParameterSectionProps {
   /** Section title */
   title: string;
@@ -30,8 +28,6 @@ export interface ParameterSectionProps {
   control?: React.ReactNode;
   /** Section content */
   children: React.ReactNode;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -66,7 +62,6 @@ export const ParameterSection: React.FC<ParameterSectionProps> = ({
   description,
   control,
   children,
-  cx: _cx,
   fieldMode = false,
 }) => {
   const colors = colorClasses[color];

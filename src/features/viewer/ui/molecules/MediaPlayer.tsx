@@ -275,7 +275,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
           </div>
         )}
 
-        {error && <MediaErrorOverlay message={error} onRetry={clearError} fieldMode={fieldMode} cx={cx} />}
+        {error && <MediaErrorOverlay message={error} onRetry={clearError} fieldMode={fieldMode} />}
 
         {/* Media element - fills available space */}
         <div className="flex-1 flex items-center justify-center relative">
@@ -299,7 +299,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             </div>
           )}
 
-          {state.isBuffering && <MediaLoadingOverlay fieldMode={fieldMode} cx={cx} />}
+          {state.isBuffering && <MediaLoadingOverlay fieldMode={fieldMode} />}
         </div>
 
         {/* Current Sync Point Overlay (Subtitles) */}
@@ -395,14 +395,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
           {/* Control buttons */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <MediaControlGroup gap="sm" fieldMode={fieldMode} cx={cx}>
-              <PlayPauseButton isPlaying={state.isPlaying} onToggle={togglePlayPause} fieldMode={fieldMode} cx={cx} />
+            <MediaControlGroup gap="sm" fieldMode={fieldMode}>
+              <PlayPauseButton isPlaying={state.isPlaying} onToggle={togglePlayPause} fieldMode={fieldMode} />
               <IconButton icon="replay_10" ariaLabel="Rewind 10s" onClick={() => seekRelative(-10)} variant="ghost" size="sm" className="!text-white hover:!text-blue-500" fieldMode={fieldMode} />
               <IconButton icon="forward_10" ariaLabel="Forward 10s" onClick={() => seekRelative(10)} variant="ghost" size="sm" className="!text-white hover:!text-blue-500" fieldMode={fieldMode} />
-              <TimeDisplay currentTime={state.currentTime} duration={state.duration} fieldMode={fieldMode} cx={cx} />
+              <TimeDisplay currentTime={state.currentTime} duration={state.duration} fieldMode={fieldMode} />
             </MediaControlGroup>
 
-            <MediaControlGroup gap="sm" fieldMode={fieldMode} cx={cx}>
+            <MediaControlGroup gap="sm" fieldMode={fieldMode}>
               {hasAccompanyingContent && showAccompanying && (
                 <IconButton
                   icon="subtitles"
@@ -415,8 +415,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 />
               )}
               <PlaybackRateSelect value={state.playbackRate} onChange={setPlaybackRate} fieldMode={fieldMode} cx={cx} />
-              <VolumeControl volume={state.volume} isMuted={state.isMuted} onVolumeChange={setVolume} onMuteToggle={toggleMute} sliderWidth="4rem" fieldMode={fieldMode} cx={cx} />
-              <FullscreenButton containerRef={containerRef} fieldMode={fieldMode} cx={cx} />
+              <VolumeControl volume={state.volume} isMuted={state.isMuted} onVolumeChange={setVolume} onMuteToggle={toggleMute} sliderWidth="4rem" fieldMode={fieldMode} />
+              <FullscreenButton containerRef={containerRef} fieldMode={fieldMode} />
             </MediaControlGroup>
           </div>
         </div>

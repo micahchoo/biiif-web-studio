@@ -509,10 +509,9 @@ export function reduce(state: NormalizedState, action: Action): ActionResult {
         const allChanges: PropertyChange[] = [];
 
         for (const update of action.updates) {
+          const entity = getEntity(state, update.id);
           currentState = updateEntity(currentState, update.id, update.changes);
           for (const [prop, value] of Object.entries(update.changes)) {
-            const entity = getEntity(state, update.id);
-            // Dynamic property access requires casting through unknown
             const oldValue = entity ? (entity as unknown as Record<string, unknown>)[prop] : undefined;
             allChanges.push({
               property: prop,

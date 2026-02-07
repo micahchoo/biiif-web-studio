@@ -18,6 +18,7 @@
 
 import React, { useState } from 'react';
 import { Button, Icon } from '../atoms';
+import { SelectionThumbnailStrip } from './SelectionThumbnailStrip';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFCanvas } from '@/src/shared/types';
 
@@ -166,10 +167,6 @@ export const FloatingSelectionToolbar: React.FC<FloatingSelectionToolbarProps> =
     'near-selection': 'sticky bottom-4 mx-auto',
   };
 
-  // Get thumbnails for first 5 selected items
-  const visibleThumbnails = selectedItems.slice(0, 5);
-  const remainingCount = Math.max(0, count - 5);
-
   return (
     <div
       className={`
@@ -189,70 +186,14 @@ export const FloatingSelectionToolbar: React.FC<FloatingSelectionToolbarProps> =
         `}
       >
         {/* Thumbnail strip */}
-        {showThumbnails && visibleThumbnails.length > 0 && (
-          <div
-            className={`
-              flex items-center gap-2 p-3 border-b
-              ${fieldMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100 bg-slate-50'}
-            `}
-          >
-            <div className="flex items-center gap-1">
-              {visibleThumbnails.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className={`
-                    w-10 h-10 rounded-lg overflow-hidden border-2
-                    ${fieldMode ? 'border-slate-600' : 'border-white shadow-sm'}
-                    ${idx === 0 ? 'ring-2 ring-blue-500' : ''}
-                  `}
-                  title={item.label?.en?.[0] || item.id}
-                >
-                  {item.thumbnail?.[0]?.id ? (
-                    <img
-                      src={item.thumbnail[0].id}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className={`w-full h-full flex items-center justify-center ${fieldMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                      <Icon name="image" className="text-xs opacity-50" />
-                    </div>
-                  )}
-                </div>
-              ))}
-              {remainingCount > 0 && (
-                <div
-                  className={`
-                    w-10 h-10 rounded-lg flex items-center justify-center text-xs font-medium
-                    ${fieldMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600'}
-                  `}
-                >
-                  +{remainingCount}
-                </div>
-              )}
-            </div>
-
-            <div className={`h-8 w-px mx-2 ${fieldMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-            {/* Selection count */}
-            <div className="flex items-center gap-2">
-              <Icon name="check_circle" className={`text-sm ${fieldMode ? 'text-green-400' : 'text-green-600'}`} />
-              <span className={`font-medium ${fieldMode ? 'text-white' : 'text-slate-900'}`}>
-                {count} {itemLabel}
-              </span>
-            </div>
-
-            <Button variant="ghost" size="bare"
-              onClick={() => setShowThumbnails(false)}
-              className={`
-                ml-auto p-1 rounded hover:bg-black/10 transition-colors
-                ${fieldMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}
-              `}
-              aria-label="Hide thumbnails"
-            >
-              <Icon name="expand_less" className="text-sm" />
-            </Button>
-          </div>
+        {showThumbnails && selectedItems.length > 0 && (
+          <SelectionThumbnailStrip
+            selectedItems={selectedItems}
+            count={count}
+            itemLabel={itemLabel}
+            onHide={() => setShowThumbnails(false)}
+            fieldMode={fieldMode}
+          />
         )}
 
         {/* Collapsed thumbnail toggle */}

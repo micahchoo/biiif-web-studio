@@ -246,6 +246,9 @@ const MainApp: React.FC = () => {
       storageFullDialog.open();
     });
 
+    // Request persistent storage to prevent eviction under storage pressure
+    storage.requestPersistentStorage().catch(() => {});
+
     storage.loadProject().then(async (proj) => {
       if (proj) loadRoot(proj);
 

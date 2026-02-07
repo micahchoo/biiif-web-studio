@@ -5,15 +5,12 @@
  * All functions return a new state object without mutating the original.
  */
 
-import { produce } from 'immer';
 import type { EntityType, IIIFItem, NormalizedState } from '@/src/shared/types';
-import { USE_IMMER_CLONING } from '@/src/shared/constants';
 import { getDescendants } from './queries';
 
 /**
  * Update an entity by ID - O(1) time, O(1) memory
  * Returns new state without full tree clone
- * Uses Immer for immutable updates when USE_IMMER_CLONING is enabled
  */
 export function updateEntity(
   state: NormalizedState,
@@ -51,35 +48,17 @@ export function updateEntity(
     console.warn('Direct ID update through updateEntity is discouraged. Use renameEntity logic.');
   }
 
-  if (USE_IMMER_CLONING) {
-    // Use Immer for efficient immutable updates
-    return produce(state, draft => {
-      (draft.entities[actualType] as Record<string, IIIFItem>)[id] = {
-        ...existing,
-        ...updates
-      } as IIIFItem;
-    });
-  }
-
   // Create new entity with updates
   const updated = { ...existing, ...updates };
 
   // Return new state with only the affected store changed
-  return {
-    ...state,
-    entities: {
-      ...state.entities,
-      [actualType]: {
-        ...store,
-        [id]: updated
-      }
-    }
-  };
+  const newEntities = { ...state.entities };
+  (newEntities as Record<string, Record<string, IIIFItem>>)[actualType] = { ...store, [id]: updated };
+  return { ...state, entities: newEntities };
 }
 
 /**
  * Add a new entity
- * Uses Immer for immutable updates when USE_IMMER_CLONING is enabled
  */
 export function addEntity(
   state: NormalizedState,
@@ -88,18 +67,6 @@ export function addEntity(
 ): NormalizedState {
   const type = entity.type as EntityType;
   const { id } = entity;
-
-  if (USE_IMMER_CLONING) {
-    return produce(state, draft => {
-      (draft.entities[type] as Record<string, IIIFItem>)[id] = entity;
-      draft.typeIndex[id] = type;
-      if (!draft.references[parentId]) {
-        draft.references[parentId] = [];
-      }
-      draft.references[parentId].push(id);
-      draft.reverseRefs[id] = parentId;
-    });
-  }
 
   const store = state.entities[type] as Record<string, IIIFItem>;
 
@@ -141,7 +108,6 @@ export function addEntity(
 
 /**
  * Remove an entity and all its descendants
- * Uses Immer for immutable updates when USE_IMMER_CLONING is enabled
  *
  * @param state - Current normalized state
  * @param id - Entity ID to remove
@@ -166,72 +132,6 @@ export function removeEntity(
     // Import dynamically to avoid circular dependency
     const { moveEntityToTrash } = require('./trash');
     return moveEntityToTrash(state, id);
-  }
-
-  if (USE_IMMER_CLONING) {
-    return produce(state, draft => {
-      // Remove entities
-      for (const entityType of Object.keys(draft.entities) as EntityType[]) {
-        const store = draft.entities[entityType];
-        for (const eid of Object.keys(store)) {
-          if (toRemove.has(eid)) {
-            delete store[eid];
-          }
-        }
-      }
-
-      // Remove from type index
-      for (const eid of Object.keys(draft.typeIndex)) {
-        if (toRemove.has(eid)) {
-          delete draft.typeIndex[eid];
-        }
-      }
-
-      // Remove from references
-      for (const pid of Object.keys(draft.references)) {
-        if (toRemove.has(pid)) {
-          delete draft.references[pid];
-        } else {
-          draft.references[pid] = draft.references[pid].filter(cid => !toRemove.has(cid));
-        }
-      }
-
-      // Remove from reverse refs
-      for (const cid of Object.keys(draft.reverseRefs)) {
-        if (toRemove.has(cid)) {
-          delete draft.reverseRefs[cid];
-        }
-      }
-
-      // Remove from collection membership
-      for (const collId of Object.keys(draft.collectionMembers)) {
-        if (toRemove.has(collId)) {
-          delete draft.collectionMembers[collId];
-        } else {
-          draft.collectionMembers[collId] = draft.collectionMembers[collId].filter(mid => !toRemove.has(mid));
-        }
-      }
-
-      for (const resId of Object.keys(draft.memberOfCollections)) {
-        if (toRemove.has(resId)) {
-          delete draft.memberOfCollections[resId];
-        } else {
-          draft.memberOfCollections[resId] = draft.memberOfCollections[resId].filter(cid => !toRemove.has(cid));
-        }
-      }
-
-      // Also remove from trashedEntities if present
-      for (const eid of toRemove) {
-        if (draft.trashedEntities[eid]) {
-          delete draft.trashedEntities[eid];
-        }
-      }
-
-      // Update root if needed
-      if (toRemove.has(draft.rootId!)) {
-        draft.rootId = null;
-      }
-    });
   }
 
   // Create new stores with entities removed
@@ -260,35 +160,53 @@ export function removeEntity(
     }
   }
 
-  // Remove from references
-  const newReferences: Record<string, string[]> = {};
-  for (const [pid, children] of Object.entries(state.references)) {
-    if (!toRemove.has(pid)) {
-      newReferences[pid] = children.filter(cid => !toRemove.has(cid));
-    }
+  // Remove from references — only filter affected parents, not all entries
+  const newReferences = { ...state.references };
+  const affectedParents = new Set<string>();
+  for (const rid of toRemove) {
+    delete newReferences[rid];
+    const parent = state.reverseRefs[rid];
+    if (parent && !toRemove.has(parent)) affectedParents.add(parent);
+  }
+  for (const pid of affectedParents) {
+    newReferences[pid] = state.references[pid].filter(cid => !toRemove.has(cid));
   }
 
   // Remove from reverse refs
-  const newReverseRefs: Record<string, string> = {};
-  for (const [cid, pid] of Object.entries(state.reverseRefs)) {
-    if (!toRemove.has(cid)) {
-      newReverseRefs[cid] = pid;
-    }
+  const newReverseRefs = { ...state.reverseRefs };
+  for (const rid of toRemove) {
+    delete newReverseRefs[rid];
   }
 
-  // Remove from collection membership (non-hierarchical references)
-  const newCollectionMembers: Record<string, string[]> = {};
-  for (const [collId, members] of Object.entries(state.collectionMembers)) {
-    if (!toRemove.has(collId)) {
-      newCollectionMembers[collId] = members.filter(mid => !toRemove.has(mid));
+  // Remove from collection membership — only filter affected entries
+  const newCollectionMembers = { ...state.collectionMembers };
+  const affectedCollections = new Set<string>();
+  for (const rid of toRemove) {
+    if (newCollectionMembers[rid]) delete newCollectionMembers[rid];
+    const collections = state.memberOfCollections[rid];
+    if (collections) {
+      for (const collId of collections) {
+        if (!toRemove.has(collId)) affectedCollections.add(collId);
+      }
     }
   }
+  for (const collId of affectedCollections) {
+    newCollectionMembers[collId] = state.collectionMembers[collId].filter(mid => !toRemove.has(mid));
+  }
 
-  const newMemberOfCollections: Record<string, string[]> = {};
-  for (const [resId, collections] of Object.entries(state.memberOfCollections)) {
-    if (!toRemove.has(resId)) {
-      newMemberOfCollections[resId] = collections.filter(cid => !toRemove.has(cid));
+  const newMemberOfCollections = { ...state.memberOfCollections };
+  const affectedMembers = new Set<string>();
+  for (const rid of toRemove) {
+    if (newMemberOfCollections[rid]) delete newMemberOfCollections[rid];
+    const members = state.collectionMembers[rid];
+    if (members) {
+      for (const mid of members) {
+        if (!toRemove.has(mid)) affectedMembers.add(mid);
+      }
     }
+  }
+  for (const mid of affectedMembers) {
+    newMemberOfCollections[mid] = state.memberOfCollections[mid].filter(cid => !toRemove.has(cid));
   }
 
   // Remove from trashedEntities if present

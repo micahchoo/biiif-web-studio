@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-02-06T23:13:11.058Z",
-  "totalFiles": 379,
+  "generatedAt": "2026-02-07T05:12:16.172Z",
+  "totalFiles": 380,
   "files": {
     "src/app/App.tsx": {
       "filePath": "src/app/App.tsx",
@@ -8,6 +8,17 @@
       "directory": "src/app",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -143,9 +154,9 @@
             "QUICK_REF_ARCHIVE",
             "QUICK_REF_BOARD",
             "QUICK_REF_METADATA",
+            "QUICK_REF_STAGING",
             "QUICK_REF_STRUCTURE",
-            "QUICK_REF_VIEWER",
-            "QUICK_REF_STAGING"
+            "QUICK_REF_VIEWER"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -466,8 +477,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 33414,
-      "lines": 776
+      "size": 33539,
+      "lines": 777
     },
     "src/app/providers/AppModeProvider.tsx": {
       "filePath": "src/app/providers/AppModeProvider.tsx",
@@ -1352,12 +1363,12 @@
           "source": "@/src/shared/types",
           "specifiers": [
             "AppMode",
-            "IIIFItem",
-            "IIIFCanvas",
-            "IIIFManifest",
-            "IIIFCollection",
             "AppSettings",
-            "IIIFAnnotation"
+            "IIIFAnnotation",
+            "IIIFCanvas",
+            "IIIFCollection",
+            "IIIFItem",
+            "IIIFManifest"
           ],
           "isTypeImport": true,
           "isRelative": false,
@@ -1390,7 +1401,53 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/features/viewer/model/annotation",
+          "specifiers": [
+            "createTimeAnnotation"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/entities/manifest/model/hooks/useIIIFEntity",
+          "specifiers": [
+            "useVaultDispatch",
+            "useVaultState"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/entities/manifest/model/actions",
+          "specifiers": [
+            "actions"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/shared/services/storage",
+          "specifiers": [
+            "storage"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -1423,8 +1480,8 @@
         {
           "source": "@/src/features/metadata-edit",
           "specifiers": [
-            "MetadataView",
-            "Inspector"
+            "Inspector",
+            "MetadataView"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -1520,8 +1577,8 @@
       "dependents": [
         "src/app/routes/index.ts"
       ],
-      "size": 23967,
-      "lines": 638
+      "size": 28424,
+      "lines": 741
     },
     "src/app/routes/index.ts": {
       "filePath": "src/app/routes/index.ts",
@@ -3021,10 +3078,21 @@
         {
           "source": "@/utils",
           "specifiers": [
-            "validateBehaviors",
-            "findBehaviorConflicts",
             "isValidNavDate",
             "isValidViewingDirection"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/utils/iiifBehaviors",
+          "specifiers": [
+            "validateBehaviors",
+            "findBehaviorConflicts",
+            ""
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -3089,8 +3157,8 @@
       "dependents": [
         "src/entities/manifest/model/hooks/useIIIFEntity.tsx"
       ],
-      "size": 38422,
-      "lines": 1200
+      "size": 40203,
+      "lines": 1245
     },
     "src/entities/manifest/model/builders/autoStructure.ts": {
       "filePath": "src/entities/manifest/model/builders/autoStructure.ts",
@@ -3201,11 +3269,14 @@
           "source": "@/src/shared/constants",
           "specifiers": [
             "DEFAULT_INGEST_PREFS",
+            "FEATURE_FLAGS",
             "getDerivativePreset",
             "IIIF_CONFIG",
             "IIIF_SPEC",
             "IMAGE_QUALITY",
-            "MIME_TYPE_MAP"
+            "MIME_TYPE_MAP",
+            "USE_ENHANCED_PROGRESS",
+            "USE_WORKER_INGEST"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -3285,19 +3356,6 @@
             "isTimeBasedMimeType",
             "suggestBehaviors",
             "validateResource"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/constants",
-          "specifiers": [
-            "FEATURE_FLAGS",
-            "USE_ENHANCED_PROGRESS",
-            "USE_WORKER_INGEST"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -3404,8 +3462,8 @@
         "src/entities/manifest/model/ingest/ingestWorkerPool.ts"
       ],
       "dependents": [],
-      "size": 57724,
-      "lines": 1704
+      "size": 58256,
+      "lines": 1715
     },
     "src/entities/manifest/model/hooks/useIIIFEntity.tsx": {
       "filePath": "src/entities/manifest/model/hooks/useIIIFEntity.tsx",
@@ -3568,8 +3626,8 @@
       "dependents": [
         "src/entities/manifest/model/hooks/useVaultSelectors.ts"
       ],
-      "size": 20271,
-      "lines": 724
+      "size": 20625,
+      "lines": 728
     },
     "src/entities/manifest/model/hooks/useVaultSelectors.ts": {
       "filePath": "src/entities/manifest/model/hooks/useVaultSelectors.ts",
@@ -4236,8 +4294,8 @@
           "specifiers": [
             "createLanguageMap",
             "findNodeById",
-            "generateValidUri",
             "generateUUID",
+            "generateValidUri",
             "normalizeUri"
           ],
           "isTypeImport": false,
@@ -4535,17 +4593,7 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
-            "IIIFManifest"
-          ],
-          "isTypeImport": true,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/types",
-          "specifiers": [
+            "IIIFManifest",
             "NormalizedState"
           ],
           "isTypeImport": true,
@@ -4592,8 +4640,8 @@
         "src/entities/manifest/model/vault/index.ts",
         "src/entities/manifest/model/vault/vault.ts"
       ],
-      "size": 3544,
-      "lines": 117
+      "size": 3502,
+      "lines": 116
     },
     "src/entities/manifest/model/vault/denormalization.ts": {
       "filePath": "src/entities/manifest/model/vault/denormalization.ts",
@@ -4609,17 +4657,7 @@
             "IIIFCollection",
             "IIIFItem",
             "IIIFManifest",
-            "IIIFRange"
-          ],
-          "isTypeImport": true,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/types",
-          "specifiers": [
+            "IIIFRange",
             "NormalizedState"
           ],
           "isTypeImport": true,
@@ -4694,8 +4732,8 @@
         "src/entities/manifest/model/vault/index.ts",
         "src/entities/manifest/model/vault/vault.ts"
       ],
-      "size": 4358,
-      "lines": 155
+      "size": 5553,
+      "lines": 193
     },
     "src/entities/manifest/model/vault/extensions.ts": {
       "filePath": "src/entities/manifest/model/vault/extensions.ts",
@@ -5350,23 +5388,13 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
+            "EntityType",
             "IIIFAnnotationPage",
             "IIIFCanvas",
             "IIIFCollection",
             "IIIFItem",
             "IIIFManifest",
-            "IIIFRange"
-          ],
-          "isTypeImport": true,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/types",
-          "specifiers": [
-            "EntityType",
+            "IIIFRange",
             "NormalizedState"
           ],
           "isTypeImport": true,
@@ -5430,8 +5458,8 @@
         "src/entities/manifest/model/vault/index.ts",
         "src/entities/manifest/model/vault/vault.ts"
       ],
-      "size": 8017,
-      "lines": 319
+      "size": 7979,
+      "lines": 320
     },
     "src/entities/manifest/model/vault/queries.ts": {
       "filePath": "src/entities/manifest/model/vault/queries.ts",
@@ -5442,18 +5470,8 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
-            "IIIFItem"
-          ],
-          "isTypeImport": true,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/types",
-          "specifiers": [
             "EntityType",
+            "IIIFItem",
             "NormalizedState"
           ],
           "isTypeImport": true,
@@ -5533,8 +5551,8 @@
         "src/entities/manifest/model/vault/updates.ts",
         "src/entities/manifest/model/vault/vault.ts"
       ],
-      "size": 2820,
-      "lines": 122
+      "size": 2778,
+      "lines": 121
     },
     "src/entities/manifest/model/vault/trash.ts": {
       "filePath": "src/entities/manifest/model/vault/trash.ts",
@@ -5556,7 +5574,11 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
-            "IIIFItem"
+            "EmptyTrashResult",
+            "EntityType",
+            "IIIFItem",
+            "NormalizedState",
+            "TrashedEntity"
           ],
           "isTypeImport": true,
           "isRelative": false,
@@ -5576,24 +5598,10 @@
           "isInternalAlias": true
         },
         {
-          "source": "@/src/shared/types",
-          "specifiers": [
-            "EntityType",
-            "NormalizedState",
-            "TrashedEntity",
-            "EmptyTrashResult"
-          ],
-          "isTypeImport": true,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
           "source": "./queries",
           "specifiers": [
-            "getEntity",
-            "getDescendants"
+            "getDescendants",
+            "getEntity"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -5638,8 +5646,8 @@
         "src/entities/manifest/model/vault/index.ts",
         "src/entities/manifest/model/vault/vault.ts"
       ],
-      "size": 10614,
-      "lines": 360
+      "size": 10572,
+      "lines": 359
     },
     "src/entities/manifest/model/vault/types.ts": {
       "filePath": "src/entities/manifest/model/vault/types.ts",
@@ -5730,7 +5738,9 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
-            "IIIFItem"
+            "EntityType",
+            "IIIFItem",
+            "NormalizedState"
           ],
           "isTypeImport": true,
           "isRelative": false,
@@ -5744,18 +5754,6 @@
             "USE_IMMER_CLONING"
           ],
           "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/types",
-          "specifiers": [
-            "EntityType",
-            "NormalizedState"
-          ],
-          "isTypeImport": true,
           "isRelative": false,
           "isAbsolute": false,
           "isExternal": false,
@@ -5798,8 +5796,8 @@
         "src/entities/manifest/model/vault/trash.ts",
         "src/entities/manifest/model/vault/vault.ts"
       ],
-      "size": 8893,
-      "lines": 313
+      "size": 8851,
+      "lines": 312
     },
     "src/entities/manifest/model/vault/vault.ts": {
       "filePath": "src/entities/manifest/model/vault/vault.ts",
@@ -5811,17 +5809,7 @@
           "source": "@/src/shared/types",
           "specifiers": [
             "IIIFItem",
-            "IIIFManifest"
-          ],
-          "isTypeImport": true,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/types",
-          "specifiers": [
+            "IIIFManifest",
             "NormalizedState",
             "VaultSnapshot"
           ],
@@ -5834,8 +5822,8 @@
         {
           "source": "./normalization",
           "specifiers": [
-            "normalize",
-            "createEmptyState"
+            "createEmptyState",
+            "normalize"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -5857,10 +5845,10 @@
         {
           "source": "./queries",
           "specifiers": [
-            "getEntity",
-            "getParentId",
             "getChildIds",
-            "getEntitiesByType"
+            "getEntitiesByType",
+            "getEntity",
+            "getParentId"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -5871,11 +5859,11 @@
         {
           "source": "./collections",
           "specifiers": [
-            "getCollectionsContaining",
-            "getCollectionMembers",
-            "isOrphanManifest",
-            "getOrphanManifests",
             "addToCollection",
+            "getCollectionMembers",
+            "getCollectionsContaining",
+            "getOrphanManifests",
+            "isOrphanManifest",
             "removeFromCollection"
           ],
           "isTypeImport": false,
@@ -5887,9 +5875,9 @@
         {
           "source": "./updates",
           "specifiers": [
-            "updateEntity",
             "addEntity",
-            "removeEntity"
+            "removeEntity",
+            "updateEntity"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -5900,9 +5888,9 @@
         {
           "source": "./trash",
           "specifiers": [
+            "emptyTrash",
             "moveEntityToTrash",
-            "restoreEntityFromTrash",
-            "emptyTrash"
+            "restoreEntityFromTrash"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -5964,8 +5952,8 @@
       "dependents": [
         "src/entities/manifest/model/vault/index.ts"
       ],
-      "size": 7409,
-      "lines": 283
+      "size": 7367,
+      "lines": 282
     },
     "src/entities/manifest/model/vault.ts": {
       "filePath": "src/entities/manifest/model/vault.ts",
@@ -6222,8 +6210,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 50524,
-      "lines": 1786
+      "size": 51793,
+      "lines": 1825
     },
     "src/entities/manifest/model.ts": {
       "filePath": "src/entities/manifest/model.ts",
@@ -6861,7 +6849,7 @@
         "src/features/archive/index.ts",
         "src/features/archive/ui/organisms/ArchiveView.tsx"
       ],
-      "size": 16949,
+      "size": 17089,
       "lines": 417
     },
     "src/features/archive/ui/organisms/ArchiveHeader.tsx": {
@@ -6961,7 +6949,7 @@
         "src/features/archive/index.ts",
         "src/features/archive/ui/organisms/ArchiveView.tsx"
       ],
-      "size": 11925,
+      "size": 11982,
       "lines": 330
     },
     "src/features/archive/ui/organisms/ArchiveList.tsx": {
@@ -6985,6 +6973,7 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
           ],
           "isTypeImport": false,
@@ -7037,7 +7026,7 @@
       "dependents": [
         "src/features/archive/ui/organisms/ArchiveView.tsx"
       ],
-      "size": 13967,
+      "size": 14001,
       "lines": 396
     },
     "src/features/archive/ui/organisms/ArchiveView.tsx": {
@@ -7123,11 +7112,11 @@
         {
           "source": "@/src/shared/ui/molecules",
           "specifiers": [
-            "ContextMenu",
-            "type ContextMenuSection",
-            "FloatingSelectionToolbar",
-            "BreadcrumbNav",
             "type BreadcrumbItem",
+            "BreadcrumbNav",
+            "ContextMenu",
+            "type ContextMenuSectionType",
+            "FloatingSelectionToolbar",
             "GuidedEmptyState",
             "PipelineBanner"
           ],
@@ -7237,8 +7226,8 @@
         "src/features/archive/index.ts",
         "src/features/archive/index.ts"
       ],
-      "size": 24623,
-      "lines": 673
+      "size": 24731,
+      "lines": 674
     },
     "src/features/board-design/hooks/useCanvasDrag.ts": {
       "filePath": "src/features/board-design/hooks/useCanvasDrag.ts",
@@ -7622,6 +7611,17 @@
           "isInternalAlias": false
         },
         {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "../../model",
           "specifiers": [
             "BoardItem"
@@ -7660,8 +7660,8 @@
       "dependents": [
         "src/features/board-design/ui/molecules/BoardNodeLayer.tsx"
       ],
-      "size": 3971,
-      "lines": 130
+      "size": 3972,
+      "lines": 125
     },
     "src/features/board-design/ui/atoms/CanvasGrid.tsx": {
       "filePath": "src/features/board-design/ui/atoms/CanvasGrid.tsx",
@@ -7679,6 +7679,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         }
       ],
       "exports": [
@@ -7697,8 +7708,8 @@
       "dependents": [
         "src/features/board-design/ui/organisms/BoardCanvas.tsx"
       ],
-      "size": 1232,
-      "lines": 57
+      "size": 1293,
+      "lines": 55
     },
     "src/features/board-design/ui/atoms/CanvasItem.tsx": {
       "filePath": "src/features/board-design/ui/atoms/CanvasItem.tsx",
@@ -7753,6 +7764,17 @@
           "isInternalAlias": false
         },
         {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "../../model",
           "specifiers": [
             "ConnectionType"
@@ -7780,8 +7802,8 @@
       "dependents": [
         "src/features/board-design/ui/molecules/ConnectionLayer.tsx"
       ],
-      "size": 2256,
-      "lines": 101
+      "size": 2295,
+      "lines": 98
     },
     "src/features/board-design/ui/atoms/ConnectionTypeBadge.tsx": {
       "filePath": "src/features/board-design/ui/atoms/ConnectionTypeBadge.tsx",
@@ -8086,6 +8108,17 @@
           "isInternalAlias": false
         },
         {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "../../model",
           "specifiers": [
             "BoardItem"
@@ -8126,8 +8159,8 @@
       "dependents": [
         "src/features/board-design/ui/organisms/BoardCanvas.tsx"
       ],
-      "size": 1831,
-      "lines": 74
+      "size": 1819,
+      "lines": 69
     },
     "src/features/board-design/ui/molecules/ConnectionLayer.tsx": {
       "filePath": "src/features/board-design/ui/molecules/ConnectionLayer.tsx",
@@ -8145,6 +8178,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         },
         {
           "source": "../../model",
@@ -8189,8 +8233,8 @@
       "dependents": [
         "src/features/board-design/ui/organisms/BoardCanvas.tsx"
       ],
-      "size": 2891,
-      "lines": 102
+      "size": 2930,
+      "lines": 99
     },
     "src/features/board-design/ui/organisms/BoardCanvas.tsx": {
       "filePath": "src/features/board-design/ui/organisms/BoardCanvas.tsx",
@@ -8202,6 +8246,17 @@
           "source": "@/src/shared/types",
           "specifiers": [
             "IIIFItem"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
           ],
           "isTypeImport": true,
           "isRelative": false,
@@ -8320,8 +8375,8 @@
         "src/features/board-design/index.ts",
         "src/features/board-design/ui/organisms/BoardView.tsx"
       ],
-      "size": 5710,
-      "lines": 201
+      "size": 5608,
+      "lines": 192
     },
     "src/features/board-design/ui/organisms/BoardHeader.tsx": {
       "filePath": "src/features/board-design/ui/organisms/BoardHeader.tsx",
@@ -8343,6 +8398,7 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
           ],
           "isTypeImport": false,
@@ -8424,7 +8480,7 @@
         "src/features/board-design/index.ts",
         "src/features/board-design/ui/organisms/BoardView.tsx"
       ],
-      "size": 9092,
+      "size": 9184,
       "lines": 276
     },
     "src/features/board-design/ui/organisms/BoardOnboarding.tsx": {
@@ -8433,6 +8489,17 @@
       "directory": "src/features/board-design/ui/organisms",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -8471,8 +8538,8 @@
       "dependents": [
         "src/features/board-design/ui/organisms/BoardView.tsx"
       ],
-      "size": 12202,
-      "lines": 283
+      "size": 12418,
+      "lines": 284
     },
     "src/features/board-design/ui/organisms/BoardToolbar.tsx": {
       "filePath": "src/features/board-design/ui/organisms/BoardToolbar.tsx",
@@ -8685,7 +8752,7 @@
         "src/features/board-design/index.ts",
         "src/features/board-design/index.ts"
       ],
-      "size": 22520,
+      "size": 22547,
       "lines": 720
     },
     "src/features/dependency-explorer/index.ts": {
@@ -8809,10 +8876,10 @@
         {
           "source": "react",
           "specifiers": [
-            "useState",
+            "useCallback",
             "useEffect",
             "useMemo",
-            "useCallback"
+            "useState"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -8926,11 +8993,11 @@
           "source": "./CopyableSection",
           "specifiers": [
             "CopyableSection",
-            "formatLayersAsMarkdown",
             "formatCrossLayerDepsAsMarkdown",
             "formatHealthMetricsAsMarkdown",
+            "formatHeavyFilesAsMarkdown",
             "formatHotFilesAsMarkdown",
-            "formatHeavyFilesAsMarkdown"
+            "formatLayersAsMarkdown"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -9100,6 +9167,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "../model/useDependencyData",
           "specifiers": [
             "useDependencyData"
@@ -9179,9 +9257,9 @@
         {
           "source": "../types",
           "specifiers": [
-            "ViewMode",
+            "FileAnalysis",
             "FilterType",
-            "FileAnalysis"
+            "ViewMode"
           ],
           "isTypeImport": true,
           "isRelative": true,
@@ -9215,8 +9293,8 @@
       "dependents": [
         "src/features/dependency-explorer/index.ts"
       ],
-      "size": 17680,
-      "lines": 410
+      "size": 17840,
+      "lines": 411
     },
     "src/features/dependency-explorer/ui/DependencyGraphView.tsx": {
       "filePath": "src/features/dependency-explorer/ui/DependencyGraphView.tsx",
@@ -9224,6 +9302,17 @@
       "directory": "src/features/dependency-explorer/ui",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "../types",
           "specifiers": [
@@ -9255,8 +9344,8 @@
         "src/features/dependency-explorer/index.ts",
         "src/features/dependency-explorer/ui/DependencyExplorer.tsx"
       ],
-      "size": 5726,
-      "lines": 171
+      "size": 5802,
+      "lines": 172
     },
     "src/features/dependency-explorer/ui/FileDetailPanel.tsx": {
       "filePath": "src/features/dependency-explorer/ui/FileDetailPanel.tsx",
@@ -9274,6 +9363,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         },
         {
           "source": "../types",
@@ -9305,8 +9405,8 @@
       "dependents": [
         "src/features/dependency-explorer/ui/DependencyExplorer.tsx"
       ],
-      "size": 9701,
-      "lines": 242
+      "size": 9833,
+      "lines": 243
     },
     "src/features/dependency-explorer/ui/OrphansPanel.tsx": {
       "filePath": "src/features/dependency-explorer/ui/OrphansPanel.tsx",
@@ -9314,6 +9414,17 @@
       "directory": "src/features/dependency-explorer/ui",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "../types",
           "specifiers": [
@@ -9357,8 +9468,8 @@
       "dependents": [
         "src/features/dependency-explorer/ui/DependencyExplorer.tsx"
       ],
-      "size": 4224,
-      "lines": 107
+      "size": 4308,
+      "lines": 109
     },
     "src/features/dependency-explorer/ui/StatsPanel.tsx": {
       "filePath": "src/features/dependency-explorer/ui/StatsPanel.tsx",
@@ -9675,7 +9786,7 @@
         "src/features/export/ui/ExportDialog.tsx",
         "src/features/export/ui/ExportDryRun.tsx"
       ],
-      "size": 58613,
+      "size": 58626,
       "lines": 1512
     },
     "src/features/export/model/staticSiteExporter.ts": {
@@ -9803,8 +9914,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 30583,
-      "lines": 1040
+      "size": 30680,
+      "lines": 1042
     },
     "src/features/export/ui/ExportDialog.tsx": {
       "filePath": "src/features/export/ui/ExportDialog.tsx",
@@ -9812,6 +9923,17 @@
       "directory": "src/features/export/ui",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -9945,8 +10067,8 @@
         "src/features/export/ui/ExportDryRun.tsx"
       ],
       "dependents": [],
-      "size": 52166,
-      "lines": 883
+      "size": 52748,
+      "lines": 884
     },
     "src/features/export/ui/ExportDryRun.tsx": {
       "filePath": "src/features/export/ui/ExportDryRun.tsx",
@@ -10094,6 +10216,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/types",
           "specifiers": [
             "getIIIFValue",
@@ -10151,8 +10284,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 6892,
-      "lines": 170
+      "size": 7098,
+      "lines": 171
     },
     "src/features/map/index.ts": {
       "filePath": "src/features/map/index.ts",
@@ -10404,7 +10537,8 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
-            "Icon"
+            "Icon",
+            "ZoomControl"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -10446,17 +10580,6 @@
           "isInternalAlias": true
         },
         {
-          "source": "@/src/features/viewer/ui/atoms",
-          "specifiers": [
-            "ZoomControl"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
           "source": "../../model",
           "specifiers": [
             "formatBounds",
@@ -10488,8 +10611,8 @@
         "src/features/map/index.ts",
         "src/features/map/index.ts"
       ],
-      "size": 10061,
-      "lines": 274
+      "size": 10012,
+      "lines": 273
     },
     "src/features/metadata-edit/index.ts": {
       "filePath": "src/features/metadata-edit/index.ts",
@@ -10853,8 +10976,8 @@
         {
           "source": "react",
           "specifiers": [
-            "useMemo",
-            "useCallback"
+            "useCallback",
+            "useMemo"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -10865,10 +10988,10 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
-            "IIIFItem",
+            "IIIFCanvas",
             "IIIFCollection",
-            "IIIFManifest",
-            "IIIFCanvas"
+            "IIIFItem",
+            "IIIFManifest"
           ],
           "isTypeImport": true,
           "isRelative": false,
@@ -10918,7 +11041,7 @@
         "src/features/metadata-edit/ui/molecules/ValidationTabPanel.tsx",
         "src/features/metadata-edit/ui/organisms/Inspector.tsx"
       ],
-      "size": 9297,
+      "size": 9331,
       "lines": 313
     },
     "src/features/metadata-edit/ui/atoms/AnnotationItem.tsx": {
@@ -11017,8 +11140,8 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
-            "Icon",
-            "Button"
+            "Button",
+            "Icon"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -11588,8 +11711,8 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
-            "Icon",
-            "Button"
+            "Button",
+            "Icon"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -11687,8 +11810,8 @@
         {
           "source": "./PropertySelector",
           "specifiers": [
-            "PropertySelector",
-            "type PropertyOption"
+            "type PropertyOption",
+            "PropertySelector"
           ],
           "isTypeImport": true,
           "isRelative": true,
@@ -11699,8 +11822,8 @@
         {
           "source": "./LanguageTag",
           "specifiers": [
-            "LanguageTag",
-            "type LanguageOption"
+            "type LanguageOption",
+            "LanguageTag"
           ],
           "isTypeImport": true,
           "isRelative": true,
@@ -12140,6 +12263,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/types",
           "specifiers": [
             "getIIIFValue",
@@ -12226,8 +12360,8 @@
       "dependents": [
         "src/features/metadata-edit/ui/organisms/Inspector.tsx"
       ],
-      "size": 15359,
-      "lines": 438
+      "size": 15603,
+      "lines": 439
     },
     "src/features/metadata-edit/ui/atoms/TechnicalProperty.tsx": {
       "filePath": "src/features/metadata-edit/ui/atoms/TechnicalProperty.tsx",
@@ -12287,6 +12421,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
             "Icon"
@@ -12329,8 +12474,8 @@
       "dependents": [
         "src/features/metadata-edit/ui/organisms/Inspector.tsx"
       ],
-      "size": 8880,
-      "lines": 278
+      "size": 8956,
+      "lines": 279
     },
     "src/features/metadata-edit/ui/atoms/ValidationBadge.tsx": {
       "filePath": "src/features/metadata-edit/ui/atoms/ValidationBadge.tsx",
@@ -13191,30 +13336,10 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
-            "Icon"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/ui/primitives/Button",
-          "specifiers": [
-            "Button"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/ui/atoms",
-          "specifiers": [
-            "StepIndicator",
-            "StepConnector"
+            "Button",
+            "Icon",
+            "StepConnector",
+            "StepIndicator"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -13308,8 +13433,8 @@
       "dependents": [
         "src/features/metadata-edit/ui/molecules/CSVImportModal.tsx"
       ],
-      "size": 7233,
-      "lines": 212
+      "size": 7152,
+      "lines": 210
     },
     "src/features/metadata-edit/ui/molecules/GeoEditor.tsx": {
       "filePath": "src/features/metadata-edit/ui/molecules/GeoEditor.tsx",
@@ -13317,6 +13442,17 @@
       "directory": "src/features/metadata-edit/ui/molecules",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/services/navPlaceService",
           "specifiers": [
@@ -13378,8 +13514,8 @@
       "dependents": [
         "src/features/metadata-edit/ui/organisms/Inspector.tsx"
       ],
-      "size": 15082,
-      "lines": 507
+      "size": 15363,
+      "lines": 508
     },
     "src/features/metadata-edit/ui/molecules/LocationPickerModal.tsx": {
       "filePath": "src/features/metadata-edit/ui/molecules/LocationPickerModal.tsx",
@@ -13388,9 +13524,9 @@
       "extension": ".tsx",
       "imports": [
         {
-          "source": "@/src/shared/ui/molecules",
+          "source": "@/src/shared/ui/atoms",
           "specifiers": [
-            "ModalDialog"
+            "Button"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -13399,9 +13535,9 @@
           "isInternalAlias": true
         },
         {
-          "source": "@/ui/primitives/Button",
+          "source": "@/src/shared/ui/molecules",
           "specifiers": [
-            "Button"
+            "ModalDialog"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -13442,7 +13578,7 @@
       "dependents": [
         "src/features/metadata-edit/ui/organisms/MetadataEditorPanel.tsx"
       ],
-      "size": 3428,
+      "size": 3457,
       "lines": 122
     },
     "src/features/metadata-edit/ui/molecules/MappingStep.tsx": {
@@ -13465,8 +13601,8 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
-            "Icon",
-            "Button"
+            "Button",
+            "Icon"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -13477,43 +13613,13 @@
         {
           "source": "../atoms",
           "specifiers": [
+            "AutoMapButton",
             "ColumnSelector",
+            "FilePreview",
+            "MappingRow",
             "type PropertyOption"
           ],
           "isTypeImport": true,
-          "isRelative": true,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": false
-        },
-        {
-          "source": "../atoms",
-          "specifiers": [
-            "MappingRow"
-          ],
-          "isTypeImport": false,
-          "isRelative": true,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": false
-        },
-        {
-          "source": "../atoms",
-          "specifiers": [
-            "FilePreview"
-          ],
-          "isTypeImport": false,
-          "isRelative": true,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": false
-        },
-        {
-          "source": "../atoms",
-          "specifiers": [
-            "AutoMapButton"
-          ],
-          "isTypeImport": false,
           "isRelative": true,
           "isAbsolute": false,
           "isExternal": false,
@@ -13563,8 +13669,8 @@
       "dependents": [
         "src/features/metadata-edit/ui/molecules/CSVImportWizard.tsx"
       ],
-      "size": 5720,
-      "lines": 172
+      "size": 5639,
+      "lines": 169
     },
     "src/features/metadata-edit/ui/molecules/MetadataTabPanel.tsx": {
       "filePath": "src/features/metadata-edit/ui/molecules/MetadataTabPanel.tsx",
@@ -13587,18 +13693,8 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/ui/primitives/Button",
-          "specifiers": [
-            "Button"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -13652,8 +13748,8 @@
       "dependents": [
         "src/features/metadata-edit/ui/organisms/MetadataEditorPanel.tsx"
       ],
-      "size": 19147,
-      "lines": 501
+      "size": 19249,
+      "lines": 500
     },
     "src/features/metadata-edit/ui/molecules/ResultStep.tsx": {
       "filePath": "src/features/metadata-edit/ui/molecules/ResultStep.tsx",
@@ -13731,15 +13827,26 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/types",
           "specifiers": [
+            "AppSettings",
+            "getIIIFValue",
+            "IIIFCanvas",
             "IIIFManifest",
             "IIIFRange",
             "IIIFRangeReference",
-            "IIIFCanvas",
-            "getIIIFValue",
-            "LanguageMap",
-            "AppSettings"
+            "LanguageMap"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -13787,8 +13894,8 @@
         "src/features/metadata-edit/index.ts",
         "src/features/metadata-edit/ui/organisms/Inspector.tsx"
       ],
-      "size": 22692,
-      "lines": 654
+      "size": 22936,
+      "lines": 655
     },
     "src/features/metadata-edit/ui/molecules/TechnicalTabPanel.tsx": {
       "filePath": "src/features/metadata-edit/ui/molecules/TechnicalTabPanel.tsx",
@@ -13810,6 +13917,7 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
           ],
           "isTypeImport": false,
@@ -13936,7 +14044,7 @@
       "dependents": [
         "src/features/metadata-edit/ui/organisms/MetadataEditorPanel.tsx"
       ],
-      "size": 11527,
+      "size": 11599,
       "lines": 358
     },
     "src/features/metadata-edit/ui/molecules/UploadStep.tsx": {
@@ -14089,6 +14197,7 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
           ],
           "isTypeImport": false,
@@ -14165,7 +14274,7 @@
       "dependents": [
         "src/features/metadata-edit/ui/organisms/MetadataEditorPanel.tsx"
       ],
-      "size": 5892,
+      "size": 5928,
       "lines": 196
     },
     "src/features/metadata-edit/ui/organisms/BatchEditor.tsx": {
@@ -14174,6 +14283,17 @@
       "directory": "src/features/metadata-edit/ui/organisms",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -14218,8 +14338,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 17834,
-      "lines": 352
+      "size": 18218,
+      "lines": 353
     },
     "src/features/metadata-edit/ui/organisms/Inspector.tsx": {
       "filePath": "src/features/metadata-edit/ui/organisms/Inspector.tsx",
@@ -14244,8 +14364,9 @@
           "isInternalAlias": true
         },
         {
-          "source": "@/src/shared/ui/atoms/Icon",
+          "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
           ],
           "isTypeImport": false,
@@ -14343,18 +14464,6 @@
           "isInternalAlias": true
         },
         {
-          "source": "@/src/entities/manifest/model/validation/validator",
-          "specifiers": [
-            "getValidationForField",
-            "ValidationIssue"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
           "source": "@/utils/iiifBehaviors",
           "specifiers": [
             "suggestBehaviors"
@@ -14401,9 +14510,10 @@
         {
           "source": "../../model/useInspectorValidation",
           "specifiers": [
-            "useInspectorValidation"
+            "useInspectorValidation",
+            "type ValidationIssue"
           ],
-          "isTypeImport": false,
+          "isTypeImport": true,
           "isRelative": true,
           "isAbsolute": false,
           "isExternal": false,
@@ -14471,8 +14581,8 @@
       "dependents": [
         "src/features/metadata-edit/index.ts"
       ],
-      "size": 36254,
-      "lines": 817
+      "size": 41486,
+      "lines": 911
     },
     "src/features/metadata-edit/ui/organisms/MetadataEditorPanel.tsx": {
       "filePath": "src/features/metadata-edit/ui/organisms/MetadataEditorPanel.tsx",
@@ -14495,18 +14605,8 @@
         {
           "source": "@/src/shared/ui/molecules",
           "specifiers": [
+            "ModalDialog",
             "TabBar"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/ui/molecules",
-          "specifiers": [
-            "ModalDialog"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -14667,7 +14767,7 @@
         "src/features/metadata-edit/index.ts",
         "src/features/metadata-edit/index.ts"
       ],
-      "size": 9173,
+      "size": 9169,
       "lines": 287
     },
     "src/features/metadata-edit/ui/organisms/MetadataView.tsx": {
@@ -14830,7 +14930,7 @@
         "src/features/metadata-edit/index.ts",
         "src/features/metadata-edit/index.ts"
       ],
-      "size": 26016,
+      "size": 26044,
       "lines": 728
     },
     "src/features/search/index.ts": {
@@ -15069,6 +15169,7 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
           ],
           "isTypeImport": false,
@@ -15154,8 +15255,8 @@
         "src/features/search/index.ts",
         "src/features/search/index.ts"
       ],
-      "size": 14818,
-      "lines": 378
+      "size": 14753,
+      "lines": 374
     },
     "src/features/staging/index.ts": {
       "filePath": "src/features/staging/index.ts",
@@ -15381,6 +15482,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/types",
           "specifiers": [
             "SourceManifest",
@@ -15437,8 +15549,8 @@
       "dependents": [
         "src/features/staging/ui/organisms/StagingWorkbench.tsx"
       ],
-      "size": 9161,
-      "lines": 278
+      "size": 9377,
+      "lines": 279
     },
     "src/features/staging/ui/molecules/IngestProgressPanel.tsx": {
       "filePath": "src/features/staging/ui/molecules/IngestProgressPanel.tsx",
@@ -15446,6 +15558,17 @@
       "directory": "src/features/staging/ui/molecules",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
@@ -15518,8 +15641,8 @@
       "dependents": [
         "src/features/staging/ui/organisms/StagingWorkbench.tsx"
       ],
-      "size": 21046,
-      "lines": 539
+      "size": 21346,
+      "lines": 540
     },
     "src/features/staging/ui/molecules/MetadataTemplateExport.tsx": {
       "filePath": "src/features/staging/ui/molecules/MetadataTemplateExport.tsx",
@@ -15527,6 +15650,17 @@
       "directory": "src/features/staging/ui/molecules",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -15587,8 +15721,8 @@
       "dependents": [
         "src/features/staging/ui/organisms/StagingWorkbench.tsx"
       ],
-      "size": 10200,
-      "lines": 269
+      "size": 10332,
+      "lines": 270
     },
     "src/features/staging/ui/molecules/SendToCollectionModal.tsx": {
       "filePath": "src/features/staging/ui/molecules/SendToCollectionModal.tsx",
@@ -15606,6 +15740,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         }
       ],
       "exports": [
@@ -15624,8 +15769,8 @@
       "dependents": [
         "src/features/staging/ui/organisms/StagingWorkbench.tsx"
       ],
-      "size": 865,
-      "lines": 38
+      "size": 941,
+      "lines": 39
     },
     "src/features/staging/ui/molecules/SourcePane.tsx": {
       "filePath": "src/features/staging/ui/molecules/SourcePane.tsx",
@@ -15853,6 +15998,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/types",
           "specifiers": [
             "AbstractionLevel",
@@ -16030,8 +16186,8 @@
         "src/features/staging/ui/molecules/MetadataTemplateExport.tsx"
       ],
       "dependents": [],
-      "size": 21363,
-      "lines": 558
+      "size": 21619,
+      "lines": 561
     },
     "src/features/structure-view/index.ts": {
       "filePath": "src/features/structure-view/index.ts",
@@ -16147,10 +16303,10 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
-            "IIIFItem",
+            "IIIFCanvas",
             "IIIFCollection",
-            "IIIFManifest",
-            "IIIFCanvas"
+            "IIIFItem",
+            "IIIFManifest"
           ],
           "isTypeImport": true,
           "isRelative": false,
@@ -16161,15 +16317,15 @@
         {
           "source": "@/utils/organisms/iiif/traversal",
           "specifiers": [
+            "buildTreeIndex",
+            "findNodeById",
+            "findParent",
+            "getAllCanvases",
             "getAllCollections",
             "getAllManifests",
-            "getAllCanvases",
-            "findNodeById",
-            "getPathToNode",
-            "buildTreeIndex",
-            "getTreeDepthStats",
             "getChildren",
-            "findParent",
+            "getPathToNode",
+            "getTreeDepthStats",
             "type TreeIndex",
             "type TreeStats",
             ""
@@ -16183,10 +16339,10 @@
         {
           "source": "@/utils/organisms/iiif/hierarchy",
           "specifiers": [
-            "getRelationshipType",
             "canHaveMultipleParents",
-            "isValidChildType",
+            "getRelationshipType",
             "getValidChildTypes",
+            "isValidChildType",
             ""
           ],
           "isTypeImport": false,
@@ -16365,6 +16521,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         }
       ],
       "exports": [
@@ -16378,8 +16545,8 @@
       "dependents": [
         "src/features/structure-view/ui/atoms/index.ts"
       ],
-      "size": 1150,
-      "lines": 47
+      "size": 1226,
+      "lines": 48
     },
     "src/features/structure-view/ui/atoms/MatchHighlight.tsx": {
       "filePath": "src/features/structure-view/ui/atoms/MatchHighlight.tsx",
@@ -16504,6 +16671,17 @@
           "isInternalAlias": false
         },
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/lib/hooks/useContextualStyles",
           "specifiers": [
             "ContextualClassNames"
@@ -16536,8 +16714,8 @@
       "dependents": [
         "src/features/structure-view/ui/atoms/index.ts"
       ],
-      "size": 4251,
-      "lines": 133
+      "size": 4355,
+      "lines": 134
     },
     "src/features/structure-view/ui/atoms/index.ts": {
       "filePath": "src/features/structure-view/ui/atoms/index.ts",
@@ -16727,7 +16905,19 @@
       "fileName": "StructureToolbar.tsx",
       "directory": "src/features/structure-view/ui/molecules",
       "extension": ".tsx",
-      "imports": [],
+      "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        }
+      ],
       "exports": [
         {
           "name": "StructureToolbar",
@@ -16739,8 +16929,8 @@
       "dependents": [
         "src/features/structure-view/ui/molecules/index.ts"
       ],
-      "size": 4938,
-      "lines": 149
+      "size": 5126,
+      "lines": 150
     },
     "src/features/structure-view/ui/molecules/TreeNodeItem.tsx": {
       "filePath": "src/features/structure-view/ui/molecules/TreeNodeItem.tsx",
@@ -16751,10 +16941,10 @@
         {
           "source": "../atoms",
           "specifiers": [
-            "StructureNodeIcon",
+            "DropIndicator",
             "ExpandButton",
             "NodeLabel",
-            "DropIndicator"
+            "StructureNodeIcon"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -16810,7 +17000,7 @@
         "src/features/structure-view/ui/molecules/VirtualTreeList.tsx",
         "src/features/structure-view/ui/molecules/index.ts"
       ],
-      "size": 5771,
+      "size": 5766,
       "lines": 195
     },
     "src/features/structure-view/ui/molecules/VirtualTreeList.tsx": {
@@ -16971,6 +17161,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/types",
           "specifiers": [
             "AbstractionLevel",
@@ -17053,8 +17254,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 26081,
-      "lines": 584
+      "size": 26427,
+      "lines": 585
     },
     "src/features/structure-view/ui/organisms/StructureTreeView.tsx": {
       "filePath": "src/features/structure-view/ui/organisms/StructureTreeView.tsx",
@@ -17076,9 +17277,9 @@
         {
           "source": "../molecules",
           "specifiers": [
-            "VirtualTreeList",
+            "EmptyStructure",
             "StructureToolbar",
-            "EmptyStructure"
+            "VirtualTreeList"
           ],
           "isTypeImport": false,
           "isRelative": true,
@@ -17911,7 +18112,27 @@
       ],
       "exports": [
         {
+          "name": "SpatialDrawingMode",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "TimeDrawingMode",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
           "name": "DrawingMode",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "TimeRange",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "TimeAnnotationState",
           "type": "named",
           "isTypeExport": true
         },
@@ -17946,12 +18167,52 @@
           "isTypeExport": false
         },
         {
+          "name": "createTimeFragmentSelector",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "parseTimeFragmentSelector",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "formatTimeForDisplay",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "createTimeAnnotation",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "isTimeBasedAnnotation",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "getAnnotationTimeRange",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
           "name": "simplifyPath",
           "type": "named",
           "isTypeExport": false
         },
         {
           "name": "useAnnotation",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "UseTimeAnnotationReturn",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "useTimeAnnotation",
           "type": "named",
           "isTypeExport": false
         }
@@ -17961,10 +18222,11 @@
         "src/features/viewer/model/index.ts",
         "src/features/viewer/ui/molecules/AnnotationCanvas.tsx",
         "src/features/viewer/ui/molecules/AnnotationDrawingOverlay.tsx",
-        "src/features/viewer/ui/molecules/AnnotationToolbar.tsx"
+        "src/features/viewer/ui/molecules/AnnotationToolbar.tsx",
+        "src/features/viewer/ui/molecules/TimeAnnotationOverlay.tsx"
       ],
-      "size": 11568,
-      "lines": 384
+      "size": 20545,
+      "lines": 677
     },
     "src/features/viewer/model/composer.ts": {
       "filePath": "src/features/viewer/model/composer.ts",
@@ -18117,14 +18379,26 @@
         {
           "source": "./annotation",
           "specifiers": [
-            "[re-export]:useAnnotation",
+            "[re-export]:// Spatial annotation utilities\n  useAnnotation",
             "[re-export]:pointsToSvgPath",
             "[re-export]:createSvgSelector",
             "[re-export]:parseSvgSelector",
             "[re-export]:getBoundingBox",
             "[re-export]:simplifyPath",
-            "[re-export]:type DrawingMode",
+            "[re-export]:// Time-based annotation utilities\n  useTimeAnnotation",
+            "[re-export]:createTimeFragmentSelector",
+            "[re-export]:parseTimeFragmentSelector",
+            "[re-export]:formatTimeForDisplay",
+            "[re-export]:createTimeAnnotation",
+            "[re-export]:isTimeBasedAnnotation",
+            "[re-export]:getAnnotationTimeRange",
+            "[re-export]:// Types\n  type DrawingMode",
+            "[re-export]:type SpatialDrawingMode",
+            "[re-export]:type TimeDrawingMode",
+            "[re-export]:type TimeRange",
+            "[re-export]:type TimeAnnotationState",
             "[re-export]:type UseAnnotationReturn",
+            "[re-export]:type UseTimeAnnotationReturn",
             "[re-export]:"
           ],
           "isTypeImport": true,
@@ -18159,7 +18433,7 @@
           "isTypeExport": true
         },
         {
-          "name": "useAnnotation",
+          "name": "// Spatial annotation utilities\n  useAnnotation",
           "type": "named",
           "isTypeExport": true
         },
@@ -18189,12 +18463,72 @@
           "isTypeExport": true
         },
         {
-          "name": "type DrawingMode",
+          "name": "// Time-based annotation utilities\n  useTimeAnnotation",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "createTimeFragmentSelector",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "parseTimeFragmentSelector",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "formatTimeForDisplay",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "createTimeAnnotation",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "isTimeBasedAnnotation",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "getAnnotationTimeRange",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "// Types\n  type DrawingMode",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "type SpatialDrawingMode",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "type TimeDrawingMode",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "type TimeRange",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "type TimeAnnotationState",
           "type": "named",
           "isTypeExport": true
         },
         {
           "name": "type UseAnnotationReturn",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "type UseTimeAnnotationReturn",
           "type": "named",
           "isTypeExport": true
         },
@@ -18245,8 +18579,8 @@
         "src/features/viewer/model/useMediaPlayer.ts"
       ],
       "dependents": [],
-      "size": 21017,
-      "lines": 676
+      "size": 24314,
+      "lines": 758
     },
     "src/features/viewer/model/useMediaPlayer.ts": {
       "filePath": "src/features/viewer/model/useMediaPlayer.ts",
@@ -18257,10 +18591,10 @@
         {
           "source": "react",
           "specifiers": [
+            "KeyboardEvent",
             "useCallback",
             "useRef",
-            "useState",
-            "KeyboardEvent"
+            "useState"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -19910,55 +20244,6 @@
       "size": 1392,
       "lines": 53
     },
-    "src/features/viewer/ui/atoms/ZoomControl.tsx": {
-      "filePath": "src/features/viewer/ui/atoms/ZoomControl.tsx",
-      "fileName": "ZoomControl.tsx",
-      "directory": "src/features/viewer/ui/atoms",
-      "extension": ".tsx",
-      "imports": [
-        {
-          "source": "@/src/shared/ui/atoms",
-          "specifiers": [
-            "Button"
-          ],
-          "isTypeImport": false,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        },
-        {
-          "source": "@/src/shared/lib/hooks/useContextualStyles",
-          "specifiers": [
-            "ContextualClassNames"
-          ],
-          "isTypeImport": true,
-          "isRelative": false,
-          "isAbsolute": false,
-          "isExternal": false,
-          "isInternalAlias": true
-        }
-      ],
-      "exports": [
-        {
-          "name": "ZoomControlProps",
-          "type": "named",
-          "isTypeExport": true
-        },
-        {
-          "name": "ZoomControl",
-          "type": "named",
-          "isTypeExport": false
-        }
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/features/viewer/ui/atoms/index.ts",
-        "src/features/viewer/ui/atoms/index.ts"
-      ],
-      "size": 4089,
-      "lines": 174
-    },
     "src/features/viewer/ui/atoms/index.ts": {
       "filePath": "src/features/viewer/ui/atoms/index.ts",
       "fileName": "index.ts",
@@ -19966,26 +20251,26 @@
       "extension": ".ts",
       "imports": [
         {
-          "source": "./ZoomControl",
+          "source": "@/src/shared/ui/atoms/ZoomControl",
           "specifiers": [
             "[re-export]:ZoomControl"
           ],
           "isTypeImport": false,
-          "isRelative": true,
+          "isRelative": false,
           "isAbsolute": false,
           "isExternal": false,
-          "isInternalAlias": false
+          "isInternalAlias": true
         },
         {
-          "source": "./ZoomControl",
+          "source": "@/src/shared/ui/atoms/ZoomControl",
           "specifiers": [
             "[re-export]:ZoomControlProps"
           ],
           "isTypeImport": true,
-          "isRelative": true,
+          "isRelative": false,
           "isAbsolute": false,
           "isExternal": false,
-          "isInternalAlias": false
+          "isInternalAlias": true
         },
         {
           "source": "./PageCounter",
@@ -20811,8 +21096,6 @@
         }
       ],
       "dependencies": [
-        "src/features/viewer/ui/atoms/ZoomControl.tsx",
-        "src/features/viewer/ui/atoms/ZoomControl.tsx",
         "src/features/viewer/ui/atoms/PageCounter.tsx",
         "src/features/viewer/ui/atoms/PageCounter.tsx",
         "src/features/viewer/ui/atoms/ParameterSection.tsx",
@@ -20863,8 +21146,8 @@
         "src/features/viewer/ui/atoms/MediaLoadingOverlay.tsx"
       ],
       "dependents": [],
-      "size": 3853,
-      "lines": 100
+      "size": 3948,
+      "lines": 101
     },
     "src/features/viewer/ui/molecules/AnnotationCanvas.tsx": {
       "filePath": "src/features/viewer/ui/molecules/AnnotationCanvas.tsx",
@@ -21006,12 +21289,11 @@
         {
           "source": "../../model/annotation",
           "specifiers": [
-            "pointsToSvgPath",
             "createSvgSelector",
+            "type SpatialDrawingMode",
             "parseSvgSelector",
-            "getBoundingBox",
+            "pointsToSvgPath",
             "simplifyPath",
-            "type DrawingMode",
             ""
           ],
           "isTypeImport": true,
@@ -21056,8 +21338,8 @@
         "src/features/viewer/ui/molecules/index.ts",
         "src/features/viewer/ui/molecules/index.ts"
       ],
-      "size": 17709,
-      "lines": 528
+      "size": 17864,
+      "lines": 529
     },
     "src/features/viewer/ui/molecules/AnnotationForm.tsx": {
       "filePath": "src/features/viewer/ui/molecules/AnnotationForm.tsx",
@@ -21165,7 +21447,7 @@
         "src/features/viewer/ui/molecules/index.ts",
         "src/features/viewer/ui/molecules/index.ts"
       ],
-      "size": 5231,
+      "size": 5235,
       "lines": 193
     },
     "src/features/viewer/ui/molecules/AnnotationToolbar.tsx": {
@@ -21336,8 +21618,8 @@
         "src/features/viewer/ui/molecules/index.ts",
         "src/features/viewer/ui/molecules/index.ts"
       ],
-      "size": 7870,
-      "lines": 230
+      "size": 7898,
+      "lines": 231
     },
     "src/features/viewer/ui/molecules/ComposerSidebar.tsx": {
       "filePath": "src/features/viewer/ui/molecules/ComposerSidebar.tsx",
@@ -21632,15 +21914,14 @@
         {
           "source": "@/src/features/viewer/ui/atoms",
           "specifiers": [
-            "PlayPauseButton",
-            "VolumeControl",
-            "ProgressBar",
-            "TimeDisplay",
-            "PlaybackRateSelect",
             "FullscreenButton",
             "MediaControlGroup",
             "MediaErrorOverlay",
             "MediaLoadingOverlay",
+            "PlaybackRateSelect",
+            "PlayPauseButton",
+            "TimeDisplay",
+            "VolumeControl",
             ""
           ],
           "isTypeImport": false,
@@ -21652,6 +21933,7 @@
         {
           "source": "@/src/shared/ui/atoms",
           "specifiers": [
+            "Button",
             "Icon"
           ],
           "isTypeImport": false,
@@ -21674,9 +21956,26 @@
         {
           "source": "@/src/features/viewer/model",
           "specifiers": [
-            "useMediaPlayer"
+            "useMediaPlayer",
+            "type TimeRange",
+            "formatTimeForDisplay",
+            "getAnnotationTimeRange",
+            "isTimeBasedAnnotation"
           ],
-          "isTypeImport": false,
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/entities/canvas/model/avService",
+          "specifiers": [
+            "avService",
+            "type AVCanvas",
+            "type SyncPoint"
+          ],
+          "isTypeImport": true,
           "isRelative": false,
           "isAbsolute": false,
           "isExternal": false,
@@ -21696,9 +21995,21 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
+            "IIIFAnnotation",
             "IIIFCanvas"
           ],
           "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/shared/types",
+          "specifiers": [
+            "getIIIFValue"
+          ],
+          "isTypeImport": false,
           "isRelative": false,
           "isAbsolute": false,
           "isExternal": false,
@@ -21728,8 +22039,103 @@
         "src/features/viewer/ui/molecules/index.ts",
         "src/features/viewer/ui/molecules/index.ts"
       ],
-      "size": 6079,
-      "lines": 167
+      "size": 19755,
+      "lines": 477
+    },
+    "src/features/viewer/ui/molecules/TimeAnnotationOverlay.tsx": {
+      "filePath": "src/features/viewer/ui/molecules/TimeAnnotationOverlay.tsx",
+      "fileName": "TimeAnnotationOverlay.tsx",
+      "directory": "src/features/viewer/ui/molecules",
+      "extension": ".tsx",
+      "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button",
+            "Icon"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/shared/ui/molecules",
+          "specifiers": [
+            "IconButton"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/shared/types",
+          "specifiers": [
+            "IIIFAnnotation"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "../../model/annotation",
+          "specifiers": [
+            "formatTimeForDisplay",
+            "getAnnotationTimeRange",
+            "isTimeBasedAnnotation",
+            "type TimeRange",
+            "useTimeAnnotation",
+            ""
+          ],
+          "isTypeImport": true,
+          "isRelative": true,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "TimeAnnotationOverlayProps",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "TimeAnnotationOverlay",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "TimeAnnotationOverlay",
+          "type": "default",
+          "isTypeExport": false
+        }
+      ],
+      "dependencies": [
+        "src/features/viewer/model/annotation.ts"
+      ],
+      "dependents": [
+        "src/features/viewer/ui/molecules/index.ts",
+        "src/features/viewer/ui/molecules/index.ts"
+      ],
+      "size": 12977,
+      "lines": 377
     },
     "src/features/viewer/ui/molecules/ViewerContent.tsx": {
       "filePath": "src/features/viewer/ui/molecules/ViewerContent.tsx",
@@ -21773,10 +22179,9 @@
         {
           "source": "./AnnotationOverlay",
           "specifiers": [
-            "AnnotationOverlay",
-            "type IIIFAnnotation"
+            "AnnotationOverlay"
           ],
-          "isTypeImport": true,
+          "isTypeImport": false,
           "isRelative": true,
           "isAbsolute": false,
           "isExternal": false,
@@ -21796,6 +22201,7 @@
         {
           "source": "@/src/shared/types",
           "specifiers": [
+            "IIIFAnnotation",
             "IIIFCanvas"
           ],
           "isTypeImport": true,
@@ -21830,8 +22236,8 @@
         "src/features/viewer/ui/molecules/index.ts",
         "src/features/viewer/ui/molecules/index.ts"
       ],
-      "size": 4363,
-      "lines": 152
+      "size": 5710,
+      "lines": 182
     },
     "src/features/viewer/ui/molecules/ViewerEmptyState.tsx": {
       "filePath": "src/features/viewer/ui/molecules/ViewerEmptyState.tsx",
@@ -22074,7 +22480,7 @@
         "src/features/viewer/ui/molecules/index.ts",
         "src/features/viewer/ui/molecules/index.ts"
       ],
-      "size": 15637,
+      "size": 15633,
       "lines": 465
     },
     "src/features/viewer/ui/molecules/ViewerToolbar.tsx": {
@@ -22166,8 +22572,8 @@
         "src/features/viewer/ui/molecules/index.ts",
         "src/features/viewer/ui/molecules/index.ts"
       ],
-      "size": 14024,
-      "lines": 470
+      "size": 11715,
+      "lines": 352
     },
     "src/features/viewer/ui/molecules/ViewerWorkbench.tsx": {
       "filePath": "src/features/viewer/ui/molecules/ViewerWorkbench.tsx",
@@ -22190,17 +22596,17 @@
         {
           "source": "@/src/features/viewer/ui/atoms",
           "specifiers": [
+            "CodePanel",
+            "CoordinateInput",
+            "FormatSelector",
+            "ImagePreview",
             "ParameterSection",
             "PresetSelector",
-            "CoordinateInput",
-            "ImagePreview",
             "PreviewHeader",
-            "UrlBar",
+            "QualitySelector",
             "RotationDial",
             "UpscaleToggle",
-            "QualitySelector",
-            "FormatSelector",
-            "CodePanel",
+            "UrlBar",
             "WorkbenchFooter",
             ""
           ],
@@ -22643,6 +23049,28 @@
           "isAbsolute": false,
           "isExternal": false,
           "isInternalAlias": false
+        },
+        {
+          "source": "./TimeAnnotationOverlay",
+          "specifiers": [
+            "[re-export]:TimeAnnotationOverlay"
+          ],
+          "isTypeImport": false,
+          "isRelative": true,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": false
+        },
+        {
+          "source": "./TimeAnnotationOverlay",
+          "specifiers": [
+            "[re-export]:TimeAnnotationOverlayProps"
+          ],
+          "isTypeImport": true,
+          "isRelative": true,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": false
         }
       ],
       "exports": [
@@ -22845,6 +23273,16 @@
           "name": "AnnotationDrawingOverlayProps",
           "type": "named",
           "isTypeExport": true
+        },
+        {
+          "name": "TimeAnnotationOverlay",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "TimeAnnotationOverlayProps",
+          "type": "named",
+          "isTypeExport": true
         }
       ],
       "dependencies": [
@@ -22881,11 +23319,13 @@
         "src/features/viewer/ui/molecules/KeyboardShortcutsModal.tsx",
         "src/features/viewer/ui/molecules/KeyboardShortcutsModal.tsx",
         "src/features/viewer/ui/molecules/AnnotationDrawingOverlay.tsx",
-        "src/features/viewer/ui/molecules/AnnotationDrawingOverlay.tsx"
+        "src/features/viewer/ui/molecules/AnnotationDrawingOverlay.tsx",
+        "src/features/viewer/ui/molecules/TimeAnnotationOverlay.tsx",
+        "src/features/viewer/ui/molecules/TimeAnnotationOverlay.tsx"
       ],
       "dependents": [],
-      "size": 2425,
-      "lines": 62
+      "size": 2566,
+      "lines": 65
     },
     "src/features/viewer/ui/organisms/AnnotationToolPanel.tsx": {
       "filePath": "src/features/viewer/ui/organisms/AnnotationToolPanel.tsx",
@@ -22957,6 +23397,17 @@
       "directory": "src/features/viewer/ui/organisms",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -23059,8 +23510,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 26857,
-      "lines": 421
+      "size": 27437,
+      "lines": 423
     },
     "src/features/viewer/ui/organisms/CanvasComposerPanel.tsx": {
       "filePath": "src/features/viewer/ui/organisms/CanvasComposerPanel.tsx",
@@ -23133,6 +23584,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
             "Icon"
@@ -23187,8 +23649,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 20227,
-      "lines": 545
+      "size": 20443,
+      "lines": 546
     },
     "src/features/viewer/ui/organisms/ViewerView.tsx": {
       "filePath": "src/features/viewer/ui/organisms/ViewerView.tsx",
@@ -23222,8 +23684,20 @@
           "isInternalAlias": true
         },
         {
+          "source": "@/src/shared/services/storage",
+          "specifiers": [
+            "storage"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "../molecules",
           "specifiers": [
+            "type AnnotationDrawingMode",
             "AnnotationDrawingOverlay",
             "FilmstripNavigator",
             "KeyboardShortcutsModal",
@@ -23233,7 +23707,6 @@
             "ViewerPanels",
             "ViewerToolbar",
             "ViewerWorkbench",
-            "type AnnotationDrawingMode",
             ""
           ],
           "isTypeImport": true,
@@ -23245,8 +23718,8 @@
         {
           "source": "../../model",
           "specifiers": [
-            "useViewer",
-            "type DrawingMode"
+            "type SpatialDrawingMode",
+            "useViewer"
           ],
           "isTypeImport": true,
           "isRelative": true,
@@ -23257,7 +23730,8 @@
         {
           "source": "@/src/entities/manifest/model/hooks/useIIIFEntity",
           "specifiers": [
-            "useVaultDispatch"
+            "useVaultDispatch",
+            "useVaultState"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -23299,8 +23773,8 @@
         "src/features/viewer/index.ts",
         "src/features/viewer/index.ts"
       ],
-      "size": 12670,
-      "lines": 359
+      "size": 14740,
+      "lines": 391
     },
     "src/shared/config/design-tokens.ts": {
       "filePath": "src/shared/config/design-tokens.ts",
@@ -23387,7 +23861,7 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 20697,
+      "size": 20711,
       "lines": 787
     },
     "src/shared/config/tokens.ts": {
@@ -23908,8 +24382,8 @@
       "dependents": [
         "src/shared/constants/index.ts"
       ],
-      "size": 2355,
-      "lines": 86
+      "size": 2530,
+      "lines": 88
     },
     "src/shared/constants/csv.ts": {
       "filePath": "src/shared/constants/csv.ts",
@@ -25298,9 +25772,9 @@
           "source": "react",
           "specifiers": [
             "useCallback",
+            "useEffect",
             "useMemo",
-            "useState",
-            "useEffect"
+            "useState"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -28376,8 +28850,8 @@
         "src/shared/services/index.ts",
         "src/shared/services/index.ts"
       ],
-      "size": 21478,
-      "lines": 709
+      "size": 21505,
+      "lines": 710
     },
     "src/shared/services/virtualManifestFactory.ts": {
       "filePath": "src/shared/services/virtualManifestFactory.ts",
@@ -28449,7 +28923,7 @@
       "dependents": [
         "src/shared/services/remoteLoader.ts"
       ],
-      "size": 14559,
+      "size": 14562,
       "lines": 511
     },
     "src/shared/types/index.ts": {
@@ -29059,6 +29533,55 @@
       "size": 1930,
       "lines": 79
     },
+    "src/shared/ui/atoms/ZoomControl.tsx": {
+      "filePath": "src/shared/ui/atoms/ZoomControl.tsx",
+      "fileName": "ZoomControl.tsx",
+      "directory": "src/shared/ui/atoms",
+      "extension": ".tsx",
+      "imports": [
+        {
+          "source": "@/ui/primitives/Button",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
+          "source": "@/src/shared/lib/hooks/useContextualStyles",
+          "specifiers": [
+            "ContextualClassNames"
+          ],
+          "isTypeImport": true,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        }
+      ],
+      "exports": [
+        {
+          "name": "ZoomControlProps",
+          "type": "named",
+          "isTypeExport": true
+        },
+        {
+          "name": "ZoomControl",
+          "type": "named",
+          "isTypeExport": false
+        }
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/ui/atoms/index.ts",
+        "src/shared/ui/atoms/index.ts"
+      ],
+      "size": 4090,
+      "lines": 174
+    },
     "src/shared/ui/atoms/index.ts": {
       "filePath": "src/shared/ui/atoms/index.ts",
       "fileName": "index.ts",
@@ -29221,6 +29744,28 @@
           "isAbsolute": false,
           "isExternal": false,
           "isInternalAlias": false
+        },
+        {
+          "source": "./ZoomControl",
+          "specifiers": [
+            "[re-export]:ZoomControl"
+          ],
+          "isTypeImport": false,
+          "isRelative": true,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": false
+        },
+        {
+          "source": "./ZoomControl",
+          "specifiers": [
+            "[re-export]:ZoomControlProps"
+          ],
+          "isTypeImport": true,
+          "isRelative": true,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": false
         }
       ],
       "exports": [
@@ -29308,6 +29853,16 @@
           "name": "StepConnectorProps",
           "type": "named",
           "isTypeExport": true
+        },
+        {
+          "name": "ZoomControl",
+          "type": "named",
+          "isTypeExport": false
+        },
+        {
+          "name": "ZoomControlProps",
+          "type": "named",
+          "isTypeExport": true
         }
       ],
       "dependencies": [
@@ -29316,11 +29871,13 @@
         "src/shared/ui/atoms/StepIndicator.tsx",
         "src/shared/ui/atoms/StepIndicator.tsx",
         "src/shared/ui/atoms/StepConnector.tsx",
-        "src/shared/ui/atoms/StepConnector.tsx"
+        "src/shared/ui/atoms/StepConnector.tsx",
+        "src/shared/ui/atoms/ZoomControl.tsx",
+        "src/shared/ui/atoms/ZoomControl.tsx"
       ],
       "dependents": [],
-      "size": 3078,
-      "lines": 62
+      "size": 3388,
+      "lines": 68
     },
     "src/shared/ui/molecules/ActionButton.tsx": {
       "filePath": "src/shared/ui/molecules/ActionButton.tsx",
@@ -29455,7 +30012,7 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 11033,
+      "size": 11145,
       "lines": 304
     },
     "src/shared/ui/molecules/CanvasItem.tsx": {
@@ -30020,8 +30577,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 6564,
-      "lines": 237
+      "size": 6709,
+      "lines": 243
     },
     "src/shared/ui/molecules/ContextMenuItem.tsx": {
       "filePath": "src/shared/ui/molecules/ContextMenuItem.tsx",
@@ -30431,6 +30988,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
             "Icon"
@@ -30456,8 +31024,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 6254,
-      "lines": 164
+      "size": 6386,
+      "lines": 165
     },
     "src/shared/ui/molecules/FacetPill.tsx": {
       "filePath": "src/shared/ui/molecules/FacetPill.tsx",
@@ -30678,7 +31246,7 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 13145,
+      "size": 13229,
       "lines": 386
     },
     "src/shared/ui/molecules/FormInput.tsx": {
@@ -30774,7 +31342,7 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 14402,
+      "size": 14428,
       "lines": 428
     },
     "src/shared/ui/molecules/IconButton.tsx": {
@@ -30962,8 +31530,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 2894,
-      "lines": 104
+      "size": 3543,
+      "lines": 113
     },
     "src/shared/ui/molecules/LoadingState.tsx": {
       "filePath": "src/shared/ui/molecules/LoadingState.tsx",
@@ -31040,8 +31608,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 5329,
-      "lines": 195
+      "size": 5515,
+      "lines": 201
     },
     "src/shared/ui/molecules/MapMarker.tsx": {
       "filePath": "src/shared/ui/molecules/MapMarker.tsx",
@@ -31255,7 +31823,7 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 13863,
+      "size": 13891,
       "lines": 412
     },
     "src/shared/ui/molecules/ModalDialog.tsx": {
@@ -31314,8 +31882,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 4931,
-      "lines": 177
+      "size": 4986,
+      "lines": 179
     },
     "src/shared/ui/molecules/MuseumLabel.tsx": {
       "filePath": "src/shared/ui/molecules/MuseumLabel.tsx",
@@ -31414,6 +31982,17 @@
           "isInternalAlias": false
         },
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "../atoms",
           "specifiers": [
             "Icon"
@@ -31460,8 +32039,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 5109,
-      "lines": 184
+      "size": 5213,
+      "lines": 185
     },
     "src/shared/ui/molecules/RangeSelector.tsx": {
       "filePath": "src/shared/ui/molecules/RangeSelector.tsx",
@@ -32085,6 +32664,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
             "Icon"
@@ -32121,8 +32711,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 7089,
-      "lines": 179
+      "size": 7329,
+      "lines": 186
     },
     "src/shared/ui/molecules/Toolbar.tsx": {
       "filePath": "src/shared/ui/molecules/Toolbar.tsx",
@@ -32140,6 +32730,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         },
         {
           "source": "@/src/shared/lib/hooks/useContextualStyles",
@@ -32175,8 +32776,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 2125,
-      "lines": 85
+      "size": 2173,
+      "lines": 86
     },
     "src/shared/ui/molecules/Tooltip.tsx": {
       "filePath": "src/shared/ui/molecules/Tooltip.tsx",
@@ -32184,6 +32785,17 @@
       "directory": "src/shared/ui/molecules",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
@@ -32236,8 +32848,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 10888,
-      "lines": 332
+      "size": 11048,
+      "lines": 333
     },
     "src/shared/ui/molecules/ViewContainer.tsx": {
       "filePath": "src/shared/ui/molecules/ViewContainer.tsx",
@@ -32255,6 +32867,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         },
         {
           "source": "../atoms",
@@ -32327,8 +32950,8 @@
         "src/shared/ui/molecules/index.ts",
         "src/shared/ui/molecules/index.ts"
       ],
-      "size": 4513,
-      "lines": 175
+      "size": 5080,
+      "lines": 190
     },
     "src/shared/ui/molecules/ViewToggle.tsx": {
       "filePath": "src/shared/ui/molecules/ViewToggle.tsx",
@@ -32634,7 +33257,7 @@
           "specifiers": [
             "[re-export]:ContextMenuProps",
             "[re-export]:ContextMenuItem",
-            "[re-export]:ContextMenuSection"
+            "[re-export]:ContextMenuSectionType"
           ],
           "isTypeImport": true,
           "isRelative": true,
@@ -33549,7 +34172,7 @@
           "isTypeExport": true
         },
         {
-          "name": "ContextMenuSection",
+          "name": "ContextMenuSectionType",
           "type": "named",
           "isTypeExport": true
         },
@@ -34040,7 +34663,7 @@
         "src/shared/ui/molecules/PipelineBanner.tsx"
       ],
       "dependents": [],
-      "size": 6717,
+      "size": 6695,
       "lines": 185
     },
     "src/shared/workers/index.ts": {
@@ -34424,6 +35047,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/services/authService",
           "specifiers": [
             "authService",
@@ -34468,8 +35102,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 13550,
-      "lines": 386
+      "size": 13766,
+      "lines": 387
     },
     "src/widgets/CommandPalette/ui/CommandPalette.tsx": {
       "filePath": "src/widgets/CommandPalette/ui/CommandPalette.tsx",
@@ -34558,6 +35192,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
             "Icon"
@@ -34605,8 +35250,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 4678,
-      "lines": 134
+      "size": 4782,
+      "lines": 135
     },
     "src/widgets/ExperienceSelector/ExperienceSelector.tsx": {
       "filePath": "src/widgets/ExperienceSelector/ExperienceSelector.tsx",
@@ -34614,6 +35259,17 @@
       "directory": "src/widgets/ExperienceSelector",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -34629,9 +35285,9 @@
           "source": "@/src/shared/config/design-tokens",
           "specifiers": [
             "COLORS",
-            "SPACING",
+            "INTERACTION",
             "LAYOUT",
-            "INTERACTION"
+            "SPACING"
           ],
           "isTypeImport": false,
           "isRelative": false,
@@ -34657,8 +35313,8 @@
         "src/widgets/ExperienceSelector/index.ts",
         "src/widgets/ExperienceSelector/index.ts"
       ],
-      "size": 12598,
-      "lines": 333
+      "size": 12702,
+      "lines": 334
     },
     "src/widgets/ExperienceSelector/index.ts": {
       "filePath": "src/widgets/ExperienceSelector/index.ts",
@@ -34852,6 +35508,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
             "Icon"
@@ -34924,8 +35591,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 18643,
-      "lines": 378
+      "size": 18887,
+      "lines": 379
     },
     "src/widgets/NavigationHeader/HeaderBreadcrumb.tsx": {
       "filePath": "src/widgets/NavigationHeader/HeaderBreadcrumb.tsx",
@@ -35388,6 +36055,17 @@
       "extension": ".tsx",
       "imports": [
         {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
+        {
           "source": "@/src/shared/types",
           "specifiers": [
             "AbstractionLevel",
@@ -35482,8 +36160,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 28836,
-      "lines": 658
+      "size": 29230,
+      "lines": 659
     },
     "src/widgets/OnboardingModal/ui/OnboardingModal.tsx": {
       "filePath": "src/widgets/OnboardingModal/ui/OnboardingModal.tsx",
@@ -35491,6 +36169,17 @@
       "directory": "src/widgets/OnboardingModal/ui",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
@@ -35534,8 +36223,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 8615,
-      "lines": 189
+      "size": 8803,
+      "lines": 190
     },
     "src/widgets/PersonaSettings/ui/PersonaSettings.tsx": {
       "filePath": "src/widgets/PersonaSettings/ui/PersonaSettings.tsx",
@@ -35543,6 +36232,17 @@
       "directory": "src/widgets/PersonaSettings/ui",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/types",
           "specifiers": [
@@ -35598,8 +36298,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 14828,
-      "lines": 275
+      "size": 15016,
+      "lines": 276
     },
     "src/widgets/QCDashboard/ui/QCDashboard.tsx": {
       "filePath": "src/widgets/QCDashboard/ui/QCDashboard.tsx",
@@ -35692,8 +36392,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 29064,
-      "lines": 492
+      "size": 29144,
+      "lines": 493
     },
     "src/widgets/StatusBar/ui/StatusBar.tsx": {
       "filePath": "src/widgets/StatusBar/ui/StatusBar.tsx",
@@ -35711,6 +36411,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         },
         {
           "source": "@/src/shared/ui/atoms/Icon",
@@ -35767,8 +36478,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 5829,
-      "lines": 132
+      "size": 5905,
+      "lines": 133
     },
     "src/widgets/StatusBar/ui/organisms/StatusBar.tsx": {
       "filePath": "src/widgets/StatusBar/ui/organisms/StatusBar.tsx",
@@ -35786,6 +36497,17 @@
           "isAbsolute": false,
           "isExternal": true,
           "isInternalAlias": false
+        },
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
         },
         {
           "source": "@/src/shared/ui/atoms/Icon",
@@ -35831,8 +36553,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 6747,
-      "lines": 154
+      "size": 6851,
+      "lines": 155
     },
     "src/widgets/StorageFullDialog/ui/StorageFullDialog.tsx": {
       "filePath": "src/widgets/StorageFullDialog/ui/StorageFullDialog.tsx",
@@ -35840,6 +36562,17 @@
       "directory": "src/widgets/StorageFullDialog/ui",
       "extension": ".tsx",
       "imports": [
+        {
+          "source": "@/src/shared/ui/atoms",
+          "specifiers": [
+            "Button"
+          ],
+          "isTypeImport": false,
+          "isRelative": false,
+          "isAbsolute": false,
+          "isExternal": false,
+          "isInternalAlias": true
+        },
         {
           "source": "@/src/shared/ui/atoms/Icon",
           "specifiers": [
@@ -35877,8 +36610,8 @@
       ],
       "dependencies": [],
       "dependents": [],
-      "size": 9543,
-      "lines": 255
+      "size": 9703,
+      "lines": 256
     }
   },
   "externalDependencies": [
@@ -35901,6 +36634,7 @@
     "@/src/app/providers/useTerminology",
     "@/src/entities",
     "@/src/entities/annotation/model/contentSearchService",
+    "@/src/entities/canvas/model/avService",
     "@/src/entities/canvas/model/fileIntegrity",
     "@/src/entities/canvas/model/imageSourceResolver",
     "@/src/entities/collection/model/stagingService",
@@ -35934,6 +36668,7 @@
     "@/src/features/timeline",
     "@/src/features/viewer",
     "@/src/features/viewer/model",
+    "@/src/features/viewer/model/annotation",
     "@/src/features/viewer/ui/atoms",
     "@/src/features/viewer/ui/organisms/AnnotationToolPanel",
     "@/src/shared/config/design-tokens",
@@ -35984,6 +36719,7 @@
     "@/src/shared/ui/atoms/SkipLink",
     "@/src/shared/ui/atoms/StepConnector",
     "@/src/shared/ui/atoms/StepIndicator",
+    "@/src/shared/ui/atoms/ZoomControl",
     "@/src/shared/ui/molecules",
     "@/src/shared/ui/molecules/ActionButton",
     "@/src/shared/ui/molecules/CanvasItem",
@@ -36112,9 +36848,9 @@
     "src/widgets/StorageFullDialog/ui/StorageFullDialog.tsx"
   ],
   "stats": {
-    "totalImports": 1528,
-    "totalExports": 2258,
-    "avgImportsPerFile": 4.031662269129288,
+    "totalImports": 1574,
+    "totalExports": 2289,
+    "avgImportsPerFile": 4.1421052631578945,
     "mostImported": [
       {
         "file": "src/features/dependency-explorer/types.ts",
@@ -36145,15 +36881,15 @@
         "count": 5
       },
       {
+        "file": "src/features/viewer/model/annotation.ts",
+        "count": 5
+      },
+      {
         "file": "src/entities/manifest/model/vault/cloning.ts",
         "count": 4
       },
       {
         "file": "src/features/dependency-explorer/ui/CopyableSection.tsx",
-        "count": 4
-      },
-      {
-        "file": "src/features/viewer/model/annotation.ts",
         "count": 4
       }
     ]

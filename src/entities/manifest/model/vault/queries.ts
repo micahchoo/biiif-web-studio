@@ -70,12 +70,18 @@ export function getAncestors(state: NormalizedState, id: string): string[] {
  */
 export function getDescendants(state: NormalizedState, id: string): string[] {
   const descendants: string[] = [];
-  const queue = [...(state.references[id] || [])];
+  const queue: string[] = state.references[id] ? [...state.references[id]] : [];
+  let idx = 0;
 
-  while (queue.length > 0) {
-    const childId = queue.shift()!;
+  while (idx < queue.length) {
+    const childId = queue[idx++];
     descendants.push(childId);
-    queue.push(...(state.references[childId] || []));
+    const children = state.references[childId];
+    if (children) {
+      for (let i = 0; i < children.length; i++) {
+        queue.push(children[i]);
+      }
+    }
   }
 
   return descendants;

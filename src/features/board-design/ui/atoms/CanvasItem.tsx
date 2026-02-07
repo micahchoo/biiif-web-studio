@@ -29,11 +29,6 @@ export interface CanvasItemProps {
   onDragStart: (id: string, offset: { x: number; y: number }) => void;
   /** Callback when clicked */
   onClick: (id: string) => void;
-  /** Contextual styles */
-  cx: {
-    surface: string;
-    accent: string;
-  };
   /** Field mode flag */
   fieldMode: boolean;
   /** Child content */
@@ -48,7 +43,6 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({
   dragging,
   onDragStart,
   onClick,
-  cx: _cx,
   fieldMode,
   children,
 }) => {

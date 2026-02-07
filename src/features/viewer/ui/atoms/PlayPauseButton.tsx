@@ -15,8 +15,6 @@
 
 import React from 'react';
 import { IconButton } from '@/src/shared/ui/molecules';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface PlayPauseButtonProps {
   /** Whether media is currently playing */
   isPlaying: boolean;
@@ -30,8 +28,6 @@ export interface PlayPauseButtonProps {
   disabled?: boolean;
   /** Additional CSS classes */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -43,7 +39,6 @@ export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
   variant = 'ghost',
   disabled = false,
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const icon = isPlaying ? 'pause' : 'play_arrow';

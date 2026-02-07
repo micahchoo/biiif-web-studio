@@ -14,8 +14,6 @@
  */
 
 import React from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface TimeDisplayProps {
   /** Current playback time in seconds */
   currentTime: number;
@@ -29,8 +27,6 @@ export interface TimeDisplayProps {
   separator?: string;
   /** Additional CSS classes */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -61,7 +57,6 @@ export const TimeDisplay: React.FC<TimeDisplayProps> = ({
   showDuration = true,
   separator = ' / ',
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const textColor = fieldMode ? 'text-yellow-400' : 'text-white';

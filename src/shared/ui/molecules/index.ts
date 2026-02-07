@@ -119,11 +119,20 @@ export type { GuidedEmptyStateProps, WorkflowStep } from './GuidedEmptyState';
 export { FloatingSelectionToolbar } from './FloatingSelectionToolbar';
 export type { FloatingSelectionToolbarProps } from './FloatingSelectionToolbar';
 
+export { SelectionThumbnailStrip } from './SelectionThumbnailStrip';
+export type { SelectionThumbnailStripProps } from './SelectionThumbnailStrip';
+
 export { BreadcrumbNav } from './BreadcrumbNav';
 export type { BreadcrumbNavProps, BreadcrumbItem } from './BreadcrumbNav';
 
+export { BreadcrumbSiblingMenu } from './BreadcrumbSiblingMenu';
+export type { BreadcrumbSiblingMenuProps } from './BreadcrumbSiblingMenu';
+
 export { MetadataCard } from './MetadataCard';
 export type { MetadataCardProps, MetadataField } from './MetadataCard';
+
+export { MetadataFieldRenderer, formatFieldValue } from './MetadataFieldRenderer';
+export type { MetadataFieldRendererProps } from './MetadataFieldRenderer';
 
 export { LoadingState } from './LoadingState';
 export type { LoadingStateProps } from './LoadingState';

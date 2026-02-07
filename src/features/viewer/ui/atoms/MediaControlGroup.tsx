@@ -14,8 +14,6 @@
  */
 
 import React from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface MediaControlGroupProps {
   /** Child controls to render */
   children: React.ReactNode;
@@ -29,8 +27,6 @@ export interface MediaControlGroupProps {
   wrap?: boolean;
   /** Additional CSS classes */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -56,7 +52,6 @@ export const MediaControlGroup: React.FC<MediaControlGroupProps> = ({
   gap = 'md',
   wrap = false,
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const flexDirection = direction === 'horizontal' ? 'flex-row' : 'flex-col';

@@ -14,8 +14,6 @@
  */
 
 import React from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface SliderProps {
   /** Current value */
   value: number;
@@ -29,8 +27,6 @@ export interface SliderProps {
   onChange: (value: number) => void;
   /** Color accent for the slider */
   color?: 'orange' | 'blue' | 'green' | 'purple';
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -49,7 +45,6 @@ export const Slider: React.FC<SliderProps> = ({
   step = 1,
   onChange,
   color = 'orange',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

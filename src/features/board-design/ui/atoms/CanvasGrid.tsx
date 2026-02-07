@@ -24,8 +24,6 @@ export interface CanvasGridProps {
   visible?: boolean;
   /** Contextual styles */
   cx: ContextualClassNames;
-  /** Field mode flag */
-  fieldMode: boolean;
 }
 
 export const CanvasGrid: React.FC<CanvasGridProps> = ({
@@ -33,7 +31,6 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({
   lineWidth = 1,
   visible = true,
   cx,
-  fieldMode: _fieldMode,
 }) => {
   if (!visible) return null;
 

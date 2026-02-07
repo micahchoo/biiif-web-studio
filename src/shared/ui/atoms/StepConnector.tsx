@@ -21,8 +21,6 @@ export interface StepConnectorProps {
   width?: string;
   /** Additional CSS class */
   className?: string;
-  /** Field mode styling */
-  fieldMode?: boolean;
 }
 
 export const StepConnector: React.FC<StepConnectorProps> = ({

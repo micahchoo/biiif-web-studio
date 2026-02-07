@@ -66,6 +66,22 @@ export function applyExtensions(
 }
 
 /**
+ * Check if an entity has any unknown properties without cloning.
+ * Returns true on the first unknown key found (early exit).
+ */
+export function hasUnknownProperties(item: object, type: EntityType): boolean {
+  const knownCommon = KNOWN_IIIF_PROPERTIES.common;
+  const knownForType = KNOWN_IIIF_PROPERTIES[type];
+  for (const key of Object.keys(item)) {
+    if (!knownCommon.has(key) && !knownForType.has(key)) {
+      const val = (item as Record<string, unknown>)[key];
+      if (val !== undefined && val !== null) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Helper to extract extensions from a typed entity
  */
 export function extractExtensionsFromEntity<T extends object>(

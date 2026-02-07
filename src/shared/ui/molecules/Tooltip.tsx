@@ -1,8 +1,28 @@
+/**
+ * Tooltip Molecule
+ *
+ * Dismissible hover tooltip with content card.
+ *
+ * ATOMIC DESIGN COMPLIANCE:
+ * - Local UI state (visibility, dismissed)
+ * - No domain logic / no service calls
+ * - Props-only API
+ * - Uses design tokens
+ *
+ * @module shared/ui/molecules/Tooltip
+ */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Button } from '@/src/shared/ui/atoms';
 import { Icon } from '@/src/shared/ui/atoms/Icon';
-import { guidance } from '@/src/shared/services/guidanceService';
+
+// Re-export extracted components for backwards compatibility
+export { FirstTimeHint } from './FirstTimeHint';
+export type { FirstTimeHintProps } from './FirstTimeHint';
+export { QuickReference } from './QuickReference';
+export type { QuickReferenceProps } from './QuickReference';
+export { GuidanceEmptyState as EmptyState } from './GuidanceEmptyState';
+export type { GuidanceEmptyStateProps as EmptyStateProps } from './GuidanceEmptyState';
 
 // ============================================================================
 // Types
@@ -36,6 +56,10 @@ interface TooltipProps {
   delay?: number;
   /** Always show regardless of dismissal state */
   persist?: boolean;
+  /** Whether already dismissed (from parent/service) */
+  initialDismissed?: boolean;
+  /** Called when user dismisses (parent persists) */
+  onDismiss?: () => void;
 }
 
 // ============================================================================
@@ -49,19 +73,14 @@ export const Tooltip: React.FC<TooltipProps> = ({
   position = 'top',
   showIndicator = false,
   delay = 400,
-  persist = false
+  persist = false,
+  initialDismissed = false,
+  onDismiss,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(initialDismissed);
   const triggerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Check if already dismissed
-  useEffect(() => {
-    if (!persist && guidance.hasSeen(`tooltip-${id}`)) {
-      setIsDismissed(true);
-    }
-  }, [id, persist]);
 
   const showTooltip = useCallback(() => {
     if (isDismissed && !persist) return;
@@ -74,10 +93,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
   }, []);
 
   const dismiss = useCallback(() => {
-    guidance.markSeen(`tooltip-${id}`);
+    onDismiss?.();
     setIsDismissed(true);
     setIsVisible(false);
-  }, [id]);
+  }, [onDismiss]);
 
   // Position classes
   const positionClasses = {
@@ -154,177 +173,6 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
           {/* Arrow */}
           <div className={`absolute w-0 h-0 border-4 ${arrowClasses[position]}`} />
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ============================================================================
-// Quick Reference Panel (per-view help)
-// ============================================================================
-
-interface QuickRefItem {
-  icon: string;
-  label: string;
-  shortcut?: string;
-  description?: string;
-}
-
-interface QuickRefProps {
-  title: string;
-  items: QuickRefItem[];
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-export const QuickReference: React.FC<QuickRefProps> = ({ title, items, isOpen, onToggle }) => {
-  // If opened from StatusBar, we don't need the toggle button here
-  // The QuickReference panel is now anchored to bottom-right, above StatusBar
-  if (!isOpen) {
-    return null; // Toggle is now in StatusBar
-  }
-
-  return (
-    <div className="fixed bottom-10 right-4 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
-      {/* Panel */}
-      <div className="w-72 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">{title}</h3>
-          <Button variant="ghost" size="bare"
-            onClick={onToggle}
-            className="p-1 hover:bg-slate-200 rounded transition-colors"
-            aria-label="Close quick help"
-          >
-            <Icon name="close" className="text-slate-500 text-sm" />
-          </Button>
-        </div>
-        <div className="p-2 max-h-80 overflow-y-auto">
-          {items.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              <Icon name={item.icon} className="text-slate-400 text-sm mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-700">{item.label}</span>
-                  {item.shortcut && (
-                    <kbd className="px-1 py-0.5 bg-slate-100 rounded text-[9px] font-mono text-slate-500">
-                      {item.shortcut}
-                    </kbd>
-                  )}
-                </div>
-                {item.description && (
-                  <p className="text-[10px] text-slate-400 mt-0.5">{item.description}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ============================================================================
-// First-Time Hint (subtle inline prompt)
-// ============================================================================
-
-interface FirstTimeHintProps {
-  id: string;
-  message: string;
-  icon?: string;
-  className?: string;
-}
-
-export const FirstTimeHint: React.FC<FirstTimeHintProps> = ({
-  id,
-  message,
-  icon = 'lightbulb',
-  className = ''
-}) => {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (!guidance.hasSeen(`hint-${id}`)) {
-      setVisible(true);
-    }
-  }, [id]);
-
-  const dismiss = () => {
-    guidance.markSeen(`hint-${id}`);
-    setVisible(false);
-  };
-
-  if (!visible) return null;
-
-  return (
-    <div className={`flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 ${className}`}>
-      <Icon name={icon} className="text-blue-500 text-sm shrink-0" />
-      <span className="flex-1">{message}</span>
-      <Button variant="ghost" size="bare"
-        onClick={dismiss}
-        className="text-blue-400 hover:text-blue-600 shrink-0"
-        title="Dismiss"
-      >
-        <Icon name="close" className="text-xs" />
-      </Button>
-    </div>
-  );
-};
-
-// ============================================================================
-// Empty State with Guidance
-// ============================================================================
-
-interface EmptyStateProps {
-  icon: string;
-  title: string;
-  description: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-  tips?: string[];
-}
-
-export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon,
-  title,
-  description,
-  action,
-  tips
-}) => {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-        <Icon name={icon} className="text-3xl text-slate-400" />
-      </div>
-      <h3 className="text-lg font-bold text-slate-700 mb-2">{title}</h3>
-      <p className="text-sm text-slate-500 max-w-md mb-6">{description}</p>
-
-      {action && (
-        <Button variant="ghost" size="bare"
-          onClick={action.onClick}
-          className="px-6 py-2.5 bg-iiif-blue text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          {action.label}
-          <Icon name="arrow_forward" className="text-sm" />
-        </Button>
-      )}
-
-      {tips && tips.length > 0 && (
-        <div className="mt-8 text-left w-full max-w-sm">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Quick tips</p>
-          <ul className="space-y-1.5">
-            {tips.map((tip, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs text-slate-500">
-                <Icon name="check_circle" className="text-green-500 text-xs mt-0.5 shrink-0" />
-                {tip}
-              </li>
-            ))}
-          </ul>
         </div>
       )}
     </div>

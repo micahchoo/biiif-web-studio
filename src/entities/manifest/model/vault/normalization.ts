@@ -17,7 +17,7 @@ import type {
   NormalizedState
 } from '@/src/shared/types';
 import { cloneAsRecord, hasType } from './cloning';
-import { extractExtensions } from './extensions';
+import { extractExtensions, hasUnknownProperties } from './extensions';
 
 /**
  * Create empty normalized state
@@ -78,10 +78,9 @@ function normalizeItem(
     state.references[parentId].push(id);
   }
 
-  // Extract and store extensions for round-tripping
-  const extensions = extractExtensions(cloneAsRecord(item), type);
-  if (Object.keys(extensions).length > 0) {
-    state.extensions[id] = extensions;
+  // Extract and store extensions for round-tripping (skip clone if no unknown properties)
+  if (hasUnknownProperties(item, type)) {
+    state.extensions[id] = extractExtensions(cloneAsRecord(item), type);
   }
 
   // Process based on type
@@ -260,10 +259,9 @@ function normalizeAnnotationPage(
   }
   state.references[parentId].push(id);
 
-  // Extract extensions from annotation page
-  const pageExtensions = extractExtensions(cloneAsRecord(page), 'AnnotationPage');
-  if (Object.keys(pageExtensions).length > 0) {
-    state.extensions[id] = pageExtensions;
+  // Extract extensions from annotation page (skip clone if no unknown properties)
+  if (hasUnknownProperties(page, 'AnnotationPage')) {
+    state.extensions[id] = extractExtensions(cloneAsRecord(page), 'AnnotationPage');
   }
 
   // Store page without nested annotations
@@ -304,10 +302,9 @@ function normalizeAnnotationPage(
 
       state.entities.Annotation[anno.id] = sanitizedAnno;
 
-      // Extract extensions from annotation
-      const annoExtensions = extractExtensions(cloneAsRecord(sanitizedAnno), 'Annotation');
-      if (Object.keys(annoExtensions).length > 0) {
-        state.extensions[anno.id] = annoExtensions;
+      // Extract extensions from annotation (skip clone if no unknown properties)
+      if (hasUnknownProperties(sanitizedAnno, 'Annotation')) {
+        state.extensions[anno.id] = extractExtensions(cloneAsRecord(sanitizedAnno), 'Annotation');
       }
     }
   }

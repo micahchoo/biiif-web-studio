@@ -14,8 +14,6 @@
  */
 
 import React, { useState } from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface ImagePreviewProps {
   /** Image URL to display */
   src: string;
@@ -25,10 +23,6 @@ export interface ImagePreviewProps {
   mirrored?: boolean;
   /** Alt text for accessibility */
   alt?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames;
-  /** Field mode flag (unused but required for API consistency) */
-  fieldMode?: boolean;
 }
 
 const ERROR_SVG = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="%231e293b" width="400" height="300"/><text fill="%2394a3b8" x="50%25" y="50%25" text-anchor="middle" font-family="sans-serif">Invalid Request</text></svg>';
@@ -38,8 +32,6 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
   rotation = 0,
   mirrored = false,
   alt = 'IIIF Image Preview',
-  cx: _cx,
-  fieldMode: _fieldMode,
 }) => {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

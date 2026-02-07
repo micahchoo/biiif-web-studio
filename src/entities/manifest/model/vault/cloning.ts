@@ -2,29 +2,16 @@
  * Vault Cloning Utilities (Molecule Layer)
  *
  * Small, focused functions for cloning entities and state.
- * Uses Immer when enabled, falls back to structuredClone or JSON serialization.
+ * Uses structuredClone with JSON serialization fallback.
  */
 
-import { enableMapSet, produce, setAutoFreeze } from 'immer';
-import { USE_IMMER_CLONING } from '@/src/shared/constants';
 import type { NormalizedState } from '@/src/shared/types';
-
-// Enable Immer Map/Set support for better performance
-enableMapSet();
-// Disable auto-freeze for better performance (we don't need immutability checks in production)
-setAutoFreeze(false);
 
 /**
  * Deep clone an entity using structuredClone (with JSON fallback)
- * Uses Immer's produce when USE_IMMER_CLONING flag is enabled
  * This is the standard pattern for working with entities during denormalization
  */
 export function cloneAsRecord<T extends object>(entity: T): Record<string, unknown> {
-  if (USE_IMMER_CLONING) {
-    // Use Immer for immutable cloning and updates
-    return produce(entity, draft => draft) as unknown as Record<string, unknown>;
-  }
-
   // Use native structuredClone if available (faster, handles more types)
   if (typeof structuredClone === 'function') {
     try {
@@ -40,13 +27,8 @@ export function cloneAsRecord<T extends object>(entity: T): Record<string, unkno
 
 /**
  * Create a deep clone of the entire state using structuredClone
- * with Immer fallback when enabled
  */
 export function deepCloneState(state: NormalizedState): NormalizedState {
-  if (USE_IMMER_CLONING) {
-    return produce(state, draft => draft);
-  }
-
   if (typeof structuredClone === 'function') {
     try {
       return structuredClone(state);

@@ -14,8 +14,6 @@
 
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export type ValidationStatus = 'success' | 'warning' | 'error';
 
 export interface ValidationBadgeProps {
@@ -27,10 +25,6 @@ export interface ValidationBadgeProps {
   label?: string;
   /** Icon name (defaults based on status) */
   icon?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames;
-  /** Field mode flag */
-  fieldMode?: boolean;
 }
 
 const statusConfig: Record<

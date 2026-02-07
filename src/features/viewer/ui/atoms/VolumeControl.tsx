@@ -15,8 +15,6 @@
 
 import React, { useCallback } from 'react';
 import { IconButton } from '@/src/shared/ui/molecules';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface VolumeControlProps {
   /** Current volume level (0-1) */
   volume: number;
@@ -30,8 +28,6 @@ export interface VolumeControlProps {
   sliderWidth?: string;
   /** Additional CSS classes for container */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -43,7 +39,6 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
   onMuteToggle,
   sliderWidth = '5rem',
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const handleSliderChange = useCallback(

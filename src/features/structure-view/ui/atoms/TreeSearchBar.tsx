@@ -15,8 +15,6 @@
 
 import React from 'react';
 import { Button } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface TreeSearchBarProps {
   /** Current search query */
   query: string;
@@ -30,10 +28,6 @@ export interface TreeSearchBarProps {
   className?: string;
   /** Whether to auto-focus on mount */
   autoFocus?: boolean;
-  /** Contextual styles from template */
-  cx?: ContextualClassNames;
-  /** Current field mode */
-  fieldMode?: boolean;
 }
 
 /**

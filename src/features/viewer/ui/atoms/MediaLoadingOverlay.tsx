@@ -14,8 +14,6 @@
  */
 
 import React from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface MediaLoadingOverlayProps {
   /** Optional loading message to display */
   message?: string;
@@ -25,8 +23,6 @@ export interface MediaLoadingOverlayProps {
   opacity?: 'light' | 'medium' | 'dark';
   /** Additional CSS classes */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -48,7 +44,6 @@ export const MediaLoadingOverlay: React.FC<MediaLoadingOverlayProps> = ({
   spinnerSize = 'md',
   opacity = 'medium',
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const size = spinnerSizes[spinnerSize];

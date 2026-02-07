@@ -18,6 +18,7 @@
 
 import React, { useState } from 'react';
 import { Button, Icon } from '../atoms';
+import { MetadataFieldRenderer, formatFieldValue } from './MetadataFieldRenderer';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFItem } from '@/src/shared/types';
 
@@ -124,124 +125,6 @@ export const MetadataCard: React.FC<MetadataCardProps> = ({
     setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
 
-  const formatValue = (value: string | string[] | null, type?: string): string => {
-    if (value === null || value === undefined) return '—';
-    
-    if (Array.isArray(value)) {
-      return value.join(', ') || '—';
-    }
-
-    // Format dates
-    if (type === 'date' && value) {
-      try {
-        const date = new Date(value);
-        return date.toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      } catch {
-        return value;
-      }
-    }
-
-    return value || '—';
-  };
-
-  const renderField = (field: MetadataField) => {
-    const displayValue = formatValue(field.value, field.type);
-    const hasError = field.error;
-
-    if (isEditing && field.editable) {
-      return (
-        <div key={field.id} className="space-y-1">
-          <label className={`text-xs font-medium ${fieldMode ? 'text-slate-400' : 'text-slate-600'}`}>
-            {field.label}
-            {field.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
-          
-          {field.type === 'textarea' ? (
-            <textarea
-              value={(field.value as string) || ''}
-              onChange={(e) => onFieldChange?.(field.id, e.target.value)}
-              rows={3}
-              className={`
-                w-full px-3 py-2 rounded-lg text-sm
-                border transition-colors resize-none
-                ${fieldMode
-                  ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500'
-                  : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                }
-                ${hasError ? 'border-red-500' : ''}
-              `}
-              placeholder={`Enter ${field.label.toLowerCase()}`}
-            />
-          ) : field.type === 'select' && field.options ? (
-            <select
-              value={(field.value as string) || ''}
-              onChange={(e) => onFieldChange?.(field.id, e.target.value)}
-              className={`
-                w-full px-3 py-2 rounded-lg text-sm
-                border transition-colors
-                ${fieldMode
-                  ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500'
-                  : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                }
-                ${hasError ? 'border-red-500' : ''}
-              `}
-            >
-              <option value="">Select {field.label.toLowerCase()}</option>
-              {field.options.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type={field.type === 'date' ? 'date' : field.type === 'url' ? 'url' : 'text'}
-              value={(field.value as string) || ''}
-              onChange={(e) => onFieldChange?.(field.id, e.target.value)}
-              className={`
-                w-full px-3 py-2 rounded-lg text-sm
-                border transition-colors
-                ${fieldMode
-                  ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500'
-                  : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                }
-                ${hasError ? 'border-red-500' : ''}
-              `}
-              placeholder={`Enter ${field.label.toLowerCase()}`}
-            />
-          )}
-          
-          {hasError && (
-            <p className="text-xs text-red-500 flex items-center gap-1">
-              <Icon name="error" className="text-xs" />
-              {field.error}
-            </p>
-          )}
-          
-          {field.helpText && !hasError && (
-            <p className={`text-xs ${fieldMode ? 'text-slate-500' : 'text-slate-400'}`}>
-              {field.helpText}
-            </p>
-          )}
-        </div>
-      );
-    }
-
-    // Read-only display
-    return (
-      <div key={field.id} className="flex flex-col">
-        <span className={`text-xs font-medium mb-1 ${fieldMode ? 'text-slate-500' : 'text-slate-500'}`}>
-          {field.label}
-        </span>
-        <span className={`text-sm ${fieldMode ? 'text-white' : 'text-slate-900'}`}>
-          {displayValue}
-        </span>
-      </div>
-    );
-  };
-
   return (
     <div
       className={`
@@ -278,7 +161,7 @@ export const MetadataCard: React.FC<MetadataCardProps> = ({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h2 className={`text-lg font-semibold truncate ${fieldMode ? 'text-white' : 'text-slate-900'}`}>
-                  {formatValue(fields.find(f => f.id === 'label')?.value) || 'Untitled'}
+                  {formatFieldValue(fields.find(f => f.id === 'label')?.value) || 'Untitled'}
                 </h2>
                 <p className={`text-sm mt-1 ${fieldMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   {t(item.type)}
@@ -295,7 +178,7 @@ export const MetadataCard: React.FC<MetadataCardProps> = ({
                     {errorCount} {errorCount === 1 ? 'error' : 'errors'}
                   </span>
                 )}
-                
+
                 {isEditing ? (
                   <>
                     <Button
@@ -331,7 +214,7 @@ export const MetadataCard: React.FC<MetadataCardProps> = ({
             {/* Summary/description */}
             {fields.find(f => f.id === 'summary')?.value && (
               <p className={`text-sm mt-2 line-clamp-2 ${fieldMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                {formatValue(fields.find(f => f.id === 'summary')?.value)}
+                {formatFieldValue(fields.find(f => f.id === 'summary')?.value)}
               </p>
             )}
           </div>
@@ -389,7 +272,15 @@ export const MetadataCard: React.FC<MetadataCardProps> = ({
                   p-4 space-y-4
                   ${fieldMode ? 'bg-slate-900/30' : 'bg-slate-50/50'}
                 `}>
-                  {groupFs.map(renderField)}
+                  {groupFs.map(field => (
+                    <MetadataFieldRenderer
+                      key={field.id}
+                      field={field}
+                      isEditing={isEditing}
+                      onFieldChange={onFieldChange}
+                      fieldMode={fieldMode}
+                    />
+                  ))}
                 </div>
               )}
             </div>

@@ -125,11 +125,11 @@ export const CSVImportWizard: React.FC<CSVImportWizardProps> = ({
     <div className={`flex flex-col h-full ${fieldMode ? 'bg-slate-900' : 'bg-white'}`}>
       {/* Progress indicator */}
       <div className={`flex items-center px-6 py-3 border-b ${fieldMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-        <WizardStepIndicator step={1} label="Upload" active={step === 'upload'} completed={step !== 'upload'} fieldMode={fieldMode} />
-        <WizardStepConnector completed={step !== 'upload'} fieldMode={fieldMode} />
-        <WizardStepIndicator step={2} label="Map" active={step === 'map'} completed={step === 'result'} fieldMode={fieldMode} />
-        <WizardStepConnector completed={step === 'result'} fieldMode={fieldMode} />
-        <WizardStepIndicator step={3} label="Result" active={step === 'result'} completed={false} fieldMode={fieldMode} />
+        <WizardStepIndicator step={1} label="Upload" active={step === 'upload'} completed={step !== 'upload'} />
+        <WizardStepConnector completed={step !== 'upload'} />
+        <WizardStepIndicator step={2} label="Map" active={step === 'map'} completed={step === 'result'} />
+        <WizardStepConnector completed={step === 'result'} />
+        <WizardStepIndicator step={3} label="Result" active={step === 'result'} completed={false} />
       </div>
 
       {/* Content */}

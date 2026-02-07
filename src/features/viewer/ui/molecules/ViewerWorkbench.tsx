@@ -140,7 +140,7 @@ export const ViewerWorkbench: React.FC<ViewerWorkbenchProps> = ({
         {/* Left: Preview */}
         <div className="flex-1 bg-slate-950 relative flex flex-col overflow-hidden">
           <PreviewHeader fieldMode={fieldMode} />
-          <ImagePreview src={url} rotation={rotationDeg} mirrored={mirrored} fieldMode={fieldMode} />
+          <ImagePreview src={url} rotation={rotationDeg} mirrored={mirrored} />
           <UrlBar imageId={imageId} {...params} fieldMode={fieldMode} />
         </div>
 

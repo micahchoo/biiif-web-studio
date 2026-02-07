@@ -52,7 +52,8 @@ export {
 export {
   extractExtensions,
   applyExtensions,
-  extractExtensionsFromEntity
+  extractExtensionsFromEntity,
+  hasUnknownProperties
 } from './extensions';
 
 // ============================================================================

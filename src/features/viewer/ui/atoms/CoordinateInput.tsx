@@ -15,8 +15,6 @@
 
 import React from 'react';
 import { Input } from '@/src/shared/ui/atoms';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface CoordinateField {
   /** Field key */
   key: string;
@@ -33,8 +31,6 @@ export interface CoordinateInputProps {
   onChange: (key: string, value: number) => void;
   /** Number of columns in grid (1 or 2) */
   columns?: 1 | 2;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -43,7 +39,6 @@ export const CoordinateInput: React.FC<CoordinateInputProps> = ({
   fields,
   onChange,
   columns = 2,
-  cx: _cx,
   fieldMode = false,
 }) => {
   const mutedTextClass = fieldMode ? 'text-slate-400' : 'text-slate-500';

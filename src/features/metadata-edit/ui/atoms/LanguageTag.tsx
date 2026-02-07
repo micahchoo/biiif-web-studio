@@ -13,8 +13,6 @@
  */
 
 import React from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface LanguageOption {
   code: string;
   label: string;
@@ -29,10 +27,6 @@ export interface LanguageTagProps {
   onChange: (code: string) => void;
   /** Whether the selector is disabled */
   disabled?: boolean;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames;
-  /** Field mode flag */
-  fieldMode?: boolean;
 }
 
 export const LanguageTag: React.FC<LanguageTagProps> = ({

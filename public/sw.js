@@ -479,6 +479,16 @@ function getFromIDB(storeName, key) {
   });
 }
 
+/**
+ * Try OPFS first, then fall back to IndexedDB for files store lookups.
+ * Used for large files that may be stored in OPFS instead of IDB.
+ */
+async function getFileBlob(key) {
+  const opfsFile = await getFromOPFS(key);
+  if (opfsFile) return opfsFile;
+  return getFromIDB(FILES_STORE, key);
+}
+
 // ============================================================================
 // IIIF Image API 3.0 Enhanced Implementation
 // ============================================================================
@@ -654,7 +664,7 @@ async function handleImageRequest(request) {
 
     // Handle info.json request
     if (params[1] === 'info.json') {
-      const blob = await getFromIDB(FILES_STORE, identifier);
+      const blob = await getFileBlob(identifier);
       if (!blob) return new Response('Not found', { status: 404 });
       const bitmap = await createImageBitmap(blob);
       const info = {
@@ -722,7 +732,7 @@ async function handleImageRequest(request) {
     }
 
     // Load original image
-    const originalBlob = await getFromIDB(FILES_STORE, identifier);
+    const originalBlob = await getFileBlob(identifier);
     if (!originalBlob) return new Response('Not found', { status: 404 });
 
     const bitmap = await createImageBitmap(originalBlob);
@@ -858,33 +868,63 @@ function getMediaMimeType(ext) {
 }
 
 /**
- * Handle media (audio/video) requests from IndexedDB
+ * Try to get a file from OPFS /originals/{id}
+ * Returns null if OPFS is unavailable or file not found.
+ * Uses a timeout to prevent hanging in SW contexts where OPFS may not resolve.
+ */
+async function getFromOPFS(id) {
+  try {
+    if (!navigator.storage?.getDirectory) return null;
+
+    // Race against a timeout - OPFS may hang in some browser SW contexts
+    const result = await Promise.race([
+      (async () => {
+        const root = await navigator.storage.getDirectory();
+        const originals = await root.getDirectoryHandle('originals');
+        const fileHandle = await originals.getFileHandle(id);
+        return await fileHandle.getFile();
+      })(),
+      new Promise(resolve => setTimeout(() => resolve(null), 1000))
+    ]);
+
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Handle media (audio/video) requests from OPFS or IndexedDB
  */
 async function handleMediaRequest(request, assetId, format) {
   console.log('[SW] Handling media request:', assetId, format);
 
   try {
-    // Open IndexedDB to get the media file
-    const db = await new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME);
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
-    });
+    // Try OPFS first (large files are stored here)
+    let blob = await getFromOPFS(assetId);
 
-    // Get the blob from files store
-    const transaction = db.transaction(FILES_STORE, 'readonly');
-    const store = transaction.objectStore(FILES_STORE);
+    // Fall back to IndexedDB
+    if (!blob) {
+      const db = await new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME);
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve(req.result);
+      });
 
-    const blob = await new Promise((resolve, reject) => {
-      const request = store.get(assetId);
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
-    });
+      const transaction = db.transaction(FILES_STORE, 'readonly');
+      const store = transaction.objectStore(FILES_STORE);
 
-    db.close();
+      blob = await new Promise((resolve, reject) => {
+        const req = store.get(assetId);
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve(req.result);
+      });
+
+      db.close();
+    }
 
     if (!blob) {
-      console.warn('[SW] Media not found in IndexedDB:', assetId);
+      console.warn('[SW] Media not found in OPFS or IndexedDB:', assetId);
       return new Response('Media not found', {
         status: 404,
         headers: { 'Content-Type': 'text/plain' }

@@ -9,6 +9,7 @@ import { ValidationIssue, validator } from '@/src/entities/manifest/model/valida
 import { Icon } from '@/src/shared/ui/atoms/Icon';
 import { ExportDryRun } from './ExportDryRun';
 import { FirstTimeHint } from '@/src/shared/ui/molecules/Tooltip';
+import { guidance } from '@/src/shared/services/guidanceService';
 import FileSaver from 'file-saver';
 import JSZip from 'jszip';
 
@@ -344,6 +345,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ root, onClose }) => 
                             message="Choose how to package your archive. Canopy creates a ready-to-deploy website. Raw IIIF gives you just the JSON files."
                             icon="info"
                             className="mb-4"
+                            initialDismissed={guidance.hasSeen('hint-export-intro')}
+                            onDismiss={() => guidance.markSeen('hint-export-intro')}
                         />
                         <div className="grid grid-cols-2 gap-4" role="radiogroup" aria-labelledby="export-format-label">
                             <span id="export-format-label" className="sr-only">Choose Export Format</span>

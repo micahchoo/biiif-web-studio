@@ -15,8 +15,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { IconButton } from '@/src/shared/ui/molecules';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface FullscreenButtonProps {
   /** Reference to the container element to make fullscreen */
   containerRef: React.RefObject<HTMLElement>;
@@ -26,8 +24,6 @@ export interface FullscreenButtonProps {
   size?: 'sm' | 'md' | 'lg';
   /** Additional CSS classes */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -37,7 +33,6 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
   onFullscreenChange,
   size = 'md',
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);

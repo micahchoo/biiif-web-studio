@@ -14,8 +14,6 @@
  */
 
 import React, { useCallback, useRef } from 'react';
-import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
-
 export interface ProgressBarProps {
   /** Current playback time in seconds */
   currentTime: number;
@@ -31,8 +29,6 @@ export interface ProgressBarProps {
   showHandle?: boolean;
   /** Additional CSS classes */
   className?: string;
-  /** Contextual styles from parent */
-  cx?: ContextualClassNames | Record<string, string>;
   /** Field mode flag */
   fieldMode?: boolean;
 }
@@ -45,7 +41,6 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   height = '0.25rem',
   showHandle = true,
   className = '',
-  cx: _cx,
   fieldMode = false,
 }) => {
   const progressRef = useRef<HTMLDivElement>(null);
