@@ -16,7 +16,7 @@
 import React from 'react';
 import { Button, Icon } from '@/src/shared/ui/atoms';
 import { AutoMapButton, ColumnSelector, FilePreview, MappingRow, type PropertyOption } from '../atoms';
-import type { CSVColumnMapping } from '@/src/features/ingest/model/csvImporter';
+import type { CSVColumnMapping } from '@/src/shared/types';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface MappingStepProps {

@@ -74,7 +74,7 @@ export const ComposerSidebar: React.FC<ComposerSidebarProps> = ({
   cx: _cx,
 }) => {
   return (
-    <div className="w-80 bg-slate-900 border-r border-white/10 flex flex-col">
+    <div className="w-inspector bg-slate-900 border-r border-white/10 flex flex-col">
       {/* Tabs */}
       <div className="flex border-b border-white/10">
         <Button

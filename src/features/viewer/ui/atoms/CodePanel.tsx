@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import { ActionButton } from '@/src/shared/ui/molecules';
+import { ActionButton } from '@/src/shared/ui/molecules/ActionButton';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface CodePanelProps {

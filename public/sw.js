@@ -5,6 +5,103 @@ const DERIVATIVES_STORE = 'derivatives';
 const TILE_CACHE_NAME = 'iiif-tile-cache-v3';
 
 // ============================================================================
+// Failure Tracking & Exponential Backoff
+// ============================================================================
+
+// Track failed requests: key -> { count, lastAttempt, backoffUntil }
+const failureTracker = new Map();
+
+// 1x1 transparent PNG for graceful degradation (89 bytes)
+const TRANSPARENT_PIXEL_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQABNjN9GQAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAAA0lEQVQI12P4z8BQDwAEgAF/QualzQAAAABJRU5ErkJggg==';
+let TRANSPARENT_PIXEL_BLOB = null;
+
+function getTransparentPixel() {
+  if (!TRANSPARENT_PIXEL_BLOB) {
+    const binary = atob(TRANSPARENT_PIXEL_B64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    TRANSPARENT_PIXEL_BLOB = new Blob([bytes], { type: 'image/png' });
+  }
+  return TRANSPARENT_PIXEL_BLOB;
+}
+
+/**
+ * Check if a request key is currently in backoff.
+ * Returns false if OK to proceed, or the remaining backoff ms if still cooling down.
+ */
+function isInBackoff(key) {
+  const entry = failureTracker.get(key);
+  if (!entry) return false;
+  const now = Date.now();
+  if (now < entry.backoffUntil) {
+    return entry.backoffUntil - now;
+  }
+  return false;
+}
+
+/**
+ * Record a failure for a key. Calculates exponential backoff.
+ * Backoff schedule: 1s, 2s, 4s, 8s, 16s, 30s, 30s, 30s... (capped at 30s)
+ * After 10 consecutive failures, backoff jumps to 5 minutes.
+ */
+function recordFailure(key, errorMsg) {
+  const entry = failureTracker.get(key) || { count: 0, lastAttempt: 0, backoffUntil: 0 };
+  entry.count++;
+  entry.lastAttempt = Date.now();
+  entry.lastError = errorMsg;
+
+  let backoffMs;
+  if (entry.count >= 10) {
+    // After 10 failures, this asset is probably permanently broken
+    backoffMs = 5 * 60 * 1000; // 5 minutes
+  } else {
+    backoffMs = Math.min(Math.pow(2, entry.count - 1) * 1000, 30000);
+  }
+  entry.backoffUntil = Date.now() + backoffMs;
+
+  failureTracker.set(key, entry);
+  console.warn(`[SW] Failure #${entry.count} for ${key}: ${errorMsg}. Backoff ${backoffMs}ms`);
+}
+
+/**
+ * Clear failure record on success (asset recovered).
+ */
+function clearFailure(key) {
+  if (failureTracker.has(key)) {
+    console.log(`[SW] Cleared failure record for ${key}`);
+    failureTracker.delete(key);
+  }
+}
+
+/**
+ * Return a graceful degradation response (transparent pixel or error JSON).
+ * Uses Cache-Control to tell the browser not to re-fetch immediately.
+ */
+function degradedImageResponse(failureEntry) {
+  const retryAfter = Math.ceil((failureEntry?.backoffUntil - Date.now()) / 1000) || 5;
+  return new Response(getTransparentPixel(), {
+    status: 200, // 200 so the viewer renders blank tile, not retry on error
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': `max-age=${retryAfter}`,
+      'X-SW-Degraded': 'true',
+      'X-SW-Failure-Count': String(failureEntry?.count || 0),
+      'Access-Control-Allow-Origin': '*'
+    }
+  });
+}
+
+// Periodic cleanup: remove stale failure entries older than 10 minutes
+setInterval(() => {
+  const cutoff = Date.now() - 10 * 60 * 1000;
+  for (const [key, entry] of failureTracker) {
+    if (entry.lastAttempt < cutoff) {
+      failureTracker.delete(key);
+    }
+  }
+}, 60 * 1000);
+
+// ============================================================================
 // Tile Serving Configuration
 // ============================================================================
 
@@ -40,7 +137,6 @@ async function handleTileRequest(request, assetId, level, x, y, format) {
   const cachedResponse = await cache.match(request);
   if (cachedResponse) {
     touchEntry(url);
-    // Return cached response with updated headers
     const headers = new Headers(cachedResponse.headers);
     headers.set('X-Cache', 'HIT');
     headers.set('X-Cache-Source', 'Cache-API');
@@ -51,22 +147,28 @@ async function handleTileRequest(request, assetId, level, x, y, format) {
     });
   }
 
+  // Check backoff before attempting main-thread communication
+  const backoffKey = `tile:${assetId}`;
+  const backoffRemaining = isInBackoff(backoffKey);
+  if (backoffRemaining) {
+    return degradedImageResponse(failureTracker.get(backoffKey));
+  }
+
   // 2. Fall back to IndexedDB via main thread
   try {
     const tileBlob = await fetchTileFromIndexedDB(assetId, level, x, y, format);
-    
+
     if (!tileBlob) {
       return new Response('Tile not found', {
         status: 404,
         statusText: 'Not Found',
         headers: {
           'Content-Type': 'text/plain',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'max-age=5' // Don't retry immediately
         }
       });
     }
 
-    // Create response with proper headers
     const contentType = format === 'png' ? 'image/png' : 'image/jpeg';
     const response = new Response(tileBlob, {
       status: 200,
@@ -79,20 +181,13 @@ async function handleTileRequest(request, assetId, level, x, y, format) {
       }
     });
 
-    // 3. Cache the tile for future requests
     await cacheTile(request, response.clone());
-
+    clearFailure(backoffKey);
     return response;
   } catch (error) {
     console.error('[SW] Error fetching tile from IndexedDB:', error);
-    return new Response('Error fetching tile', {
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: {
-        'Content-Type': 'text/plain',
-        'Cache-Control': 'no-cache'
-      }
-    });
+    recordFailure(backoffKey, error.message);
+    return degradedImageResponse(failureTracker.get(backoffKey));
   }
 }
 
@@ -199,17 +294,29 @@ async function cacheTile(request, response) {
  * @returns {Promise<Response>}
  */
 async function handleTileInfoRequest(assetId) {
+  const backoffKey = `tileinfo:${assetId}`;
+  const backoffRemaining = isInBackoff(backoffKey);
+  if (backoffRemaining) {
+    return new Response(JSON.stringify({ error: 'Temporarily unavailable' }), {
+      status: 503,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': `max-age=${Math.ceil(backoffRemaining / 1000)}`,
+        'Retry-After': String(Math.ceil(backoffRemaining / 1000))
+      }
+    });
+  }
+
   try {
-    // Fetch manifest from IndexedDB via main thread
     const manifest = await fetchTileManifestFromIndexedDB(assetId);
-    
+
     if (!manifest) {
       return new Response('Tile manifest not found', {
         status: 404,
         statusText: 'Not Found',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'max-age=5'
         }
       });
     }
@@ -250,12 +357,15 @@ async function handleTileInfoRequest(assetId) {
     });
   } catch (error) {
     console.error('[SW] Error fetching tile info:', error);
+    recordFailure(backoffKey, error.message);
+    const entry = failureTracker.get(backoffKey);
+    const retryAfter = Math.ceil((entry?.backoffUntil - Date.now()) / 1000) || 5;
     return new Response(JSON.stringify({ error: 'Failed to fetch tile info' }), {
-      status: 500,
-      statusText: 'Internal Server Error',
+      status: 503,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': `max-age=${retryAfter}`,
+        'Retry-After': String(retryAfter)
       }
     });
   }
@@ -648,13 +758,22 @@ async function handleImageRequest(request) {
     return cachedResponse;
   }
 
-  try {
-    const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split('/iiif/image/');
-    if (pathParts.length < 2) return new Response('Invalid IIIF URL', { status: 400 });
+  // Extract identifier early for backoff tracking
+  const urlObj = new URL(url);
+  const pathParts = urlObj.pathname.split('/iiif/image/');
+  if (pathParts.length < 2) return new Response('Invalid IIIF URL', { status: 400 });
 
-    const params = pathParts[1].split('/');
-    const identifier = decodeURIComponent(params[0]);
+  const params = pathParts[1].split('/');
+  const identifier = decodeURIComponent(params[0]);
+  const backoffKey = `image:${identifier}`;
+
+  // Check if this asset is in backoff from previous failures
+  const backoffRemaining = isInBackoff(backoffKey);
+  if (backoffRemaining) {
+    return degradedImageResponse(failureTracker.get(backoffKey));
+  }
+
+  try {
     const region = params[1];
     const size = params[2];
     const rotationParam = params[3] || '0';
@@ -666,7 +785,51 @@ async function handleImageRequest(request) {
     if (params[1] === 'info.json') {
       const blob = await getFileBlob(identifier);
       if (!blob) return new Response('Not found', { status: 404 });
-      const bitmap = await createImageBitmap(blob);
+
+      // SVGs can't be reliably measured via createImageBitmap in all browsers
+      if (blob.type === 'image/svg+xml' || identifier.endsWith('.svg')) {
+        const info = {
+          "@context": "http://iiif.io/api/image/3/context.json",
+          "id": `${urlObj.origin}${urlObj.pathname.replace('/info.json', '')}`,
+          "type": "ImageService3",
+          "protocol": "http://iiif.io/api/image",
+          "profile": "level0",
+          "width": 1000,
+          "height": 1000,
+          "preferredFormats": ["svg"]
+        };
+        return new Response(JSON.stringify(info), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'max-age=86400'
+          }
+        });
+      }
+
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(blob);
+      } catch (bitmapErr) {
+        // Some PNGs or images may be malformed — return minimal info
+        console.warn(`[SW] createImageBitmap failed for info.json of ${identifier}:`, bitmapErr.message);
+        recordFailure(backoffKey, `info.json bitmap: ${bitmapErr.message}`);
+        return new Response(JSON.stringify({
+          "@context": "http://iiif.io/api/image/3/context.json",
+          "id": `${urlObj.origin}${urlObj.pathname.replace('/info.json', '')}`,
+          "type": "ImageService3",
+          "protocol": "http://iiif.io/api/image",
+          "profile": "level0",
+          "width": 1,
+          "height": 1
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'max-age=30'
+          }
+        });
+      }
       const info = {
         "@context": "http://iiif.io/api/image/3/context.json",
         "id": `${urlObj.origin}${urlObj.pathname.replace('/info.json', '')}`,
@@ -734,6 +897,18 @@ async function handleImageRequest(request) {
     // Load original image
     const originalBlob = await getFileBlob(identifier);
     if (!originalBlob) return new Response('Not found', { status: 404 });
+
+    // SVG safety net: serve raw SVG instead of trying to rasterize
+    if (originalBlob.type === 'image/svg+xml' || identifier.endsWith('.svg')) {
+      return new Response(originalBlob, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'max-age=31536000, immutable'
+        }
+      });
+    }
 
     const bitmap = await createImageBitmap(originalBlob);
     let rx = 0, ry = 0, rw = bitmap.width, rh = bitmap.height;
@@ -829,17 +1004,20 @@ async function handleImageRequest(request) {
 
     // Use LRU cache instead of simple cache.put
     await addToCache(request, res.clone());
+
+    // Success — clear any previous failure record for this asset
+    clearFailure(backoffKey);
     return res;
 
   } catch (err) {
     console.error('[SW] Error handling image request:', err);
-    return new Response(JSON.stringify({
-      error: 'Error processing image request',
-      details: err.message
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+
+    // Record failure with exponential backoff
+    recordFailure(backoffKey, err.message);
+
+    // Return transparent pixel so the viewer renders a blank tile
+    // instead of retrying the request in a tight loop
+    return degradedImageResponse(failureTracker.get(backoffKey));
   }
 }
 
@@ -848,7 +1026,7 @@ async function handleImageRequest(request) {
 // ============================================================================
 
 // Media URL pattern: /media/{assetId}.{ext} or /iiif/media/{assetId}.{ext}
-const MEDIA_URL_PATTERN = /\/(iiif\/)?media\/([^\/]+)\.(mp3|mp4|webm|ogg|wav|m4a|aac|flac)$/;
+const MEDIA_URL_PATTERN = /\/(iiif\/)?media\/([^\/]+)\.(mp3|mp4|webm|ogg|wav|m4a|aac|flac|svg)$/;
 
 /**
  * Get MIME type from file extension
@@ -862,7 +1040,8 @@ function getMediaMimeType(ext) {
     'wav': 'audio/wav',
     'm4a': 'audio/mp4',
     'aac': 'audio/aac',
-    'flac': 'audio/flac'
+    'flac': 'audio/flac',
+    'svg': 'image/svg+xml'
   };
   return mimeTypes[ext.toLowerCase()] || 'application/octet-stream';
 }
@@ -1073,6 +1252,32 @@ self.addEventListener('message', (event) => {
       evictLRU(event.data.requiredSpace || 0).then((freed) => {
         event.ports[0]?.postMessage({ freed });
       });
+      break;
+
+    case 'clearFailures':
+      // Reset all failure tracking (e.g., after re-ingest)
+      {
+        const count = failureTracker.size;
+        failureTracker.clear();
+        console.log(`[SW] Cleared ${count} failure records`);
+        event.ports[0]?.postMessage({ cleared: count });
+      }
+      break;
+
+    case 'getFailureStats':
+      // Diagnostics: report current failure state
+      {
+        const stats = [];
+        for (const [key, entry] of failureTracker) {
+          stats.push({
+            key,
+            count: entry.count,
+            lastError: entry.lastError,
+            backoffRemaining: Math.max(0, entry.backoffUntil - Date.now())
+          });
+        }
+        event.ports[0]?.postMessage({ failures: stats });
+      }
       break;
   }
 });

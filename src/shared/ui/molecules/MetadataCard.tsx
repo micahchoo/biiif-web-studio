@@ -21,29 +21,9 @@ import { Button, Icon } from '../atoms';
 import { MetadataFieldRenderer, formatFieldValue } from './MetadataFieldRenderer';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFItem } from '@/src/shared/types';
+import type { MetadataField } from './metadataTypes';
 
-export interface MetadataField {
-  /** Field identifier */
-  id: string;
-  /** Human-readable label */
-  label: string;
-  /** Current value */
-  value: string | string[] | null;
-  /** Whether field is editable */
-  editable?: boolean;
-  /** Field type for appropriate input */
-  type?: 'text' | 'textarea' | 'date' | 'url' | 'select' | 'readonly';
-  /** Options for select type */
-  options?: { value: string; label: string }[];
-  /** Help text/tooltip */
-  helpText?: string;
-  /** Group/category */
-  group?: 'basic' | 'technical' | 'rights' | 'relations';
-  /** Whether field is required */
-  required?: boolean;
-  /** Validation error message */
-  error?: string | null;
-}
+export type { MetadataField };
 
 export interface MetadataCardProps {
   /** Item being displayed */

@@ -43,9 +43,20 @@ export {
   useMediaPlayer,
   type MediaState,
 } from './useMediaPlayer';
+export {
+  useViewingBehavior,
+  type ViewingBehavior,
+  type ViewingLayout,
+} from './useViewingBehavior';
+export {
+  useAnnotationLayers,
+  type AnnotationLayer,
+  type UseAnnotationLayersReturn,
+} from './useAnnotationLayers';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { IIIFAnnotation, IIIFCanvas, IIIFManifest } from '@/src/shared/types';
+import type { IIIFAnnotation, IIIFAnnotationBody, IIIFCanvas, IIIFExternalWebResource, IIIFManifest, IIIFTextualBody } from '@/src/shared/types';
+import { isChoice, getIIIFValue } from '@/src/shared/types';
 import { contentSearchService } from '@/src/entities/annotation/model/contentSearchService';
 import { resolveImageSource } from '@/src/entities/canvas/model/imageSourceResolver';
 
@@ -56,6 +67,12 @@ declare const OpenSeadragon: any;
 // ============================================================================
 
 export type MediaType = 'image' | 'video' | 'audio' | 'other';
+
+/** A single option within a Choice body */
+export interface ChoiceItem {
+  label: string;
+  body: IIIFExternalWebResource | IIIFTextualBody;
+}
 
 export interface ViewerState {
   mediaType: MediaType;
@@ -75,6 +92,11 @@ export interface ViewerState {
   showKeyboardHelp: boolean;
   selectedAnnotationId: string | null;
   isOcring: boolean;
+
+  // Choice support
+  hasChoice: boolean;
+  choiceItems: ChoiceItem[];
+  activeChoiceIndex: number;
 }
 
 export interface UseViewerReturn extends ViewerState {
@@ -109,6 +131,9 @@ export interface UseViewerReturn extends ViewerState {
   selectAnnotation: (id: string | null) => void;
   addAnnotation: (annotation: IIIFAnnotation) => void;
   removeAnnotation: (id: string) => void;
+
+  // Choice Actions
+  setActiveChoiceIndex: (index: number) => void;
 
   // Utility
   hasSearchService: boolean;
@@ -188,6 +213,33 @@ export const useViewer = (
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [isOcring, _setIsOcring] = useState(false);
+  const [activeChoiceIndex, setActiveChoiceIndex] = useState(0);
+
+  // Detect Choice bodies on the painting annotation
+  const { hasChoice, choiceItems } = useMemo(() => {
+    if (!item?.items?.[0]?.items?.[0]) {
+      return { hasChoice: false, choiceItems: [] as ChoiceItem[] };
+    }
+
+    const body = item.items[0].items[0].body as IIIFAnnotationBody;
+    if (!body || !isChoice(body)) {
+      return { hasChoice: false, choiceItems: [] as ChoiceItem[] };
+    }
+
+    const items: ChoiceItem[] = body.items.map((b) => ({
+      label: getIIIFValue((b as { label?: Record<string, string[]> }).label) ||
+        ('format' in b ? b.format : '') ||
+        ('type' in b ? b.type : 'Option'),
+      body: b,
+    }));
+
+    return { hasChoice: items.length > 0, choiceItems: items };
+  }, [item?.id]);
+
+  // Reset choice index when canvas changes
+  useEffect(() => {
+    setActiveChoiceIndex(0);
+  }, [item?.id]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -717,6 +769,9 @@ export const useViewer = (
     showKeyboardHelp,
     selectedAnnotationId,
     isOcring,
+    hasChoice,
+    choiceItems,
+    activeChoiceIndex,
 
     // Refs
     viewerRef,
@@ -749,6 +804,9 @@ export const useViewer = (
     selectAnnotation,
     addAnnotation,
     removeAnnotation,
+
+    // Choice
+    setActiveChoiceIndex,
 
     // Computed
     hasSearchService,

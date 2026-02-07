@@ -25,11 +25,11 @@ import { ArchiveView } from '@/src/features/archive';
 import { BoardView } from '@/src/features/board-design';
 import { Inspector, MetadataView } from '@/src/features/metadata-edit';
 import { SearchView } from '@/src/features/search';
-import { ViewerView } from '@/src/features/viewer';
+const ViewerView = React.lazy(() => import('@/src/features/viewer/ui/organisms/ViewerView').then(m => ({ default: m.ViewerView })));
 import { MapView } from '@/src/features/map';
 import { TimelineView } from '@/src/features/timeline';
 import { StructureTreeView } from '@/src/features/structure-view';
-import { DependencyExplorer } from '@/src/features/dependency-explorer';
+const DependencyExplorer = React.lazy(() => import('@/src/features/dependency-explorer/ui/DependencyExplorer').then(m => ({ default: m.DependencyExplorer })));
 
 export interface ViewRouterProps {
   selectedId: string | null;
@@ -378,7 +378,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
         {/* Left: Archive Filmstrip when viewer shown, full grid otherwise */}
         <div className={`flex flex-col transition-all duration-300 ${
           shouldShowViewer
-            ? `w-72 shrink-0 ${isFieldMode ? 'bg-black border-r border-yellow-900/50' : 'bg-slate-900 border-r border-slate-700'}`
+            ? `w-filmstrip shrink-0 ${isFieldMode ? 'bg-black border-r border-yellow-900/50' : 'bg-slate-900 border-r border-slate-700'}`
             : 'flex-1'
         }`}>
           <ArchiveView
@@ -437,32 +437,35 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
             </div>
             <div className="flex-1 flex min-h-0 overflow-hidden">
               <div className={`flex flex-col min-h-0 min-w-0 ${showInspectorPanel ? 'flex-1' : 'w-full'}`}>
-                <ViewerView
-                  item={selectedItem as IIIFCanvas}
-                  manifest={viewerData.manifest}
-                  onUpdate={(updates) => onUpdateItem?.(updates)}
-                  cx={viewerCx}
-                  fieldMode={isFieldMode}
-                  t={(key) => key}
-                  isAdvanced={settings?.abstractionLevel === 'advanced'}
-                  // Controlled annotation mode for Inspector integration
-                  annotationToolActive={showAnnotationTool}
-                  onAnnotationToolToggle={handleAnnotationToolToggle}
-                  annotationText={annotationText}
-                  annotationMotivation={annotationMotivation}
-                  onAnnotationDrawingStateChange={setAnnotationDrawingState}
-                  onAnnotationSaveRef={(fn) => { annotationSaveRef.current = fn; }}
-                  onAnnotationClearRef={(fn) => { annotationClearRef.current = fn; }}
-                  // Time-based annotation props
-                  timeRange={timeRange}
-                  onTimeRangeChange={setTimeRange}
-                  currentPlaybackTime={currentPlaybackTime}
-                  onPlaybackTimeChange={handlePlaybackTimeChange}
-                />
+                <React.Suspense fallback={null}>
+                  <ViewerView
+                    item={selectedItem as IIIFCanvas}
+                    manifest={viewerData.manifest}
+                    onUpdate={(updates) => onUpdateItem?.(updates)}
+                    cx={viewerCx}
+                    fieldMode={isFieldMode}
+                    t={(key) => key}
+                    isAdvanced={settings?.abstractionLevel === 'advanced'}
+                    // Controlled annotation mode for Inspector integration
+                    annotationToolActive={showAnnotationTool}
+                    onAnnotationToolToggle={handleAnnotationToolToggle}
+                    annotationText={annotationText}
+                    annotationMotivation={annotationMotivation}
+                    onAnnotationDrawingStateChange={setAnnotationDrawingState}
+                    onAnnotationSaveRef={(fn) => { annotationSaveRef.current = fn; }}
+                    onAnnotationClearRef={(fn) => { annotationClearRef.current = fn; }}
+                    // Time-based annotation props
+                    timeRange={timeRange}
+                    onTimeRangeChange={setTimeRange}
+                    currentPlaybackTime={currentPlaybackTime}
+                    onPlaybackTimeChange={handlePlaybackTimeChange}
+                  />
+                </React.Suspense>
               </div>
-              {/* Inspector Panel - Full Inspector with tabs */}
+              {/* Inspector Panel — archive-specific mount point. Other views mount
+                 Inspector at the App.tsx level instead. See App.tsx comment. */}
               {showInspectorPanel && settings && (
-                <div className="w-80 shrink-0 min-h-0 overflow-hidden border-l border-slate-700">
+                <div className="w-inspector shrink-0 min-h-0 overflow-hidden border-l border-slate-700">
                   <Inspector
                     resource={selectedItem}
                     onUpdateResource={(updates) => onUpdateItem?.(updates)}
@@ -658,15 +661,17 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
         };
 
     return (
-      <ViewerView
-        item={viewerData.canvas}
-        manifest={viewerData.manifest}
-        onUpdate={(updates) => onUpdateItem?.(updates)}
-        cx={viewerCx}
-        fieldMode={isFieldMode}
-        t={(key) => key}
-        isAdvanced={settings?.abstractionLevel === 'advanced'}
-      />
+      <React.Suspense fallback={null}>
+        <ViewerView
+          item={viewerData.canvas}
+          manifest={viewerData.manifest}
+          onUpdate={(updates) => onUpdateItem?.(updates)}
+          cx={viewerCx}
+          fieldMode={isFieldMode}
+          t={(key) => key}
+          isAdvanced={settings?.abstractionLevel === 'advanced'}
+        />
+      </React.Suspense>
     );
   }
 
@@ -727,9 +732,11 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
   // Admin dependency explorer
   if (currentMode === 'admin-deps') {
     return (
-      <div className="h-full bg-slate-50 dark:bg-slate-950 p-6">
-        <DependencyExplorer />
-      </div>
+      <React.Suspense fallback={<div className="h-full bg-slate-50 dark:bg-slate-950 p-6 flex items-center justify-center text-slate-400">Loading...</div>}>
+        <div className="h-full bg-slate-50 dark:bg-slate-950 p-6">
+          <DependencyExplorer />
+        </div>
+      </React.Suspense>
     );
   }
 

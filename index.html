@@ -10,39 +10,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js"></script>
-    <style>
-      /* Custom Scrollbar */
-      .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-      html, body { height: 100%; overflow: hidden; }
-
-      /* Snappiness: Global Animations */
-      @keyframes slideInRight {
-        from { transform: translateX(20px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes scaleIn {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-      }
-      
-      .animate-slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
-      .animate-scale-in { animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-      /* Snappiness: Transitions */
-      .snappy-transition { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-      
-      /* Gestalt: Focus & Selection */
-      *:focus-visible { outline: 2px solid #005596; outline-offset: 2px; }
-      ::selection { background: #005596; color: white; }
-    </style>
   <script type="importmap">
 {
   "imports": {

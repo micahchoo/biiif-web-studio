@@ -407,8 +407,23 @@ const InspectorComponent: React.FC<InspectorProps> = ({
       aria-label="Resource Inspector"
     >
       {/* Header */}
-      <div className={`h-14 flex items-center justify-between px-4 border-b shrink-0 ${cx.headerBg} ${cx.text}`}>
+      <div className={`h-header-compact flex items-center justify-between px-4 border-b shrink-0 ${cx.headerBg} ${cx.text}`}>
         <div className="flex items-center gap-2">
+          {/* Provider logo (if available) */}
+          {resource.provider?.[0] && (() => {
+            const provider = resource.provider[0] as any;
+            const logoUrl = provider.logo?.[0]?.id;
+            const providerLabel = getIIIFValue(provider.label) || 'Provider';
+            return logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={providerLabel}
+                title={providerLabel}
+                className="h-5 w-auto rounded object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : null;
+          })()}
           <Icon name={config.icon} className={`${config.colorClass} text-sm`}/>
           <span className={`text-xs font-black uppercase tracking-widest ${settings.fieldMode ? cx.accent : config.colorClass}`}>
             {t('Inspector')}
@@ -416,9 +431,9 @@ const InspectorComponent: React.FC<InspectorProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <ShareButton item={resource} fieldMode={settings.fieldMode} />
-          <Button variant="ghost" size="bare" 
+          <Button variant="ghost" size="bare"
             aria-label="Close Inspector"
-            onClick={onClose} 
+            onClick={onClose}
             className={`p-2 rounded-lg ${settings.fieldMode ? 'hover:bg-slate-800' : 'hover:bg-slate-200'}`}
           >
             <Icon name="close"/>

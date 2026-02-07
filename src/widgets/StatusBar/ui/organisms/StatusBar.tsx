@@ -63,7 +63,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const hasMultiSelection = effectiveSelectionCount > 0;
 
   return (
-    <div className="h-7 bg-slate-950 border-t border-slate-800 flex items-center justify-between px-3 text-[11px] text-slate-400 select-none z-50">
+    <div className="h-status-bar bg-slate-950 border-t border-slate-800 flex items-center justify-between px-3 text-[11px] text-slate-400 select-none z-50">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5 hover:text-slate-200 cursor-pointer transition-colors" title="Total items in archive">
             <Icon name="inventory_2" className="text-[14px]" />

@@ -14,7 +14,7 @@
 
 import React, { useMemo } from 'react';
 import { Button, Icon } from '@/src/shared/ui/atoms';
-import { EmptyState } from '@/src/shared/ui/molecules';
+import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { ValidationFixAction } from '../atoms';
 import type { ValidationIssue } from '../../model/useInspectorValidation';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';

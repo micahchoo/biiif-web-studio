@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 
 export interface BoardToolbarProps {
   /** Currently active tool */

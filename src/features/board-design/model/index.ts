@@ -204,8 +204,131 @@ export const getConnectionLabel = (
 };
 
 /**
+ * Auto-arrange layout types
+ */
+export type LayoutArrangement = 'grid' | 'continuous' | 'paged' | 'circle' | 'timeline';
+
+/**
+ * Auto-arrange board items in a specific layout pattern.
+ * Respects viewingDirection for layout direction.
+ */
+export const autoArrangeItems = (
+  items: BoardItem[],
+  arrangement: LayoutArrangement,
+  canvasSize: { width: number; height: number },
+  viewingDirection: 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top' = 'left-to-right',
+): BoardItem[] => {
+  if (items.length === 0) return items;
+
+  const spacing = 20;
+  const itemW = 200;
+  const itemH = 150;
+  const centerX = canvasSize.width / 2;
+  const centerY = canvasSize.height / 2;
+
+  const isRTL = viewingDirection === 'right-to-left';
+  const isVertical = viewingDirection === 'top-to-bottom' || viewingDirection === 'bottom-to-top';
+  const isReverse = viewingDirection === 'right-to-left' || viewingDirection === 'bottom-to-top';
+
+  const ordered = isReverse ? [...items].reverse() : [...items];
+
+  switch (arrangement) {
+    case 'grid': {
+      const cols = Math.ceil(Math.sqrt(items.length));
+      const totalW = cols * (itemW + spacing) - spacing;
+      const startX = centerX - totalW / 2;
+      const startY = 80;
+      return ordered.map((item, i) => {
+        const col = isRTL ? (cols - 1 - (i % cols)) : (i % cols);
+        const row = Math.floor(i / cols);
+        return {
+          ...item,
+          x: startX + col * (itemW + spacing),
+          y: startY + row * (itemH + spacing),
+          w: itemW,
+          h: itemH,
+        };
+      });
+    }
+
+    case 'continuous': {
+      // Single column/row strip
+      const startPos = 60;
+      return ordered.map((item, i) => ({
+        ...item,
+        x: isVertical ? centerX - itemW / 2 : startPos + i * (itemW + spacing / 2),
+        y: isVertical ? startPos + i * (itemH + spacing / 2) : centerY - itemH / 2,
+        w: itemW,
+        h: itemH,
+      }));
+    }
+
+    case 'paged': {
+      // 2-up rows (book spread)
+      const pairW = itemW * 2 + 10;
+      const startX = centerX - pairW / 2;
+      const startY = 80;
+      return ordered.map((item, i) => {
+        const pairIndex = Math.floor(i / 2);
+        const isRight = i % 2 === 1;
+        return {
+          ...item,
+          x: isRTL
+            ? (isRight ? startX : startX + itemW + 10)
+            : (isRight ? startX + itemW + 10 : startX),
+          y: startY + pairIndex * (itemH + spacing * 2),
+          w: itemW,
+          h: itemH,
+        };
+      });
+    }
+
+    case 'circle': {
+      const radius = Math.max(150, items.length * 30);
+      return ordered.map((item, i) => {
+        const angle = (i / items.length) * Math.PI * 2 - Math.PI / 2;
+        return {
+          ...item,
+          x: centerX + Math.cos(angle) * radius - itemW / 2,
+          y: centerY + Math.sin(angle) * radius - itemH / 2,
+          w: itemW,
+          h: itemH,
+        };
+      });
+    }
+
+    case 'timeline': {
+      // Horizontal timeline with staggered heights
+      const startX = 60;
+      return ordered.map((item, i) => ({
+        ...item,
+        x: startX + i * (itemW + spacing),
+        y: centerY + (i % 2 === 0 ? -20 : 20) - itemH / 2,
+        w: itemW,
+        h: itemH,
+      }));
+    }
+
+    default:
+      return items;
+  }
+};
+
+/**
+ * Snap a position to a grid
+ */
+export const snapToGrid = (
+  pos: { x: number; y: number },
+  gridSize: number = 20,
+): { x: number; y: number } => ({
+  x: Math.round(pos.x / gridSize) * gridSize,
+  y: Math.round(pos.y / gridSize) * gridSize,
+});
+
+/**
  * Export board state to IIIF Manifest format
- * Supports navDate (timeline), navPlace (map), and linking annotations
+ * Supports navDate (timeline), navPlace (map), behaviors, viewingDirection,
+ * structures (Ranges), and linking annotations.
  */
 export const exportToManifest = (
   state: BoardState,
@@ -213,16 +336,20 @@ export const exportToManifest = (
   options?: {
     includeNavDate?: boolean;
     includeNavPlace?: boolean;
-    templateType?: 'narrative' | 'comparison' | 'timeline' | 'map';
+    templateType?: 'narrative' | 'comparison' | 'timeline' | 'map' | string;
+    behavior?: string[];
+    viewingDirection?: string;
+    highlightedItemId?: string;
+    groups?: Array<{ label: string; itemIds: string[] }>;
   }
 ): Partial<IIIFManifest> => {
-  const manifest: Partial<IIIFManifest> = {
+  const resultManifest: Partial<IIIFManifest> = {
     type: 'Manifest',
     label: { en: [title] },
     items: state.items
       .filter((item) => !item.isNote)
       .map((item, index) => {
-        const canvas: any = {
+        const resultCanvas: any = {
           type: 'Canvas' as const,
           id: item.resourceId,
           label: { en: [item.label] },
@@ -234,20 +361,18 @@ export const exportToManifest = (
         // Add navDate for timeline templates
         if (options?.includeNavDate || options?.templateType === 'timeline') {
           const baseYear = new Date().getFullYear() - state.items.length + index;
-          canvas.navDate = `${baseYear}-01-01T00:00:00Z`;
+          resultCanvas.navDate = `${baseYear}-01-01T00:00:00Z`;
         }
 
         // Add navPlace for map templates
         if (options?.includeNavPlace || options?.templateType === 'map') {
-          // Use position on board to generate approximate coordinates
-          // This is a demo - in production, users would set real coordinates
-          const normalizedX = (item.x / 1000) * 180 - 90; // -90 to 90 (lat-like)
-          const normalizedY = (item.y / 1000) * 360 - 180; // -180 to 180 (lng-like)
-          canvas.navPlace = {
+          const normalizedX = (item.x / 1000) * 180 - 90;
+          const normalizedY = (item.y / 1000) * 360 - 180;
+          resultCanvas.navPlace = {
             type: 'Feature',
             geometry: {
               type: 'Point',
-              coordinates: [normalizedY, normalizedX], // GeoJSON is [lng, lat]
+              coordinates: [normalizedY, normalizedX],
             },
             properties: {
               name: item.label,
@@ -255,9 +380,56 @@ export const exportToManifest = (
           };
         }
 
-        return canvas;
+        return resultCanvas;
       }),
   };
+
+  // Add behavior from template or explicit option
+  if (options?.behavior && options.behavior.length > 0) {
+    (resultManifest as any).behavior = options.behavior;
+  } else if (options?.templateType) {
+    const behaviorMap: Record<string, string[]> = {
+      'continuous': ['continuous'],
+      'scroll-layout': ['continuous'],
+      'paged': ['paged'],
+      'book-spread': ['paged'],
+      'narrative': ['individuals'],
+      'storyboard': ['individuals'],
+    };
+    const defaultBehavior = behaviorMap[options.templateType];
+    if (defaultBehavior) {
+      (resultManifest as any).behavior = defaultBehavior;
+    }
+  }
+
+  // Add viewingDirection
+  if (options?.viewingDirection) {
+    (resultManifest as any).viewingDirection = options.viewingDirection;
+  }
+
+  // Add start property if a highlighted item exists
+  if (options?.highlightedItemId) {
+    const startItem = state.items.find(i => i.id === options.highlightedItemId);
+    if (startItem) {
+      (resultManifest as any).start = {
+        id: startItem.resourceId,
+        type: 'Canvas',
+      };
+    }
+  }
+
+  // Add structures (Ranges) from grouped items
+  if (options?.groups && options.groups.length > 0) {
+    (resultManifest as any).structures = options.groups.map((group, gi) => ({
+      id: `${title}-range-${gi}`,
+      type: 'Range',
+      label: { en: [group.label] },
+      items: group.itemIds
+        .map(id => state.items.find(i => i.id === id))
+        .filter(Boolean)
+        .map(item => ({ id: item!.resourceId, type: 'Canvas' })),
+    }));
+  }
 
   // Add linking annotations for connections
   if (state.connections.length > 0) {
@@ -273,8 +445,7 @@ export const exportToManifest = (
       label: conn.label ? { en: [conn.label] } : undefined,
     }));
 
-    // Add as a top-level annotations array (IIIF Presentation 3.0)
-    (manifest as any).annotations = [
+    (resultManifest as any).annotations = [
       {
         type: 'AnnotationPage',
         id: `${title}-annotations`,
@@ -283,7 +454,7 @@ export const exportToManifest = (
     ];
   }
 
-  return manifest;
+  return resultManifest;
 };
 
 /**

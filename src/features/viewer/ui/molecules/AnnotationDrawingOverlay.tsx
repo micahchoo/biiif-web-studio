@@ -14,7 +14,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFAnnotation, IIIFCanvas } from '@/src/shared/types';
 import {

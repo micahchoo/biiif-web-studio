@@ -14,7 +14,7 @@
 import React, { useEffect, useRef } from 'react';
 import { getIIIFValue, IIIFCanvas } from '@/src/shared/types';
 import { Icon } from '@/src/shared/ui/atoms';
-import { StackedThumbnail } from '@/src/shared/ui/molecules';
+import { StackedThumbnail } from '@/src/shared/ui/molecules/StackedThumbnail';
 import { RESOURCE_TYPE_CONFIG } from '@/src/shared/constants';
 import { Button } from '@/ui/primitives/Button';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';

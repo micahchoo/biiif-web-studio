@@ -14,7 +14,7 @@
 
 import React from 'react';
 import { Button, Icon } from '../atoms';
-import type { BreadcrumbItem } from './BreadcrumbNav';
+import type { BreadcrumbItem } from './breadcrumbTypes';
 
 export interface BreadcrumbSiblingMenuProps {
   /** Current item ID (for highlighting) */

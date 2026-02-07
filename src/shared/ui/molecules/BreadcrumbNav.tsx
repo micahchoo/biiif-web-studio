@@ -20,23 +20,9 @@ import React, { useState } from 'react';
 import { Button, Icon } from '../atoms';
 import { BreadcrumbSiblingMenu } from './BreadcrumbSiblingMenu';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
+import type { BreadcrumbItem } from './breadcrumbTypes';
 
-export interface BreadcrumbItem {
-  /** Unique identifier */
-  id: string;
-  /** Display label */
-  label: string;
-  /** Optional icon */
-  icon?: string;
-  /** Item type for styling */
-  type?: 'root' | 'collection' | 'manifest' | 'canvas' | 'folder';
-  /** Number of children (for badge) */
-  childCount?: number;
-  /** Sibling items for dropdown navigation */
-  siblings?: BreadcrumbItem[];
-  /** Click handler */
-  onClick?: () => void;
-}
+export type { BreadcrumbItem };
 
 export interface BreadcrumbNavProps {
   /** Breadcrumb path from root to current */

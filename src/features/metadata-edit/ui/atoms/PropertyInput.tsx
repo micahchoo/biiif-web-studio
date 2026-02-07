@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import { FormInput } from '@/src/shared/ui/molecules';
+import { FormInput } from '@/src/shared/ui/molecules/FormInput';
 import { LocationPicker } from '../atoms/LocationPicker';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 

@@ -9,7 +9,7 @@ import { Sidebar } from '@/src/widgets/NavigationSidebar/ui/organisms/Sidebar';
 import { Inspector } from '@/src/features/metadata-edit/ui/organisms/Inspector';
 import { StatusBar } from '@/src/widgets/StatusBar/ui/organisms/StatusBar';
 import { StagingWorkbench } from '@/src/features/staging/ui/organisms/StagingWorkbench';
-import { ExportDialog } from '@/src/features/export/ui/ExportDialog';
+const ExportDialog = React.lazy(() => import('@/src/features/export/ui/ExportDialog').then(m => ({ default: m.ExportDialog })));
 import { ContextualHelp } from '@/src/widgets/ContextualHelp/ui/ContextualHelp';
 import { QuickReference } from '@/src/shared/ui/molecules/Tooltip';
 import { QUICK_REF_ARCHIVE, QUICK_REF_BOARD, QUICK_REF_METADATA, QUICK_REF_STAGING, QUICK_REF_STRUCTURE, QUICK_REF_VIEWER } from '@/src/shared/constants/helpContent';
@@ -532,7 +532,7 @@ const MainApp: React.FC = () => {
   // ============================================================================
 
   return (
-    <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors duration-300 ${settings.fieldMode ? 'bg-black text-white' : settings.theme === 'dark' ? 'dark text-slate-100 bg-slate-950' : 'text-slate-900 bg-slate-50'}`}>
+    <div className={`flex flex-col h-dvh w-screen overflow-hidden font-sans transition-colors duration-300 ${settings.fieldMode ? 'bg-black text-white' : settings.theme === 'dark' ? 'dark text-slate-100 bg-slate-950' : 'text-slate-900 bg-slate-50'}`}>
       {/* Skip Links for Accessibility - screen reader only, visible on focus */}
       <SkipLink targetId="main-content" label="Skip to main content" />
       <SkipLink targetId="sidebar" label="Skip to sidebar" />
@@ -566,7 +566,7 @@ const MainApp: React.FC = () => {
       <div className="flex-1 flex min-h-0 relative">
         {/* Mobile Header */}
         {isMobile && (
-          <header className="absolute top-0 left-0 right-0 h-14 bg-slate-900 z-[100] flex items-center px-4 justify-between shadow-lg">
+          <header className="absolute top-0 left-0 right-0 h-header-compact bg-slate-900 z-[100] flex items-center px-4 justify-between shadow-lg">
             <Button variant="ghost" size="bare" onClick={() => setShowSidebar(true)} aria-label="Open sidebar" className="text-white p-2">
               <Icon name="menu" />
             </Button>
@@ -601,7 +601,7 @@ const MainApp: React.FC = () => {
           onAbstractionLevelChange={handleAbstractionLevelChange}
         />
 
-        <main id="main-content" className={`flex-1 flex flex-col min-w-0 relative shadow-xl z-0 ${settings.fieldMode ? 'bg-black' : 'bg-white'} ${isMobile ? 'pt-14' : ''} transition-colors duration-300`}>
+        <main id="main-content" className={`flex-1 flex flex-col min-w-0 relative shadow-xl z-0 ${settings.fieldMode ? 'bg-black' : 'bg-white'} ${isMobile ? 'pt-header-compact' : ''} transition-colors duration-300`}>
           {/* View content */}
           <ViewRouter
             root={root}
@@ -621,7 +621,10 @@ const MainApp: React.FC = () => {
           <ContextualHelp mode={currentMode} isInspectorOpen={showInspector && !!selectedItem && !settings.fieldMode} />
         </main>
 
-        {/* Inspector - Hidden in archive mode (ViewRouter handles split view) */}
+        {/* Inspector dual-mount: In archive mode, Inspector lives inside ViewRouter
+            as part of the filmstrip/viewer/inspector flex row. In all other views,
+            Inspector mounts here as a sibling of <main>. This is intentional — archive
+            needs the inspector within its split-view layout for proper flex sizing. */}
         {currentMode !== 'archive' && (
           <Inspector
             key={selectedId || 'none'}
@@ -666,7 +669,11 @@ const MainApp: React.FC = () => {
         />
       )}
 
-      {exportDialog.isOpen && root && <ExportDialog root={root} onClose={exportDialog.close} />}
+      {exportDialog.isOpen && root && (
+        <React.Suspense fallback={null}>
+          <ExportDialog root={root} onClose={exportDialog.close} />
+        </React.Suspense>
+      )}
 
       {qcDashboard.isOpen && (
         <QCDashboard

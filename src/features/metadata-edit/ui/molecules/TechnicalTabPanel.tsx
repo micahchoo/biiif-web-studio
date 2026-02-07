@@ -19,20 +19,25 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { type IIIFItem } from '@/src/shared/types';
+import { type IIIFItem, type IIIFCanvas, getIIIFValue } from '@/src/shared/types';
 import { Button, Icon } from '@/src/shared/ui/atoms';
+import { LinkListEditor, type LinkItem } from '@/src/shared/ui/molecules/LinkListEditor';
+import { AgentEditor, type AgentItem } from '@/src/shared/ui/molecules/AgentEditor';
 import { PropertyInput } from '../atoms/PropertyInput';
 import { PropertyLabel } from '../atoms/PropertyLabel';
 import { RightsSelector } from '../atoms/RightsSelector';
 import { ViewingDirectionSelector } from '../atoms/ViewingDirectionSelector';
 import { BehaviorSelector } from '../atoms/BehaviorSelector';
 import { BehaviorTag } from '../atoms/BehaviorTag';
+import { StartPropertyEditor } from '../atoms/StartPropertyEditor';
 import { BEHAVIOR_OPTIONS, getConflictingBehaviors } from '@/src/shared/constants/iiif';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface TechnicalTabPanelProps {
   /** Resource being edited */
   resource: IIIFItem;
+  /** Available canvases for start property (Manifests) */
+  canvases?: IIIFCanvas[];
   /** Contextual styles from parent */
   cx: ContextualClassNames;
   /** Field mode flag */
@@ -53,6 +58,7 @@ const ADVANCED_FIELDS = ['viewingDirection', 'behavior', 'logo', 'homepage', 'se
  */
 export const TechnicalTabPanel: React.FC<TechnicalTabPanelProps> = ({
   resource,
+  canvases = [],
   cx,
   fieldMode,
   onUpdateResource,
@@ -205,58 +211,114 @@ export const TechnicalTabPanel: React.FC<TechnicalTabPanelProps> = ({
         </Button>
       </div>
 
+      {/* === LINKING PROPERTIES (Standard+ level) === */}
+      <div className={`space-y-6 pt-4 border-t ${fieldMode ? 'border-slate-800' : 'border-slate-200'}`}>
+        {/* Provider */}
+        <AgentEditor
+          value={(resource.provider || []) as AgentItem[]}
+          onChange={(providers) => onUpdateResource({ provider: providers as IIIFItem['provider'] })}
+          fieldMode={fieldMode}
+        />
+
+        {/* Homepage */}
+        <LinkListEditor
+          value={(resource.homepage || []) as LinkItem[]}
+          onChange={(links) => onUpdateResource({ homepage: links as IIIFItem['homepage'] })}
+          resourceType="homepage"
+          fieldMode={fieldMode}
+        />
+
+        {/* Rendering (Downloads) */}
+        <LinkListEditor
+          value={(resource.rendering || []) as LinkItem[]}
+          onChange={(links) => onUpdateResource({ rendering: links as IIIFItem['rendering'] })}
+          resourceType="rendering"
+          fieldMode={fieldMode}
+        />
+
+        {/* See Also */}
+        <LinkListEditor
+          value={(resource.seeAlso || []) as LinkItem[]}
+          onChange={(links) => onUpdateResource({ seeAlso: links as IIIFItem['seeAlso'] })}
+          resourceType="seeAlso"
+          fieldMode={fieldMode}
+        />
+
+        {/* Required Statement */}
+        <div>
+          <PropertyLabel
+            label="Required Statement"
+            dcHint="requiredStatement"
+            fieldMode={fieldMode}
+            cx={cx}
+            helpText="Text that must be displayed when presenting the resource"
+          />
+          <div className="space-y-2">
+            <PropertyInput
+              type="text"
+              value={getIIIFValue(resource.requiredStatement?.label)}
+              onChange={(val) => {
+                const current = resource.requiredStatement || { label: { none: [''] }, value: { none: [''] } };
+                onUpdateResource({
+                  requiredStatement: { ...current, label: { none: [val] } }
+                });
+              }}
+              cx={cx}
+              fieldMode={fieldMode}
+              className={inputClass}
+              placeholder="Label (e.g., Attribution)"
+            />
+            <PropertyInput
+              type="text"
+              value={getIIIFValue(resource.requiredStatement?.value)}
+              onChange={(val) => {
+                const current = resource.requiredStatement || { label: { none: ['Attribution'] }, value: { none: [''] } };
+                onUpdateResource({
+                  requiredStatement: { ...current, value: { none: [val] } }
+                });
+              }}
+              cx={cx}
+              fieldMode={fieldMode}
+              className={inputClass}
+              placeholder="Value (e.g., Provided by Example Museum)"
+            />
+          </div>
+        </div>
+
+        {/* Start Canvas (Manifests only) */}
+        {isManifest && canvases.length > 0 && (
+          <StartPropertyEditor
+            value={resource.start as any}
+            canvases={canvases}
+            onChange={(start) => onUpdateResource({ start } as Partial<IIIFItem>)}
+            fieldMode={fieldMode}
+          />
+        )}
+      </div>
+
+      {/* === ADVANCED PROPERTIES TOGGLE === */}
+      <div className={`pt-4 border-t ${fieldMode ? 'border-slate-800' : 'border-slate-200'}`}>
+        <Button variant="ghost" size="bare"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className={`flex items-center gap-2 text-sm font-medium w-full ${
+            fieldMode
+              ? 'text-slate-300 hover:text-slate-100'
+              : 'text-slate-600 hover:text-slate-800'
+          }`}
+          aria-expanded={showAdvanced}
+          aria-controls="advanced-properties"
+        >
+          <Icon name={showAdvanced ? 'expand_less' : 'expand_more'} className="text-lg" />
+          {showAdvanced ? 'Hide Advanced Properties' : 'Show Advanced Properties'}
+        </Button>
+      </div>
+
       {/* === ADVANCED PROPERTIES === */}
       {showAdvanced && (
         <div
           id="advanced-properties"
           className={`space-y-6 pt-2 pb-4 ${fieldMode ? 'border-b border-slate-800' : 'border-b border-slate-200'}`}
         >
-          {/* Required Statement */}
-          <div>
-            <PropertyLabel
-              label="Required Statement"
-              dcHint="requiredStatement"
-              fieldMode={fieldMode}
-              cx={cx}
-              helpText="Text that must be displayed when presenting the resource"
-            />
-            <PropertyInput
-              type="text"
-              value={''} // TODO: Add required statement support
-              onChange={(val) => {
-                // TODO: Implement required statement update
-                console.log('Required statement:', val);
-              }}
-              cx={cx}
-              fieldMode={fieldMode}
-              className={inputClass}
-              placeholder="Attribution or rights statement"
-            />
-          </div>
-
-          {/* Provider */}
-          <div>
-            <PropertyLabel
-              label="Provider"
-              dcHint="provider"
-              fieldMode={fieldMode}
-              cx={cx}
-              helpText="Organization that provided the resource"
-            />
-            <PropertyInput
-              type="text"
-              value={''} // TODO: Add provider support
-              onChange={(val) => {
-                // TODO: Implement provider update
-                console.log('Provider:', val);
-              }}
-              cx={cx}
-              fieldMode={fieldMode}
-              className={inputClass}
-              placeholder="Institution or organization"
-            />
-          </div>
-
           {/* Part Of */}
           <div>
             <PropertyLabel
@@ -268,19 +330,22 @@ export const TechnicalTabPanel: React.FC<TechnicalTabPanelProps> = ({
             />
             <PropertyInput
               type="text"
-              value={''} // TODO: Add partOf support
+              value={resource.partOf?.[0]?.id || ''}
               onChange={(val) => {
-                // TODO: Implement partOf update
-                console.log('Part of:', val);
+                if (val.trim()) {
+                  onUpdateResource({ partOf: [{ id: val.trim(), type: 'Collection' }] } as Partial<IIIFItem>);
+                } else {
+                  onUpdateResource({ partOf: undefined } as Partial<IIIFItem>);
+                }
               }}
               cx={cx}
               fieldMode={fieldMode}
               className={inputClass}
-              placeholder="Parent collection or manifest"
+              placeholder="Parent collection URI"
             />
           </div>
 
-          {/* Thumbnail */}
+          {/* Thumbnail URL */}
           <div>
             <PropertyLabel
               label="Thumbnail"
@@ -291,62 +356,31 @@ export const TechnicalTabPanel: React.FC<TechnicalTabPanelProps> = ({
             />
             <PropertyInput
               type="url"
-              value={''} // TODO: Add thumbnail support
+              value={resource.thumbnail?.[0]?.id || ''}
               onChange={(val) => {
-                // TODO: Implement thumbnail update
-                console.log('Thumbnail:', val);
+                if (val.trim()) {
+                  onUpdateResource({
+                    thumbnail: [{ id: val.trim(), type: 'Image', format: 'image/jpeg' }]
+                  } as Partial<IIIFItem>);
+                } else {
+                  onUpdateResource({ thumbnail: undefined } as Partial<IIIFItem>);
+                }
               }}
               cx={cx}
               fieldMode={fieldMode}
               className={inputClass}
               placeholder="https://example.com/thumb.jpg"
             />
-          </div>
-
-          {/* Homepage */}
-          <div>
-            <PropertyLabel
-              label="Homepage"
-              dcHint="homepage"
-              fieldMode={fieldMode}
-              cx={cx}
-              helpText="External web page about this resource"
-            />
-            <PropertyInput
-              type="url"
-              value={''} // TODO: Add homepage support
-              onChange={(val) => {
-                // TODO: Implement homepage update
-                console.log('Homepage:', val);
-              }}
-              cx={cx}
-              fieldMode={fieldMode}
-              className={inputClass}
-              placeholder="https://example.com/resource"
-            />
-          </div>
-
-          {/* See Also */}
-          <div>
-            <PropertyLabel
-              label="See Also"
-              dcHint="seeAlso"
-              fieldMode={fieldMode}
-              cx={cx}
-              helpText="Related machine-readable resources"
-            />
-            <PropertyInput
-              type="url"
-              value={''} // TODO: Add seeAlso support
-              onChange={(val) => {
-                // TODO: Implement seeAlso update
-                console.log('See also:', val);
-              }}
-              cx={cx}
-              fieldMode={fieldMode}
-              className={inputClass}
-              placeholder="https://example.com/data.json"
-            />
+            {resource.thumbnail?.[0]?.id && (
+              <div className="mt-2">
+                <img
+                  src={resource.thumbnail[0].id}
+                  alt="Thumbnail preview"
+                  className="h-16 rounded border border-slate-200 object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

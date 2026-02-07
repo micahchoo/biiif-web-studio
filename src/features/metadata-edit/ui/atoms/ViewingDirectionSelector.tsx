@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import { SelectField } from '@/src/shared/ui/molecules';
+import { SelectField } from '@/src/shared/ui/molecules/SelectField';
 import { VIEWING_DIRECTIONS } from '@/src/shared/constants/iiif';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 

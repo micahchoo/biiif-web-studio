@@ -31,6 +31,7 @@ import {
 } from './vault';
 import {
   IIIFAnnotation,
+  IIIFAnnotationPage,
   IIIFCanvas,
   IIIFItem,
   IIIFManifest,
@@ -85,7 +86,17 @@ export type Action =
   | { type: 'ADD_CANVAS_TO_RANGE'; rangeId: string; canvasId: string; index?: number }
   | { type: 'REMOVE_CANVAS_FROM_RANGE'; rangeId: string; canvasId: string }
   | { type: 'REORDER_RANGE_ITEMS'; rangeId: string; order: string[] }
-  | { type: 'ADD_NESTED_RANGE'; parentRangeId: string; range: IIIFRange; index?: number };
+  | { type: 'ADD_NESTED_RANGE'; parentRangeId: string; range: IIIFRange; index?: number }
+  // Phase 4: IIIF Presentation API 3.0 Feature Actions
+  | { type: 'CREATE_ANNOTATION_PAGE'; canvasId: string; label?: LanguageMap; motivation?: string }
+  | { type: 'UPDATE_ANNOTATION_PAGE_LABEL'; pageId: string; label: LanguageMap }
+  | { type: 'MOVE_ANNOTATION_TO_PAGE'; annotationId: string; targetPageId: string }
+  | { type: 'SET_ANNOTATION_PAGE_BEHAVIOR'; pageId: string; behavior: string[] }
+  | { type: 'UPDATE_LINKING_PROPERTY'; id: string; property: 'rendering' | 'seeAlso' | 'homepage' | 'provider'; value: unknown[] }
+  | { type: 'UPDATE_REQUIRED_STATEMENT'; id: string; requiredStatement: { label: LanguageMap; value: LanguageMap } | undefined }
+  | { type: 'BATCH_UPDATE_NAV_DATE'; updates: Array<{ id: string; navDate: string }> }
+  | { type: 'UPDATE_START'; id: string; start: { id: string; type: 'Canvas' | 'SpecificResource'; source?: string; selector?: unknown } | undefined }
+  | { type: 'UPDATE_RANGE_SUPPLEMENTARY'; rangeId: string; supplementary: { id: string; type: 'AnnotationCollection' } | undefined };
 
 export interface ActionResult {
   success: boolean;
@@ -861,6 +872,186 @@ export function reduce(state: NormalizedState, action: Action): ActionResult {
         };
       }
 
+      // ============================================================================
+      // Phase 4: IIIF Presentation API 3.0 Feature Actions
+      // ============================================================================
+
+      case 'CREATE_ANNOTATION_PAGE': {
+        const canvas = getEntity(state, action.canvasId);
+        if (!canvas) {
+          return { success: false, state, error: `Canvas not found: ${action.canvasId}` };
+        }
+
+        const motivation = action.motivation || 'supplementing';
+        const pageId = `${action.canvasId}/annotations/${motivation}-${Date.now()}`;
+        const annotationPage: IIIFItem = {
+          id: pageId,
+          type: 'AnnotationPage',
+          label: action.label,
+          behavior: [],
+          items: []
+        };
+
+        const newState = addEntity(state, annotationPage, action.canvasId);
+        return {
+          success: true,
+          state: newState,
+          changes: [{ property: 'annotations', oldValue: null, newValue: pageId }]
+        };
+      }
+
+      case 'UPDATE_ANNOTATION_PAGE_LABEL': {
+        const page = getEntity(state, action.pageId);
+        if (!page) {
+          return { success: false, state, error: `Annotation page not found: ${action.pageId}` };
+        }
+
+        const error = validateLanguageMap(action.label, 'label');
+        if (error) return { success: false, state, error };
+
+        return {
+          success: true,
+          state: updateEntity(state, action.pageId, { label: action.label }),
+          changes: [{ property: 'label', oldValue: page.label, newValue: action.label }]
+        };
+      }
+
+      case 'MOVE_ANNOTATION_TO_PAGE': {
+        const annotation = getEntity(state, action.annotationId);
+        if (!annotation) {
+          return { success: false, state, error: `Annotation not found: ${action.annotationId}` };
+        }
+
+        const targetPage = getEntity(state, action.targetPageId);
+        if (!targetPage) {
+          return { success: false, state, error: `Target page not found: ${action.targetPageId}` };
+        }
+
+        const newState = moveEntity(state, action.annotationId, action.targetPageId);
+        return {
+          success: true,
+          state: newState,
+          changes: [{
+            property: '_parentId',
+            oldValue: state.reverseRefs[action.annotationId],
+            newValue: action.targetPageId
+          }]
+        };
+      }
+
+      case 'SET_ANNOTATION_PAGE_BEHAVIOR': {
+        const page = getEntity(state, action.pageId);
+        if (!page) {
+          return { success: false, state, error: `Annotation page not found: ${action.pageId}` };
+        }
+
+        return {
+          success: true,
+          state: updateEntity(state, action.pageId, { behavior: action.behavior }),
+          changes: [{ property: 'behavior', oldValue: page.behavior, newValue: action.behavior }]
+        };
+      }
+
+      case 'UPDATE_LINKING_PROPERTY': {
+        const entity = getEntity(state, action.id);
+        if (!entity) {
+          return { success: false, state, error: `Entity not found: ${action.id}` };
+        }
+
+        const oldValue = (entity as unknown as Record<string, unknown>)[action.property];
+        const changes: PropertyChange[] = [{
+          property: action.property,
+          oldValue,
+          newValue: action.value
+        }];
+
+        return {
+          success: true,
+          state: updateEntity(state, action.id, { [action.property]: action.value } as Partial<IIIFItem>),
+          changes
+        };
+      }
+
+      case 'UPDATE_REQUIRED_STATEMENT': {
+        const entity = getEntity(state, action.id);
+        if (!entity) {
+          return { success: false, state, error: `Entity not found: ${action.id}` };
+        }
+
+        if (action.requiredStatement) {
+          const labelError = validateLanguageMap(action.requiredStatement.label, 'requiredStatement.label');
+          if (labelError) return { success: false, state, error: labelError };
+          const valueError = validateLanguageMap(action.requiredStatement.value, 'requiredStatement.value');
+          if (valueError) return { success: false, state, error: valueError };
+        }
+
+        return {
+          success: true,
+          state: updateEntity(state, action.id, { requiredStatement: action.requiredStatement }),
+          changes: [{ property: 'requiredStatement', oldValue: entity.requiredStatement, newValue: action.requiredStatement }]
+        };
+      }
+
+      case 'BATCH_UPDATE_NAV_DATE': {
+        let currentState = state;
+        const allChanges: PropertyChange[] = [];
+
+        for (const update of action.updates) {
+          if (!isValidNavDate(update.navDate)) {
+            return { success: false, state, error: `Invalid navDate for ${update.id}: ${update.navDate}` };
+          }
+
+          const entity = getEntity(currentState, update.id);
+          if (!entity) {
+            return { success: false, state, error: `Entity not found: ${update.id}` };
+          }
+
+          allChanges.push({ property: 'navDate', oldValue: entity.navDate, newValue: update.navDate });
+          currentState = updateEntity(currentState, update.id, { navDate: update.navDate });
+        }
+
+        return {
+          success: true,
+          state: currentState,
+          changes: allChanges
+        };
+      }
+
+      case 'UPDATE_START': {
+        const entity = getEntity(state, action.id);
+        if (!entity) {
+          return { success: false, state, error: `Entity not found: ${action.id}` };
+        }
+
+        if (action.start && action.start.type === 'Canvas') {
+          const canvas = getEntity(state, action.start.id);
+          if (!canvas) {
+            return { success: false, state, error: `Start canvas not found: ${action.start.id}` };
+          }
+        }
+
+        const oldStart = entity.start;
+        return {
+          success: true,
+          state: updateEntity(state, action.id, { start: action.start } as Partial<IIIFItem>),
+          changes: [{ property: 'start', oldValue: oldStart, newValue: action.start }]
+        };
+      }
+
+      case 'UPDATE_RANGE_SUPPLEMENTARY': {
+        const range = getEntity(state, action.rangeId) as IIIFRange;
+        if (!range) {
+          return { success: false, state, error: `Range not found: ${action.rangeId}` };
+        }
+
+        const oldSupplementary = (range as IIIFItem).supplementary;
+        return {
+          success: true,
+          state: updateEntity(state, action.rangeId, { supplementary: action.supplementary } as Partial<IIIFItem>),
+          changes: [{ property: 'supplementary', oldValue: oldSupplementary, newValue: action.supplementary }]
+        };
+      }
+
       default:
         return { success: false, state, error: `Unknown action type` };
     }
@@ -1186,7 +1377,35 @@ export const actions = {
     ({ type: 'REORDER_RANGE_ITEMS', rangeId, order }),
 
   addNestedRange: (parentRangeId: string, range: IIIFRange, index?: number): Action =>
-    ({ type: 'ADD_NESTED_RANGE', parentRangeId, range, index })
+    ({ type: 'ADD_NESTED_RANGE', parentRangeId, range, index }),
+
+  // Phase 4: IIIF Presentation API 3.0 Feature Action Creators
+  createAnnotationPage: (canvasId: string, label?: LanguageMap, motivation?: string): Action =>
+    ({ type: 'CREATE_ANNOTATION_PAGE', canvasId, label, motivation }),
+
+  updateAnnotationPageLabel: (pageId: string, label: LanguageMap): Action =>
+    ({ type: 'UPDATE_ANNOTATION_PAGE_LABEL', pageId, label }),
+
+  moveAnnotationToPage: (annotationId: string, targetPageId: string): Action =>
+    ({ type: 'MOVE_ANNOTATION_TO_PAGE', annotationId, targetPageId }),
+
+  setAnnotationPageBehavior: (pageId: string, behavior: string[]): Action =>
+    ({ type: 'SET_ANNOTATION_PAGE_BEHAVIOR', pageId, behavior }),
+
+  updateLinkingProperty: (id: string, property: 'rendering' | 'seeAlso' | 'homepage' | 'provider', value: unknown[]): Action =>
+    ({ type: 'UPDATE_LINKING_PROPERTY', id, property, value }),
+
+  updateRequiredStatement: (id: string, requiredStatement: { label: LanguageMap; value: LanguageMap } | undefined): Action =>
+    ({ type: 'UPDATE_REQUIRED_STATEMENT', id, requiredStatement }),
+
+  batchUpdateNavDate: (updates: Array<{ id: string; navDate: string }>): Action =>
+    ({ type: 'BATCH_UPDATE_NAV_DATE', updates }),
+
+  updateStart: (id: string, start: { id: string; type: 'Canvas' | 'SpecificResource'; source?: string; selector?: unknown } | undefined): Action =>
+    ({ type: 'UPDATE_START', id, start }),
+
+  updateRangeSupplementary: (rangeId: string, supplementary: { id: string; type: 'AnnotationCollection' } | undefined): Action =>
+    ({ type: 'UPDATE_RANGE_SUPPLEMENTARY', rangeId, supplementary })
 };
 
 // ============================================================================

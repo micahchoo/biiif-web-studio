@@ -180,18 +180,50 @@ const IMAGE_QUALITY = {
 };
 
 const MIME_TYPE_MAP: Record<string, { format: string; type: string; motivation: string }> = {
+  // Images
   'jpg': { format: 'image/jpeg', type: 'Image', motivation: 'painting' },
   'jpeg': { format: 'image/jpeg', type: 'Image', motivation: 'painting' },
   'png': { format: 'image/png', type: 'Image', motivation: 'painting' },
   'gif': { format: 'image/gif', type: 'Image', motivation: 'painting' },
   'webp': { format: 'image/webp', type: 'Image', motivation: 'painting' },
+  'avif': { format: 'image/avif', type: 'Image', motivation: 'painting' },
+  'bmp': { format: 'image/bmp', type: 'Image', motivation: 'painting' },
   'tiff': { format: 'image/tiff', type: 'Image', motivation: 'painting' },
   'tif': { format: 'image/tiff', type: 'Image', motivation: 'painting' },
+  'svg': { format: 'image/svg+xml', type: 'Image', motivation: 'painting' },
+  // Audio
   'mp3': { format: 'audio/mpeg', type: 'Sound', motivation: 'painting' },
+  'wav': { format: 'audio/wav', type: 'Sound', motivation: 'painting' },
+  'ogg': { format: 'audio/ogg', type: 'Sound', motivation: 'painting' },
+  'm4a': { format: 'audio/mp4', type: 'Sound', motivation: 'painting' },
+  'aac': { format: 'audio/aac', type: 'Sound', motivation: 'painting' },
+  'flac': { format: 'audio/flac', type: 'Sound', motivation: 'painting' },
+  // Video
   'mp4': { format: 'video/mp4', type: 'Video', motivation: 'painting' },
   'webm': { format: 'video/webm', type: 'Video', motivation: 'painting' },
+  'mov': { format: 'video/quicktime', type: 'Video', motivation: 'painting' },
+  // Documents
   'pdf': { format: 'application/pdf', type: 'Text', motivation: 'painting' },
+  'txt': { format: 'text/plain', type: 'Text', motivation: 'supplementing' },
+  'csv': { format: 'text/csv', type: 'Dataset', motivation: 'supplementing' },
+  // 3D
+  'glb': { format: 'model/gltf-binary', type: 'Model', motivation: 'painting' },
 };
+
+/** Raster image extensions that support createImageBitmap in workers */
+const RASTER_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp', 'tiff', 'tif']);
+
+/** Check if file is a raster image by extension OR file.type (fixes empty file.type bug) */
+function isRasterImageFile(file: { name: string; type: string }): boolean {
+  const ext = getExtension(file.name);
+  return RASTER_EXTENSIONS.has(ext) || (file.type.startsWith('image/') && file.type !== 'image/svg+xml');
+}
+
+/** Check if file is an SVG by extension OR file.type */
+function isSvgFileWorker(file: { name: string; type: string }): boolean {
+  const ext = getExtension(file.name);
+  return ext === 'svg' || file.type === 'image/svg+xml';
+}
 
 const DEFAULT_DERIVATIVE_SIZES = [256, 512, 1024];
 const THUMBNAIL_WIDTH = 256;
@@ -356,12 +388,17 @@ async function processFile(
   const canvasId = `${manifestId}/canvas/${canvasIndex}`;
   const assetId = `${manifestId.split('/').pop()}-${file.name.replace(/[^a-zA-Z0-9-_]/g, '')}`;
 
-  // Get image dimensions
+  // Get image dimensions (use extension-based check — file.type can be empty)
   let width = 1000;
   let height = 1000;
   let thumbnailBlob: Blob | null = null;
 
-  if (file.type.startsWith('image/')) {
+  if (isSvgFileWorker(file)) {
+    // SVG: can't use createImageBitmap reliably in workers, use defaults
+    // Main thread path handles SVG dimensions properly via parseSvgDimensions
+    width = 800;
+    height = 600;
+  } else if (isRasterImageFile(file)) {
     const dims = await getImageDimensions(file);
     width = dims.width;
     height = dims.height;

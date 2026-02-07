@@ -14,7 +14,7 @@
 
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import { ColumnSelector } from './ColumnSelector';
 import { type PropertyOption, PropertySelector } from './PropertySelector';
 import { type LanguageOption, LanguageTag } from './LanguageTag';

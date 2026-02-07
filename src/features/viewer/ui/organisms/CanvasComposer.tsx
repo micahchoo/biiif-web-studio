@@ -150,7 +150,7 @@ export const CanvasComposer: React.FC<CanvasComposerProps> = ({ canvas, root, on
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-80 bg-slate-900 border-r border-white/10 flex flex-col">
+        <div className="w-inspector bg-slate-900 border-r border-white/10 flex flex-col">
             <div className="flex border-b border-white/10">
                 <Button variant="ghost" size="bare" onClick={() => setSidebarTab('layers')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${sidebarTab === 'layers' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/40'}`}>Layers</Button>
                 <Button variant="ghost" size="bare" onClick={() => setSidebarTab('library')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${sidebarTab === 'library' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-white/40'}`}>Library</Button>

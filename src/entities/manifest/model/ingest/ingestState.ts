@@ -13,63 +13,14 @@
  */
 
 import { storage } from '@/src/shared/services/storage';
+import type { CheckpointFile, IngestCheckpoint } from '@/src/shared/types';
+
+export type { CheckpointFile, IngestCheckpoint };
 
 const CHECKPOINTS_STORE = 'checkpoints';
 const CHECKPOINT_PREFIX = 'ingest_checkpoint_';
 const MAX_CHECKPOINT_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_CHECKPOINTS = 10; // Keep only recent checkpoints
-
-/**
- * File tracking information for checkpoint
- */
-export interface CheckpointFile {
-  /** File path relative to root */
-  path: string;
-  /** SHA-256 hash of file content */
-  hash: string;
-  /** Whether this file has been processed */
-  processed: boolean;
-  /** Error message if processing failed */
-  error?: string;
-  /** File size in bytes */
-  size?: number;
-  /** Last modified timestamp */
-  lastModified?: number;
-}
-
-/**
- * Import checkpoint for resumable operations
- */
-export interface IngestCheckpoint {
-  /** Unique checkpoint ID */
-  id: string;
-  /** Creation timestamp */
-  timestamp: number;
-  /** Last updated timestamp */
-  updatedAt: number;
-  /** Source identifier (e.g., folder path or import ID) */
-  sourceId: string;
-  /** Human-readable source name */
-  sourceName: string;
-  /** Files being imported */
-  files: CheckpointFile[];
-  /** Associated manifest ID if created */
-  manifestId?: string;
-  /** Import metadata (settings, mappings, etc.) */
-  metadata: Record<string, unknown>;
-  /** Current import progress (0-100) */
-  progress: number;
-  /** Import status */
-  status: 'in_progress' | 'completed' | 'failed' | 'paused';
-  /** Error message if failed */
-  errorMessage?: string;
-  /** Total files count (for progress calculation) */
-  totalFiles: number;
-  /** Processed files count */
-  processedFiles: number;
-  /** Failed files count */
-  failedFiles: number;
-}
 
 /**
  * Options for creating a new checkpoint

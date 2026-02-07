@@ -40,7 +40,7 @@ export const AnnotationForm: React.FC<AnnotationFormProps> = ({
   onClear,
 }) => {
   return (
-    <div className="w-80 bg-slate-900 border-l border-white/10 p-4 flex flex-col">
+    <div className="w-inspector bg-slate-900 border-l border-white/10 p-4 flex flex-col">
       <h3 className="text-white font-bold text-sm mb-4">Annotation Details</h3>
 
       {/* Motivation */}

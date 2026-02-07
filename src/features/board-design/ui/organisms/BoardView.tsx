@@ -20,6 +20,7 @@ import { usePipeline } from '@/src/shared/lib/hooks';
 import { useToast } from '@/src/shared/ui/molecules/Toast';
 import { PipelineBanner } from '@/src/shared/ui/molecules/PipelineBanner';
 import {
+  autoArrangeItems,
   type BoardState,
   calculateAnchorPoints,
   type ConnectionType,
@@ -27,7 +28,9 @@ import {
   createConnection,
   createInitialBoardState,
   getConnectionLabel,
+  type LayoutArrangement,
   selectIsEmpty,
+  snapToGrid,
 } from '../../model';
 import { BoardHeader } from './BoardHeader';
 import { BoardCanvas } from './BoardCanvas';
@@ -98,6 +101,9 @@ export const BoardView: React.FC<BoardViewProps> = ({
 
   // Background mode (from CanvasComposer)
   const [bgMode, setBgMode] = useState<'grid' | 'dark' | 'light'>('grid');
+
+  // Snap to grid toggle
+  const [snapEnabled, setSnapEnabled] = useState(false);
 
   // Refs
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -179,17 +185,46 @@ export const BoardView: React.FC<BoardViewProps> = ({
     [connectingFrom, items, connections, board, updateBoard, showToast, isAdvanced]
   );
 
-  // Handle item move
+  // Handle item move (with optional snap-to-grid)
   const handleMoveItem = useCallback(
     (id: string, newPosition: { x: number; y: number }) => {
+      const pos = snapEnabled ? snapToGrid(newPosition) : newPosition;
       updateBoard({
         ...board,
         items: items.map((item) =>
-          item.id === id ? { ...item, x: newPosition.x, y: newPosition.y } : item
+          item.id === id ? { ...item, x: pos.x, y: pos.y } : item
+        ),
+      });
+    },
+    [board, items, updateBoard, snapEnabled]
+  );
+
+  // Handle item resize
+  const handleResizeItem = useCallback(
+    (id: string, newSize: { w: number; h: number }) => {
+      updateBoard({
+        ...board,
+        items: items.map((item) =>
+          item.id === id ? { ...item, w: Math.max(80, newSize.w), h: Math.max(60, newSize.h) } : item
         ),
       });
     },
     [board, items, updateBoard]
+  );
+
+  // Handle auto-arrange layout
+  const handleAutoArrange = useCallback(
+    (arrangement: LayoutArrangement) => {
+      const canvasWidth = canvasRef.current?.clientWidth || 800;
+      const canvasHeight = canvasRef.current?.clientHeight || 600;
+      const arranged = autoArrangeItems(items, arrangement, { width: canvasWidth, height: canvasHeight });
+      updateBoard({
+        ...board,
+        items: arranged,
+      });
+      showToast(`Arranged items: ${arrangement}`, 'info');
+    },
+    [board, items, updateBoard, showToast]
   );
 
   // Handle delete selected item
@@ -327,13 +362,21 @@ export const BoardView: React.FC<BoardViewProps> = ({
           case 'n':
             setActiveTool('note');
             break;
+          case 'l':
+            // Layout tool: cycle through arrangements
+            handleAutoArrange('grid');
+            break;
+          case 'g':
+            // Toggle snap-to-grid
+            setSnapEnabled((s) => !s);
+            break;
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedItemId, handleDeleteSelected, undo, redo, handleToolChange]);
+  }, [selectedItemId, handleDeleteSelected, undo, redo, handleToolChange, handleAutoArrange]);
 
   // Track if we've already loaded pipeline items (to prevent double-loading)
   const pipelineLoadedRef = useRef(false);
@@ -517,13 +560,74 @@ export const BoardView: React.FC<BoardViewProps> = ({
             y: centerY
           };
           break;
-        case 'map':
+        case 'map': {
           // 3 items: Scattered around center (geographic positions)
           const angle = (index / 3) * Math.PI * 2;
           const radius = 180;
           position = {
             x: centerX + Math.cos(angle) * radius,
             y: centerY + Math.sin(angle) * radius
+          };
+          break;
+        }
+        case 'storyboard':
+          // Horizontal filmstrip with notes below
+          position = {
+            x: 60 + index * 220,
+            y: centerY - 75
+          };
+          break;
+        case 'choice-comparison':
+          // Side-by-side for multispectral
+          position = {
+            x: centerX - 330 + index * 220,
+            y: centerY - 75
+          };
+          break;
+        case 'annotation-review': {
+          // Radial: first item center, rest around it
+          if (index === 0) {
+            position = { x: centerX - 100, y: centerY - 75 };
+          } else {
+            const reviewAngle = ((index - 1) / (itemsToAdd.length - 1)) * Math.PI * 2 - Math.PI / 2;
+            const reviewRadius = 250;
+            position = {
+              x: centerX + Math.cos(reviewAngle) * reviewRadius - 100,
+              y: centerY + Math.sin(reviewAngle) * reviewRadius - 75,
+            };
+          }
+          break;
+        }
+        case 'book-spread': {
+          // 2-up rows (book spread layout)
+          const pairIndex = Math.floor(index / 2);
+          const isRight = index % 2 === 1;
+          position = {
+            x: centerX + (isRight ? 10 : -210),
+            y: 80 + pairIndex * 190
+          };
+          break;
+        }
+        case 'provenance-map': {
+          // Star: first item center, rest around it
+          if (index === 0) {
+            position = { x: centerX - 100, y: centerY - 75 };
+          } else {
+            const provPositions = [
+              { x: centerX - 100, y: centerY - 250 }, // top
+              { x: centerX + 200, y: centerY - 75 },  // right
+              { x: centerX - 100, y: centerY + 100 },  // bottom
+              { x: centerX - 400, y: centerY - 75 },   // left
+            ];
+            position = provPositions[(index - 1) % provPositions.length];
+          }
+          break;
+        }
+        case 'scroll-layout':
+          // Vertical strip
+          position = {
+            x: centerX - 100,
+            y: 60 + index * 170
           };
           break;
       }
@@ -594,7 +698,6 @@ export const BoardView: React.FC<BoardViewProps> = ({
 
         case 'map':
           // Map items are connected by geographic proximity (optional)
-          // For now, just create reference connections
           if (addedItemIds.length >= 2) {
             const conn = createConnection(
               addedItemIds[0],
@@ -608,6 +711,54 @@ export const BoardView: React.FC<BoardViewProps> = ({
             newConnections.push(conn);
           }
           break;
+
+        case 'storyboard':
+        case 'scroll-layout':
+        case 'book-spread':
+          // Sequence connections between consecutive items
+          for (let i = 0; i < addedItemIds.length - 1; i++) {
+            newConnections.push(createConnection(
+              addedItemIds[i],
+              addedItemIds[i + 1],
+              'sequence',
+              {
+                label: isAdvanced ? 'Sequence' : 'Next',
+                style: 'straight',
+              }
+            ));
+          }
+          break;
+
+        case 'choice-comparison':
+          // similarTo connections between adjacent items
+          for (let i = 0; i < addedItemIds.length - 1; i++) {
+            newConnections.push(createConnection(
+              addedItemIds[i],
+              addedItemIds[i + 1],
+              'similarTo',
+              {
+                label: isAdvanced ? 'Similar To' : 'Compare',
+                style: 'straight',
+              }
+            ));
+          }
+          break;
+
+        case 'annotation-review':
+        case 'provenance-map':
+          // Star: connect center (first) to all others
+          for (let i = 1; i < addedItemIds.length; i++) {
+            newConnections.push(createConnection(
+              addedItemIds[0],
+              addedItemIds[i],
+              'references',
+              {
+                label: isAdvanced ? 'References' : 'Related',
+                style: 'curved',
+              }
+            ));
+          }
+          break;
       }
 
       if (newConnections.length > connections.length) {
@@ -619,15 +770,21 @@ export const BoardView: React.FC<BoardViewProps> = ({
       }
     }, 100);
 
-    const templateDescription = {
+    const templateDescription: Record<string, string> = {
       narrative: 'as a presentation sequence',
       comparison: 'for comparative analysis',
       timeline: 'with temporal ordering (navDate)',
       map: 'with geographic metadata (navPlace)',
+      storyboard: 'as a horizontal filmstrip',
+      'choice-comparison': 'for multispectral comparison',
+      'annotation-review': 'for annotation layer review',
+      'book-spread': 'as a paged book layout',
+      'provenance-map': 'as a linked data star map',
+      'scroll-layout': 'as a continuous scroll strip',
     };
 
     showToast(
-      `Created ${template.name} ${templateDescription[template.previewLayout]}`,
+      `Created ${template.name} ${templateDescription[template.previewLayout] || ''}`,
       'success'
     );
   }, [getAvailableItems, board, items, connections, updateBoard, showToast, isAdvanced]);
@@ -687,6 +844,9 @@ export const BoardView: React.FC<BoardViewProps> = ({
         bgMode={bgMode}
         onBgModeChange={setBgMode}
         onAlign={handleAlign}
+        snapEnabled={snapEnabled}
+        onSnapToggle={() => setSnapEnabled((s) => !s)}
+        onAutoArrange={handleAutoArrange}
         cx={cx}
         fieldMode={fieldMode}
       />

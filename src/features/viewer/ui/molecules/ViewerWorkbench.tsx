@@ -14,7 +14,8 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { IconButton, TabBar } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
+import { TabBar } from '@/src/shared/ui/molecules/TabBar';
 import {
   CodePanel, CoordinateInput, FormatSelector, ImagePreview,
   ParameterSection, PresetSelector, PreviewHeader, QualitySelector,

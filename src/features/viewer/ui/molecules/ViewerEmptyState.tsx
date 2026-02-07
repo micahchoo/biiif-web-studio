@@ -24,7 +24,7 @@
  */
 
 import React from 'react';
-import { GuidedEmptyState } from '@/src/shared/ui/molecules';
+import { GuidedEmptyState } from '@/src/shared/ui/molecules/GuidedEmptyState';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface ViewerEmptyStateProps {

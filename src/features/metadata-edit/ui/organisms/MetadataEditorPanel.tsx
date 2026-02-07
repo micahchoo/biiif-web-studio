@@ -21,7 +21,8 @@
 
 import React, { useEffect } from 'react';
 import { getIIIFValue, type IIIFItem } from '@/src/shared/types';
-import { ModalDialog, TabBar } from '@/src/shared/ui/molecules';
+import { ModalDialog } from '@/src/shared/ui/molecules/ModalDialog';
+import { TabBar } from '@/src/shared/ui/molecules/TabBar';
 import { EmptyProperties } from '../atoms/EmptyProperties';
 import { MetadataTabPanel } from '../molecules/MetadataTabPanel';
 import { TechnicalTabPanel } from '../molecules/TechnicalTabPanel';

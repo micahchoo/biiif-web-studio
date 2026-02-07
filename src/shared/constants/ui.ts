@@ -84,21 +84,26 @@ export const SPACING = {
 
 export const LAYOUT = {
   // Standard 3-panel layout dimensions
+  // CSS custom properties defined in src/index.css (:root)
   sidebar: {
     default: '240px',
     min: '180px',
     max: '400px',
   },
   inspector: {
-    default: '320px',
+    default: '320px',  // --inspector-w / w-inspector
     min: '280px',
     max: '480px',
   },
+  filmstrip: {
+    default: '288px',  // --filmstrip-w / w-filmstrip
+  },
   statusBar: {
-    height: '24px',
+    height: '28px',    // --status-bar-h / h-status-bar
   },
   header: {
-    height: '56px',
+    height: '64px',         // --header-h / h-header
+    compactHeight: '56px',  // --header-compact-h / h-header-compact
   },
 
   // Border radius

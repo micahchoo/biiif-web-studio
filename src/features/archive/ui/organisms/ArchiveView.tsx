@@ -17,13 +17,172 @@ import { useToast } from '@/src/shared/ui/molecules/Toast';
 import { useGridVirtualization, useIIIFTraversal, usePipeline, useResponsive, useSharedSelection } from '@/src/shared/lib/hooks';
 import { IIIF_CONFIG, IIIF_SPEC } from '@/src/shared/constants';
 import { isValidChildType } from '@/utils/iiifHierarchy';
-import { type BreadcrumbItem, BreadcrumbNav, ContextMenu, type ContextMenuSectionType, FloatingSelectionToolbar, GuidedEmptyState, PipelineBanner } from '@/src/shared/ui/molecules';
+import { type BreadcrumbItem, BreadcrumbNav } from '@/src/shared/ui/molecules/BreadcrumbNav';
+import { ContextMenu, type ContextMenuSectionType } from '@/src/shared/ui/molecules/ContextMenu';
+import { FloatingSelectionToolbar } from '@/src/shared/ui/molecules/FloatingSelectionToolbar';
+import { GuidedEmptyState } from '@/src/shared/ui/molecules/GuidedEmptyState';
+import { PipelineBanner } from '@/src/shared/ui/molecules/PipelineBanner';
 import { createLanguageMap, generateUUID } from '@/utils/iiifTypes';
 import { ArchiveHeader } from './ArchiveHeader';
 import { ArchiveGrid } from './ArchiveGrid';
 import { ArchiveList } from './ArchiveList';
 import { type ArchiveViewMode, filterByTerm, getSelectionDNA, loadViewMode, saveViewMode, sortCanvases, type SortMode } from '../../model';
-import { Button } from '@/src/shared/ui/atoms';
+import { Button, Icon } from '@/src/shared/ui/atoms';
+
+/**
+ * NavDate Bulk Set Modal
+ * Sets navDate on multiple selected canvases at once.
+ */
+const NavDateBulkModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  selectedCount: number;
+  onApply: (updates: Array<{ id: string; navDate: string }>) => void;
+  selectedIds: Set<string>;
+  fieldMode: boolean;
+}> = ({ isOpen, onClose, selectedCount, onApply, selectedIds, fieldMode }) => {
+  const [dateValue, setDateValue] = useState('');
+  const [timeValue, setTimeValue] = useState('09:00');
+  const [autoIncrement, setAutoIncrement] = useState(false);
+  const [incrementUnit, setIncrementUnit] = useState<'minute' | 'hour' | 'day'>('day');
+
+  if (!isOpen) return null;
+
+  const handleApply = () => {
+    if (!dateValue) return;
+    const ids = Array.from(selectedIds);
+    const updates: Array<{ id: string; navDate: string }> = [];
+
+    const baseDate = new Date(`${dateValue}T${timeValue}:00`);
+
+    ids.forEach((id, i) => {
+      const d = new Date(baseDate.getTime());
+      if (autoIncrement && i > 0) {
+        if (incrementUnit === 'minute') d.setMinutes(d.getMinutes() + i);
+        else if (incrementUnit === 'hour') d.setHours(d.getHours() + i);
+        else d.setDate(d.getDate() + i);
+      }
+      updates.push({ id, navDate: d.toISOString() });
+    });
+
+    onApply(updates);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className={`relative w-full max-w-sm rounded-xl shadow-2xl ${
+        fieldMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'
+      }`}>
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${
+          fieldMode ? 'border-slate-700' : 'border-slate-200'
+        }`}>
+          <h3 className={`font-bold text-sm ${fieldMode ? 'text-white' : 'text-slate-800'}`}>
+            Set Navigation Dates
+          </h3>
+          <Button variant="ghost" size="bare"
+            onClick={onClose}
+            className={`p-1 rounded ${fieldMode ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+          >
+            <Icon name="close" className={fieldMode ? 'text-slate-400' : 'text-slate-500'} />
+          </Button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className={`text-xs ${fieldMode ? 'text-slate-400' : 'text-slate-600'}`}>
+            Apply navDate to {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}
+          </div>
+
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className={`block text-[10px] font-bold uppercase mb-1 ${fieldMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                Date
+              </label>
+              <input
+                type="date"
+                value={dateValue}
+                onChange={(e) => setDateValue(e.target.value)}
+                className={`w-full text-sm px-2 py-1.5 rounded border outline-none ${
+                  fieldMode
+                    ? 'bg-slate-800 text-white border-slate-700 focus:border-yellow-500'
+                    : 'bg-white border-slate-300 focus:border-blue-500'
+                }`}
+              />
+            </div>
+            <div className="w-28">
+              <label className={`block text-[10px] font-bold uppercase mb-1 ${fieldMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                Time
+              </label>
+              <input
+                type="time"
+                value={timeValue}
+                onChange={(e) => setTimeValue(e.target.value)}
+                className={`w-full text-sm px-2 py-1.5 rounded border outline-none ${
+                  fieldMode
+                    ? 'bg-slate-800 text-white border-slate-700 focus:border-yellow-500'
+                    : 'bg-white border-slate-300 focus:border-blue-500'
+                }`}
+              />
+            </div>
+          </div>
+
+          {selectedCount > 1 && (
+            <div className={`p-3 rounded-lg border ${fieldMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoIncrement}
+                  onChange={(e) => setAutoIncrement(e.target.checked)}
+                  className="rounded"
+                />
+                <span className={`text-xs ${fieldMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Auto-increment by
+                </span>
+                <select
+                  value={incrementUnit}
+                  onChange={(e) => setIncrementUnit(e.target.value as 'minute' | 'hour' | 'day')}
+                  disabled={!autoIncrement}
+                  className={`text-xs px-1.5 py-0.5 rounded border ${
+                    fieldMode
+                      ? 'bg-slate-800 text-white border-slate-700'
+                      : 'bg-white border-slate-300'
+                  } ${!autoIncrement ? 'opacity-50' : ''}`}
+                >
+                  <option value="minute">1 minute</option>
+                  <option value="hour">1 hour</option>
+                  <option value="day">1 day</option>
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div className={`flex items-center justify-end gap-2 px-4 py-3 border-t ${
+          fieldMode ? 'border-slate-700' : 'border-slate-200'
+        }`}>
+          <Button variant="ghost" size="bare"
+            onClick={onClose}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              fieldMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            Cancel
+          </Button>
+          <Button variant="ghost" size="bare"
+            onClick={handleApply}
+            disabled={!dateValue}
+            className={`px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 ${
+              fieldMode ? 'bg-yellow-600 text-white hover:bg-yellow-500' : 'bg-blue-600 text-white hover:bg-blue-500'
+            }`}
+          >
+            Apply
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export interface ArchiveViewProps {
   root: IIIFItem | null;
@@ -174,6 +333,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   useEffect(() => { console.log('[ArchiveView] Density changed to:', density); }, [density]);
   const [activeItem, setActiveItem] = useState<IIIFCanvas | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string; isMulti?: boolean } | null>(null);
+  const [showNavDateModal, setShowNavDateModal] = useState(false);
 
   // Selection
   const { selectedIds, handleSelectWithModifier, select, toggle, clear: clearSelection, isSelected } = useSharedSelection();
@@ -291,6 +451,27 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
       showToast(`Grouped ${canvasesToMove.length} Canvases into new Manifest`, 'success');
     }
   }, [root, onUpdate, selectedIds, select, showToast]);
+
+  // Handle bulk navDate updates
+  const handleBulkNavDate = useCallback((updates: Array<{ id: string; navDate: string }>) => {
+    if (!root || !onUpdate) return;
+    const newRoot = JSON.parse(JSON.stringify(root));
+
+    const applyNavDates = (parent: any) => {
+      const list = parent.items || [];
+      for (const item of list) {
+        const update = updates.find(u => u.id === item.id);
+        if (update) {
+          item.navDate = update.navDate;
+        }
+        if (item.items) applyNavDates(item);
+      }
+    };
+
+    applyNavDates(newRoot);
+    onUpdate(newRoot);
+    showToast(`Set navDate on ${updates.length} item${updates.length !== 1 ? 's' : ''}`, 'success');
+  }, [root, onUpdate, showToast]);
 
   // Pipeline: Archive -> Map with selected items
   const handleOpenMap = useCallback(() => {
@@ -607,6 +788,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
             title: 'Organize',
             items: [
               { id: 'group-into-manifest', label: 'Group into Manifest', icon: 'folder_special', onClick: () => { handleCreateManifestFromSelection([contextMenu.targetId]); setContextMenu(null); } },
+              { id: 'set-navdate', label: 'Set Date', icon: 'event', onClick: () => { setShowNavDateModal(true); setContextMenu(null); } },
               { id: 'duplicate', label: 'Duplicate', icon: 'content_copy', onClick: () => { showToast('Duplicate feature coming soon', 'info'); setContextMenu(null); } },
             ]
           },
@@ -666,6 +848,16 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
           position="bottom"
         />
       )}
+
+      {/* NavDate Bulk Set Modal */}
+      <NavDateBulkModal
+        isOpen={showNavDateModal}
+        onClose={() => setShowNavDateModal(false)}
+        selectedCount={selectedIds.size || 1}
+        onApply={handleBulkNavDate}
+        selectedIds={selectedIds}
+        fieldMode={fieldMode}
+      />
     </div>
   );
 };

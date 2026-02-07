@@ -453,12 +453,13 @@ class VirtualManifestFactory {
   }> {
     const blobUrl = URL.createObjectURL(file);
 
-    // Determine media type from file
+    // Determine media type from file (check extension first — file.type can be empty)
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     let type: MediaInfo['type'] = 'unknown';
-    if (file.type.startsWith('image/')) type = 'image';
-    else if (file.type.startsWith('audio/')) type = 'audio';
-    else if (file.type.startsWith('video/')) type = 'video';
-    else if (file.type === 'application/pdf') type = 'pdf';
+    if (LOCAL_IMAGE_EXTENSIONS.includes(fileExt) || file.type.startsWith('image/')) type = 'image';
+    else if (LOCAL_AUDIO_EXTENSIONS.includes(fileExt) || file.type.startsWith('audio/')) type = 'audio';
+    else if (LOCAL_VIDEO_EXTENSIONS.includes(fileExt) || file.type.startsWith('video/')) type = 'video';
+    else if (fileExt === 'pdf' || file.type === 'application/pdf') type = 'pdf';
 
     const mediaInfo: MediaInfo = {
       url: blobUrl,

@@ -15,14 +15,32 @@ import React, { useState } from 'react';
 import { Button } from '@/src/shared/ui/atoms';
 import type { IIIFItem } from '@/src/shared/types';
 
+export type BoardLayoutType =
+  | 'narrative'
+  | 'comparison'
+  | 'map'
+  | 'timeline'
+  | 'storyboard'
+  | 'choice-comparison'
+  | 'annotation-review'
+  | 'book-spread'
+  | 'provenance-map'
+  | 'scroll-layout';
+
 export interface BoardTemplate {
   id: string;
   name: string;
   description: string;
   icon: string;
-  previewLayout: 'narrative' | 'comparison' | 'map' | 'timeline';
+  previewLayout: BoardLayoutType;
   itemCount: number;
   suggestedItems?: string[];
+  /** IIIF behavior to set on export */
+  defaultBehavior?: string[];
+  /** IIIF viewingDirection to set on export */
+  defaultViewingDirection?: string;
+  /** Connection type used between items */
+  connectionType?: string;
 }
 
 export interface BoardOnboardingProps {
@@ -54,6 +72,7 @@ const TEMPLATES: BoardTemplate[] = [
     icon: 'auto_stories',
     previewLayout: 'narrative',
     itemCount: 4,
+    defaultBehavior: ['individuals'],
   },
   {
     id: 'comparison',
@@ -62,6 +81,7 @@ const TEMPLATES: BoardTemplate[] = [
     icon: 'compare',
     previewLayout: 'comparison',
     itemCount: 2,
+    connectionType: 'similarTo',
   },
   {
     id: 'timeline',
@@ -79,6 +99,64 @@ const TEMPLATES: BoardTemplate[] = [
     previewLayout: 'map',
     itemCount: 3,
   },
+  {
+    id: 'storyboard',
+    name: 'Storyboard',
+    description: 'Horizontal filmstrip with sequence connections + notes below each frame. Ideal for AV scenes.',
+    icon: 'view_carousel',
+    previewLayout: 'storyboard',
+    itemCount: 4,
+    defaultBehavior: ['individuals'],
+    connectionType: 'sequence',
+  },
+  {
+    id: 'choice-comparison',
+    name: 'Choice Comparison',
+    description: 'Side-by-side layout for multispectral/RTI imaging. Shows Choice body alternatives together.',
+    icon: 'layers',
+    previewLayout: 'choice-comparison',
+    itemCount: 3,
+    connectionType: 'similarTo',
+  },
+  {
+    id: 'annotation-review',
+    name: 'Annotation Review',
+    description: 'Canvas in center with annotation layers fanned around it. For specialist review workflows.',
+    icon: 'hub',
+    previewLayout: 'annotation-review',
+    itemCount: 5,
+    connectionType: 'references',
+  },
+  {
+    id: 'book-spread',
+    name: 'Book Spread',
+    description: 'Paired 2-up rows representing page openings. Ideal for paged manuscripts.',
+    icon: 'menu_book',
+    previewLayout: 'book-spread',
+    itemCount: 6,
+    defaultBehavior: ['paged'],
+    connectionType: 'sequence',
+  },
+  {
+    id: 'provenance-map',
+    name: 'Provenance Map',
+    description: 'Star layout: manifest center with provider, homepage, seeAlso, rendering fanned around.',
+    icon: 'account_tree',
+    previewLayout: 'provenance-map',
+    itemCount: 5,
+    connectionType: 'references',
+  },
+  {
+    id: 'scroll-layout',
+    name: 'Scroll Layout',
+    description: 'Vertical strip with sequence connections. Mirrors IIIF continuous behavior for scroll objects.',
+    icon: 'view_day',
+    previewLayout: 'scroll-layout',
+    itemCount: 4,
+    defaultBehavior: ['continuous'],
+    defaultViewingDirection: 'top-to-bottom',
+    connectionType: 'sequence',
+  },
 ];
 
 const TemplatePreview: React.FC<{ layout: BoardTemplate['previewLayout']; itemCount: number; fieldMode: boolean }> = ({
@@ -86,8 +164,10 @@ const TemplatePreview: React.FC<{ layout: BoardTemplate['previewLayout']; itemCo
   fieldMode,
 }) => {
   const baseItemClass = `absolute w-8 h-8 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`;
+  const lineColor = fieldMode ? '#78716c' : '#d6d3d1';
+  const accentColor = fieldMode ? '#d97706' : '#f59e0b';
 
-  const layouts = {
+  const layouts: Record<BoardLayoutType, React.ReactNode> = {
     narrative: (
       <div className="relative w-full h-full flex items-center justify-center">
         <div className={`${baseItemClass} left-2 top-6`} />
@@ -95,14 +175,14 @@ const TemplatePreview: React.FC<{ layout: BoardTemplate['previewLayout']; itemCo
         <div className={`${baseItemClass} left-22 top-8`} />
         <div className={`${baseItemClass} left-32 top-5`} />
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 80 40">
-          <path d="M 20 20 Q 30 15, 40 20 T 60 20" fill="none" stroke={fieldMode ? '#78716c' : '#d6d3d1'} strokeWidth="1" strokeDasharray="2 2" />
+          <path d="M 20 20 Q 30 15, 40 20 T 60 20" fill="none" stroke={lineColor} strokeWidth="1" strokeDasharray="2 2" />
         </svg>
       </div>
     ),
     comparison: (
       <div className="relative w-full h-full flex items-center justify-center gap-4">
         <div className={`w-10 h-12 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
-        <div className={`text-lg ${fieldMode ? 'text-stone-600' : 'text-stone-400'}`}>↔</div>
+        <div className={`text-lg ${fieldMode ? 'text-stone-600' : 'text-stone-400'}`}>{'\u2194'}</div>
         <div className={`w-10 h-12 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
       </div>
     ),
@@ -124,9 +204,92 @@ const TemplatePreview: React.FC<{ layout: BoardTemplate['previewLayout']; itemCo
         <div className={`absolute left-12 bottom-4 w-4 h-4 rounded-full ${fieldMode ? 'bg-amber-500' : 'bg-amber-300'}`} />
       </div>
     ),
+    storyboard: (
+      <div className="relative w-full h-full flex items-end pb-1">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-0.5 px-0.5">
+            <div className={`w-full h-6 rounded-sm ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
+            <div className={`w-full h-2 rounded-sm ${fieldMode ? 'bg-stone-800' : 'bg-stone-100'}`} />
+          </div>
+        ))}
+        <svg className="absolute top-3 left-0 w-full" viewBox="0 0 80 4" preserveAspectRatio="none">
+          <path d="M 10 2 L 70 2" fill="none" stroke={lineColor} strokeWidth="0.5" strokeDasharray="1 1" />
+        </svg>
+      </div>
+    ),
+    'choice-comparison': (
+      <div className="relative w-full h-full flex items-center justify-center gap-1">
+        {[0, 1, 2].map(i => (
+          <div key={i} className={`w-8 h-10 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'} border ${fieldMode ? 'border-stone-600' : 'border-stone-300'}`} />
+        ))}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 80 40">
+          <line x1="28" y1="20" x2="38" y2="20" stroke={accentColor} strokeWidth="0.8" />
+          <line x1="48" y1="20" x2="58" y2="20" stroke={accentColor} strokeWidth="0.8" />
+        </svg>
+      </div>
+    ),
+    'annotation-review': (
+      <div className="relative w-full h-full flex items-center justify-center">
+        <div className={`w-10 h-10 rounded ${fieldMode ? 'bg-stone-600' : 'bg-stone-300'} z-10`} />
+        {[0, 1, 2, 3].map(i => {
+          const angle = (i / 4) * Math.PI * 2 - Math.PI / 2;
+          const r = 18;
+          return (
+            <div key={i} className={`absolute w-5 h-5 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`}
+              style={{ left: `calc(50% + ${Math.cos(angle) * r}px - 10px)`, top: `calc(50% + ${Math.sin(angle) * r}px - 10px)` }}
+            />
+          );
+        })}
+      </div>
+    ),
+    'book-spread': (
+      <div className="relative w-full h-full flex flex-col items-center justify-center gap-1">
+        {[0, 1].map(row => (
+          <div key={row} className="flex gap-0.5">
+            <div className={`w-12 h-8 rounded-l ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
+            <div className={`w-12 h-8 rounded-r ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
+          </div>
+        ))}
+      </div>
+    ),
+    'provenance-map': (
+      <div className="relative w-full h-full flex items-center justify-center">
+        <div className={`w-8 h-8 rounded ${fieldMode ? 'bg-amber-700' : 'bg-amber-300'} z-10`} />
+        {[0, 1, 2, 3].map(i => {
+          const positions = [
+            { left: '15%', top: '15%' },
+            { left: '70%', top: '15%' },
+            { left: '15%', top: '65%' },
+            { left: '70%', top: '65%' },
+          ];
+          return (
+            <div key={i} className={`absolute w-5 h-5 rounded ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`}
+              style={positions[i]}
+            />
+          );
+        })}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 80 40">
+          <line x1="40" y1="20" x2="18" y2="10" stroke={lineColor} strokeWidth="0.5" strokeDasharray="2 1" />
+          <line x1="40" y1="20" x2="62" y2="10" stroke={lineColor} strokeWidth="0.5" strokeDasharray="2 1" />
+          <line x1="40" y1="20" x2="18" y2="32" stroke={lineColor} strokeWidth="0.5" strokeDasharray="2 1" />
+          <line x1="40" y1="20" x2="62" y2="32" stroke={lineColor} strokeWidth="0.5" strokeDasharray="2 1" />
+        </svg>
+      </div>
+    ),
+    'scroll-layout': (
+      <div className="relative w-full h-full flex flex-col items-center justify-center gap-0.5">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className={`w-16 h-4 rounded-sm ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
+        ))}
+        <svg className="absolute right-3 top-2 bottom-2 w-2" viewBox="0 0 4 40">
+          <line x1="2" y1="2" x2="2" y2="38" stroke={lineColor} strokeWidth="0.5" />
+          <polygon points="0,36 4,36 2,40" fill={lineColor} />
+        </svg>
+      </div>
+    ),
   };
 
-  return layouts[layout];
+  return <>{layouts[layout]}</>;
 };
 
 export const BoardOnboarding: React.FC<BoardOnboardingProps> = ({
@@ -206,7 +369,7 @@ export const BoardOnboarding: React.FC<BoardOnboardingProps> = ({
         <h2 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${cx.textMuted}`}>
           Choose a Template
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {TEMPLATES.map((template) => (
             <Button variant="ghost" size="bare"
               key={template.id}

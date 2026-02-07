@@ -30,6 +30,13 @@ export default {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
+      spacing: {
+        'header': 'var(--header-h)',
+        'header-compact': 'var(--header-compact-h)',
+        'status-bar': 'var(--status-bar-h)',
+        'inspector': 'var(--inspector-w)',
+        'filmstrip': 'var(--filmstrip-w)',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],

@@ -109,6 +109,19 @@ export type { ActionButtonProps } from './ActionButton';
 export { MenuButton } from './MenuButton';
 export type { MenuButtonProps } from './MenuButton';
 
+// Tooltip & Guidance
+export { Tooltip } from './Tooltip';
+export type { TooltipContent } from './Tooltip';
+
+export { FirstTimeHint } from './FirstTimeHint';
+export type { FirstTimeHintProps } from './FirstTimeHint';
+
+export { QuickReference } from './QuickReference';
+export type { QuickReferenceProps } from './QuickReference';
+
+export { GuidanceEmptyState } from './GuidanceEmptyState';
+export type { GuidanceEmptyStateProps } from './GuidanceEmptyState';
+
 // State & Info
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps, EmptyStateAction } from './EmptyState';
@@ -191,3 +204,10 @@ export type { CollectionCardMenuProps } from './CollectionCardMenu';
 // Pipeline Navigation
 export { PipelineBanner } from './PipelineBanner';
 export type { PipelineBannerProps } from './PipelineBanner';
+
+// IIIF Property Editors
+export { LinkListEditor } from './LinkListEditor';
+export type { LinkListEditorProps, LinkItem, LinkResourceType } from './LinkListEditor';
+
+export { AgentEditor } from './AgentEditor';
+export type { AgentEditorProps, AgentItem } from './AgentEditor';

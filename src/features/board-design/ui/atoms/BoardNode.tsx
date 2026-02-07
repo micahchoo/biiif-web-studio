@@ -36,6 +36,8 @@ export interface BoardNodeProps {
   onDragStart: (id: string, offset: { x: number; y: number }) => void;
   /** Callback when connection starts */
   onConnectStart: (id: string) => void;
+  /** Callback when resize starts */
+  onResizeStart?: (id: string, direction: string, startPos: { x: number; y: number }, startSize: { w: number; h: number }) => void;
   /** Contextual styles */
   cx: ContextualClassNames;
   /** Field mode flag */
@@ -52,6 +54,7 @@ export const BoardNode: React.FC<BoardNodeProps> = ({
   onSelect,
   onDragStart,
   onConnectStart,
+  onResizeStart,
   cx,
   fieldMode,
 }) => {
@@ -72,6 +75,16 @@ export const BoardNode: React.FC<BoardNodeProps> = ({
   // onConnectStart is passed but not used directly in this atom; keep for API consistency
   // Prefix with underscore to satisfy ESLint unused var rule
   const _onConnectStart = onConnectStart;
+
+  const handleResizeMouseDown = (e: React.MouseEvent, direction: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onResizeStart?.(id, direction, { x: e.clientX, y: e.clientY }, { w: size.width, h: size.height });
+  };
+
+  const resizeHandleClass = `absolute w-2.5 h-2.5 rounded-sm ${
+    fieldMode ? 'bg-amber-400' : 'bg-iiif-blue'
+  }`;
 
   return (
     <div
@@ -118,6 +131,28 @@ export const BoardNode: React.FC<BoardNodeProps> = ({
           <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-400" />
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-yellow-400" />
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-400" />
+        </>
+      )}
+
+      {/* Resize handles (corners) */}
+      {selected && onResizeStart && (
+        <>
+          <div
+            className={`${resizeHandleClass} -bottom-1.5 -right-1.5 cursor-se-resize`}
+            onMouseDown={(e) => handleResizeMouseDown(e, 'se')}
+          />
+          <div
+            className={`${resizeHandleClass} -bottom-1.5 -left-1.5 cursor-sw-resize`}
+            onMouseDown={(e) => handleResizeMouseDown(e, 'sw')}
+          />
+          <div
+            className={`${resizeHandleClass} -top-1.5 -right-1.5 cursor-ne-resize`}
+            onMouseDown={(e) => handleResizeMouseDown(e, 'ne')}
+          />
+          <div
+            className={`${resizeHandleClass} -top-1.5 -left-1.5 cursor-nw-resize`}
+            onMouseDown={(e) => handleResizeMouseDown(e, 'nw')}
+          />
         </>
       )}
     </div>

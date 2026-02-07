@@ -132,18 +132,109 @@ export const IMAGE_QUALITY = {
  * MIME type mappings for file extensions
  */
 export const MIME_TYPE_MAP: Record<string, { type: string; format: string; motivation: string }> = {
+  // Images
   'jpg': { type: 'Image', format: 'image/jpeg', motivation: 'painting' },
   'jpeg': { type: 'Image', format: 'image/jpeg', motivation: 'painting' },
   'png': { type: 'Image', format: 'image/png', motivation: 'painting' },
   'webp': { type: 'Image', format: 'image/webp', motivation: 'painting' },
   'gif': { type: 'Image', format: 'image/gif', motivation: 'painting' },
+  'avif': { type: 'Image', format: 'image/avif', motivation: 'painting' },
+  'bmp': { type: 'Image', format: 'image/bmp', motivation: 'painting' },
+  'tiff': { type: 'Image', format: 'image/tiff', motivation: 'painting' },
+  'tif': { type: 'Image', format: 'image/tiff', motivation: 'painting' },
+  'svg': { type: 'Image', format: 'image/svg+xml', motivation: 'painting' },
+  // Audio
   'mp3': { type: 'Sound', format: 'audio/mpeg', motivation: 'painting' },
   'wav': { type: 'Sound', format: 'audio/wav', motivation: 'painting' },
+  'ogg': { type: 'Sound', format: 'audio/ogg', motivation: 'painting' },
+  'm4a': { type: 'Sound', format: 'audio/mp4', motivation: 'painting' },
+  'aac': { type: 'Sound', format: 'audio/aac', motivation: 'painting' },
+  'flac': { type: 'Sound', format: 'audio/flac', motivation: 'painting' },
+  // Video
   'mp4': { type: 'Video', format: 'video/mp4', motivation: 'painting' },
+  'webm': { type: 'Video', format: 'video/webm', motivation: 'painting' },
+  'mov': { type: 'Video', format: 'video/quicktime', motivation: 'painting' },
+  // Documents
+  'pdf': { type: 'Text', format: 'application/pdf', motivation: 'painting' },
   'txt': { type: 'Text', format: 'text/plain', motivation: 'supplementing' },
   'json': { type: 'Dataset', format: 'application/json', motivation: 'supplementing' },
+  'csv': { type: 'Dataset', format: 'text/csv', motivation: 'supplementing' },
+  // 3D Models
   'glb': { type: 'Model', format: 'model/gltf-binary', motivation: 'painting' },
+  'gltf': { type: 'Model', format: 'model/gltf+json', motivation: 'painting' },
 } as const;
+
+/**
+ * Image file extensions (raster + vector)
+ */
+const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp', 'tiff', 'tif', 'svg']);
+
+/**
+ * Raster image extensions (can use createImageBitmap)
+ */
+const RASTER_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp', 'tiff', 'tif']);
+
+/**
+ * Audio file extensions
+ */
+const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac']);
+
+/**
+ * Video file extensions
+ */
+const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov']);
+
+/**
+ * Check if a file is an image by extension OR file.type.
+ * Fixes the bug where file.type can be empty (Linux, webkitdirectory, drag-drop).
+ */
+export function isImageFile(file: { name: string; type: string }): boolean {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return IMAGE_EXTENSIONS.has(ext) || file.type.startsWith('image/');
+}
+
+/**
+ * Check if a file is a raster image (supports createImageBitmap).
+ * SVGs are excluded — they need separate dimension parsing.
+ */
+export function isRasterImage(file: { name: string; type: string }): boolean {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return RASTER_IMAGE_EXTENSIONS.has(ext) || (file.type.startsWith('image/') && file.type !== 'image/svg+xml');
+}
+
+/**
+ * Check if a file is an SVG.
+ */
+export function isSvgFile(file: { name: string; type: string }): boolean {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return ext === 'svg' || file.type === 'image/svg+xml';
+}
+
+/**
+ * Check if a file is audio by extension OR file.type.
+ */
+export function isAudioFile(file: { name: string; type: string }): boolean {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return AUDIO_EXTENSIONS.has(ext) || file.type.startsWith('audio/');
+}
+
+/**
+ * Check if a file is video by extension OR file.type.
+ */
+export function isVideoFile(file: { name: string; type: string }): boolean {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return VIDEO_EXTENSIONS.has(ext) || file.type.startsWith('video/');
+}
+
+/**
+ * Resolve the correct MIME format string for a file.
+ * Falls back to extension-based lookup when file.type is empty.
+ */
+export function resolveFileFormat(file: { name: string; type: string }): string {
+  if (file.type) return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return MIME_TYPE_MAP[ext]?.format || 'application/octet-stream';
+}
 
 /**
  * Legacy default derivative sizes (for backwards compatibility)

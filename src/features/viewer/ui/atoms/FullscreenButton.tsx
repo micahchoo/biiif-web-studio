@@ -14,7 +14,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 export interface FullscreenButtonProps {
   /** Reference to the container element to make fullscreen */
   containerRef: React.RefObject<HTMLElement>;

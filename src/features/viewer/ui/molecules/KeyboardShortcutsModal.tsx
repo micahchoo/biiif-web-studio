@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import { ModalDialog } from '@/src/shared/ui/molecules';
+import { ModalDialog } from '@/src/shared/ui/molecules/ModalDialog';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface KeyboardShortcutsModalProps {

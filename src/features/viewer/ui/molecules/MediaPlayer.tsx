@@ -23,7 +23,7 @@ import {
   VolumeControl,
 } from '@/src/features/viewer/ui/atoms';
 import { Button, Icon } from '@/src/shared/ui/atoms';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import { useMediaPlayer, type TimeRange, formatTimeForDisplay, getAnnotationTimeRange, isTimeBasedAnnotation } from '@/src/features/viewer/model';
 import { avService, type AVCanvas, type SyncPoint } from '@/src/entities/canvas/model/avService';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
@@ -435,7 +435,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
       {/* Transcript Panel */}
       {showTranscript && hasAccompanyingContent && (
-        <div className={`w-80 ${fieldMode ? 'bg-slate-900' : 'bg-slate-800'} border-l ${fieldMode ? 'border-slate-800' : 'border-slate-700'} flex flex-col`}>
+        <div className={`w-inspector ${fieldMode ? 'bg-slate-900' : 'bg-slate-800'} border-l ${fieldMode ? 'border-slate-800' : 'border-slate-700'} flex flex-col`}>
           <div className={`p-3 border-b ${fieldMode ? 'border-slate-800' : 'border-slate-700'} flex items-center justify-between`}>
             <div className="flex items-center gap-2">
               <Icon name="subtitles" className="text-slate-400" />

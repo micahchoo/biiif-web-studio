@@ -1,4 +1,4 @@
-import { getIIIFValue, IIIFCanvas, IIIFItem, isCanvas } from '@/src/shared/types';
+import { type CSVColumnMapping, getIIIFValue, IIIFCanvas, IIIFItem, isCanvas } from '@/src/shared/types';
 import {
   createLanguageMap,
   formatNavDate,
@@ -7,11 +7,7 @@ import {
 } from '@/utils';
 import { CSV_COLUMN_ALIASES, CSV_SUPPORTED_PROPERTIES } from '@/src/shared/constants';
 
-export interface CSVColumnMapping {
-  csvColumn: string;
-  iiifProperty: string;
-  language?: string;
-}
+export type { CSVColumnMapping };
 
 export interface CSVImportResult {
   matched: number;

@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import { DropdownSelect } from '@/src/shared/ui/molecules';
+import { DropdownSelect } from '@/src/shared/ui/molecules/DropdownSelect';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
 export interface QualityOption {

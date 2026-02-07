@@ -15,7 +15,7 @@
 
 import React, { ReactNode } from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 
 export interface ListItemBaseProps {
   /** Item content */

@@ -14,7 +14,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 export interface VolumeControlProps {
   /** Current volume level (0-1) */
   volume: number;

@@ -46,6 +46,7 @@ interface RangeTreeItemProps {
   isSelected: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onSupplementaryChange?: (rangeId: string, supplementary: { id: string; type: 'AnnotationCollection' } | undefined) => void;
   fieldMode: boolean;
   language: string;
   canvases: IIIFCanvas[];
@@ -67,6 +68,7 @@ const RangeTreeItem: React.FC<RangeTreeItemProps> = ({
   isSelected,
   onEdit,
   onDelete,
+  onSupplementaryChange,
   fieldMode,
   language,
   canvases,
@@ -166,6 +168,51 @@ const RangeTreeItem: React.FC<RangeTreeItemProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Supplementary AnnotationCollection link (shown when selected) */}
+      {isSelected && onSupplementaryChange && (
+        <div
+          className={`mx-2 mb-2 p-2 rounded-lg border text-xs ${
+            fieldMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}
+          style={{ marginLeft: `${depth * 16 + 28}px` }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className={`text-[9px] font-bold uppercase tracking-wider mb-1 ${
+            fieldMode ? 'text-slate-500' : 'text-slate-400'
+          }`}>
+            <Icon name="library_books" className="text-[10px] mr-1 inline" />
+            Supplementary Annotations
+          </div>
+          <div className="flex gap-2 items-center">
+            <input
+              type="url"
+              value={(range as any).supplementary?.id || ''}
+              onChange={(e) => {
+                const val = e.target.value.trim();
+                onSupplementaryChange(
+                  range.id,
+                  val ? { id: val, type: 'AnnotationCollection' } : undefined
+                );
+              }}
+              placeholder="AnnotationCollection URI"
+              className={`flex-1 text-xs px-2 py-1 rounded border outline-none ${
+                fieldMode
+                  ? 'bg-black border-slate-700 text-white placeholder-slate-600 focus:border-yellow-500'
+                  : 'bg-white border-slate-300 placeholder-slate-400 focus:border-blue-500'
+              }`}
+            />
+            {(range as any).supplementary?.id && (
+              <Button variant="ghost" size="bare"
+                onClick={() => onSupplementaryChange(range.id, undefined)}
+                className="text-red-400 hover:text-red-600 p-0.5"
+              >
+                <Icon name="close" className="text-xs" />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -533,6 +580,39 @@ export const StructureTabPanel: React.FC<StructureTabPanelProps> = ({
     setDragOverRangeId(null);
   }, []);
 
+  // Update supplementary on a range
+  const handleSupplementaryChange = useCallback((rangeId: string, supplementary: { id: string; type: 'AnnotationCollection' } | undefined) => {
+    const updateSupplementaryInList = (ranges: IIIFRange[]): IIIFRange[] => {
+      return ranges.map(range => {
+        if (range.id === rangeId) {
+          const updated = { ...range } as any;
+          if (supplementary) {
+            updated.supplementary = supplementary;
+          } else {
+            delete updated.supplementary;
+          }
+          return updated;
+        }
+        if (range.items) {
+          const nestedRanges = range.items.filter((item): item is IIIFRange =>
+            typeof item !== 'string' && 'type' in item && item.type === 'Range'
+          );
+          if (nestedRanges.length > 0) {
+            const updatedNested = updateSupplementaryInList(nestedRanges);
+            const canvasRefs = range.items.filter((item): item is IIIFRangeReference =>
+              typeof item !== 'string' && 'type' in item && item.type === 'Canvas'
+            );
+            return { ...range, items: [...canvasRefs, ...updatedNested] };
+          }
+        }
+        return range;
+      });
+    };
+
+    const newStructures = updateSupplementaryInList(structures);
+    onUpdateManifest({ structures: newStructures });
+  }, [structures, onUpdateManifest]);
+
   // Get canvas IDs from a range
   const getCanvasIdsFromRange = (range: IIIFRange): string[] => {
     return (range.items || [])
@@ -561,6 +641,7 @@ export const StructureTabPanel: React.FC<StructureTabPanelProps> = ({
             isSelected={selectedRangeId === range.id}
             onEdit={() => { setEditingRange(range); setModalOpen(true); }}
             onDelete={() => handleDeleteRange(range.id)}
+            onSupplementaryChange={handleSupplementaryChange}
             fieldMode={settings.fieldMode}
             language={settings.language}
             canvases={canvases}

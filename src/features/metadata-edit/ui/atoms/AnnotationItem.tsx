@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import { ListItemBase } from '@/src/shared/ui/molecules';
+import { ListItemBase } from '@/src/shared/ui/molecules/ListItemBase';
 import { getIIIFValue, type IIIFAnnotation } from '@/src/shared/types';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 

@@ -15,7 +15,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/src/shared/ui/atoms';
-import { ModalDialog } from '@/src/shared/ui/molecules';
+import { ModalDialog } from '@/src/shared/ui/molecules/ModalDialog';
 import { DEFAULT_MAP_CONFIG } from '@/src/shared/constants';
 
 declare const L: any;

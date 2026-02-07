@@ -18,7 +18,7 @@
 
 import React, { useState } from 'react';
 import { getIIIFValue, type IIIFCanvas } from '@/src/shared/types';
-import { StackedThumbnail } from '@/src/shared/ui/molecules';
+import { StackedThumbnail } from '@/src/shared/ui/molecules/StackedThumbnail';
 import { Icon } from '@/src/shared/ui/atoms';
 import { Button } from '@/ui/primitives/Button';
 import { RESOURCE_TYPE_CONFIG } from '@/src/shared/constants';
@@ -26,6 +26,8 @@ import { resolveHierarchicalThumbs } from '@/utils/imageSourceResolver';
 import { getFileDNA } from '../../model';
 
 export type GridDensity = 'compact' | 'comfortable' | 'spacious';
+
+export type ViewingDirection = 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top';
 
 export interface ArchiveGridProps {
   /** Canvas items to render */
@@ -78,6 +80,8 @@ export interface ArchiveGridProps {
   reorderEnabled?: boolean;
   /** Callback when items are reordered via drag-and-drop */
   onReorder?: (fromIndex: number, toIndex: number) => void;
+  /** IIIF viewingDirection from manifest */
+  viewingDirection?: ViewingDirection;
 }
 
 /**
@@ -119,7 +123,16 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
   onDensityChange,
   reorderEnabled = false,
   onReorder,
+  viewingDirection = 'left-to-right',
 }) => {
+  // Resolve CSS direction from IIIF viewingDirection
+  const isRTL = viewingDirection === 'right-to-left';
+  const directionStyle: React.CSSProperties = isRTL ? { direction: 'rtl' } : {};
+  const directionLabel = viewingDirection === 'right-to-left' ? 'RTL'
+    : viewingDirection === 'top-to-bottom' ? 'TTB'
+    : viewingDirection === 'bottom-to-top' ? 'BTT'
+    : '';
+
   const gap = 16;
   const rowHeight = itemSize.height + gap;
   const totalRows = Math.ceil(items.length / columns);
@@ -343,6 +356,13 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
     <div className="relative">
       {/* Density controls toolbar */}
       <div className="flex items-center justify-end gap-2 mb-4">
+        {directionLabel && (
+          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+            fieldMode ? 'bg-slate-800 text-yellow-400' : 'bg-purple-100 text-purple-700'
+          }`}>
+            {viewingDirection === 'right-to-left' ? '\u2190' : viewingDirection === 'top-to-bottom' ? '\u2193' : '\u2191'} {directionLabel}
+          </span>
+        )}
         <span className="text-xs text-stone-500 dark:text-stone-400">View:</span>
         <div className="flex items-center bg-stone-100 dark:bg-stone-800 rounded-lg p-0.5">
           {(['compact', 'comfortable', 'spacious'] as const).map((d) => (
@@ -367,7 +387,7 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
       </div>
 
       {topSpacer > 0 && <div style={{ height: topSpacer }} aria-hidden="true" />}
-      <div className={`grid ${densityClasses[density]} ${gridColsClass}`}>
+      <div className={`grid ${densityClasses[density]} ${gridColsClass}`} style={directionStyle}>
         {visibleItems.map((item, index) => renderItem(item, index))}
       </div>
       {bottomSpacer > 0 && <div style={{ height: bottomSpacer }} aria-hidden="true" />}

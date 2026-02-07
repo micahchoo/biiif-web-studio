@@ -22,7 +22,7 @@ import {
   LegacyProgressCallback
 } from '@/src/shared/types';
 import { storage } from '@/src/shared/services/storage';
-import { DEFAULT_INGEST_PREFS, FEATURE_FLAGS, getDerivativePreset, IIIF_CONFIG, IIIF_SPEC, IMAGE_QUALITY, MIME_TYPE_MAP, USE_ENHANCED_PROGRESS, USE_WORKER_INGEST } from '@/src/shared/constants';
+import { DEFAULT_INGEST_PREFS, FEATURE_FLAGS, getDerivativePreset, IIIF_CONFIG, IIIF_SPEC, IMAGE_QUALITY, isAudioFile, isImageFile, isRasterImage, isSvgFile, isVideoFile, MIME_TYPE_MAP, resolveFileFormat, USE_ENHANCED_PROGRESS, USE_WORKER_INGEST } from '@/src/shared/constants';
 import { load } from 'js-yaml';
 import { extractMetadata } from '@/src/shared/services/metadataHarvester';
 import { generateDerivativeAsync, getTileWorkerPool } from '../ingest/tileWorker';
@@ -535,6 +535,91 @@ const generateDerivative = async (file: Blob, width: number): Promise<Blob | nul
 };
 
 /**
+ * Parse SVG dimensions from the SVG XML content.
+ * Tries: width/height attributes → viewBox → <img> natural dimensions
+ */
+async function parseSvgDimensions(file: File): Promise<{ width: number; height: number }> {
+  try {
+    const text = await file.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'image/svg+xml');
+    const svg = doc.documentElement;
+
+    // Try explicit width/height attributes
+    const wAttr = svg.getAttribute('width');
+    const hAttr = svg.getAttribute('height');
+    if (wAttr && hAttr) {
+      const w = parseFloat(wAttr);
+      const h = parseFloat(hAttr);
+      if (w > 0 && h > 0) return { width: Math.round(w), height: Math.round(h) };
+    }
+
+    // Try viewBox
+    const viewBox = svg.getAttribute('viewBox');
+    if (viewBox) {
+      const parts = viewBox.trim().split(/[\s,]+/).map(Number);
+      if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+        return { width: Math.round(parts[2]), height: Math.round(parts[3]) };
+      }
+    }
+
+    // Fallback: load into <img> for natural dimensions
+    return await new Promise<{ width: number; height: number }>((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth || 800, height: img.naturalHeight || 600 });
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => {
+        resolve({ width: 800, height: 600 });
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    });
+  } catch {
+    return { width: 800, height: 600 };
+  }
+}
+
+/**
+ * Rasterize an SVG to a PNG blob at the target width (for thumbnails).
+ * Uses <img> + OffscreenCanvas on the main thread (which has DOM access).
+ */
+async function rasterizeSvg(file: File, targetWidth: number): Promise<Blob | null> {
+  try {
+    const dims = await parseSvgDimensions(file);
+    const ratio = dims.height / dims.width;
+    const targetHeight = Math.floor(targetWidth * ratio);
+
+    return await new Promise<Blob | null>((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          const canvas = new OffscreenCanvas(targetWidth, targetHeight);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); URL.revokeObjectURL(url); return; }
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+          const blob = await canvas.convertToBlob({ type: 'image/png' });
+          resolve(blob);
+        } catch {
+          resolve(null);
+        }
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => {
+        resolve(null);
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Count total media files in a file tree for progress tracking
  */
 function countMediaFiles(node: FileTree): number {
@@ -734,7 +819,26 @@ const processNodeWithProgress = async (
         let imageWidth: number = DEFAULT_INGEST_PREFS.defaultCanvasWidth;
         let imageHeight: number = DEFAULT_INGEST_PREFS.defaultCanvasHeight;
 
-        if (file.type.startsWith('image/')) {
+        if (isSvgFile(file)) {
+          // SVG: parse dimensions from XML, rasterize thumbnail as PNG
+          try {
+            const dims = await parseSvgDimensions(file);
+            imageWidth = dims.width;
+            imageHeight = dims.height;
+          } catch (e) {
+            console.warn(`Could not read SVG dimensions for ${file.name}, using defaults`);
+          }
+
+          const preset = getDerivativePreset();
+
+          progress = updateFileProgress(progress, fileId, { progress: 70 });
+          reportProgress(progress);
+
+          const thumb = await rasterizeSvg(file, preset.thumbnailWidth);
+          if (thumb) await storage.saveDerivative(assetId, 'thumb', thumb);
+          // No larger derivatives needed — SVG scales infinitely
+        } else if (isRasterImage(file)) {
+          // Raster image: use createImageBitmap for dimensions and derivatives
           try {
             const bitmap = await createImageBitmap(file);
             imageWidth = bitmap.width;
@@ -766,19 +870,21 @@ const processNodeWithProgress = async (
 
         const extractedMeta = await extractMetadata(file);
         const iiifType = MIME_TYPE_MAP[ext]?.type || 'Image';
-        const isImage = iiifType === 'Image';
+        const fileSvg = isSvgFile(file);
+        const isImage = iiifType === 'Image' && !fileSvg;
         const preset = getDerivativePreset();
 
-        const thumbnails = isImage ? [{
+        const thumbnails = (isImage || fileSvg) ? [{
           id: `${IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId)}/full/${preset.thumbnailWidth},/0/default.jpg`,
           type: "Image" as const,
           format: "image/jpeg",
           width: preset.thumbnailWidth
         }] : undefined;
 
-        // Use MEDIA_SERVICE for audio/video, IMAGE_SERVICE for images
+        // Use MEDIA_SERVICE for audio/video/SVG, IMAGE_SERVICE for raster images
         const isAudioVideo = iiifType === 'Sound' || iiifType === 'Video';
-        const bodyId = isAudioVideo
+        const useMediaService = isAudioVideo || fileSvg;
+        const bodyId = useMediaService
           ? IIIF_CONFIG.ID_PATTERNS.MEDIA_SERVICE(baseUrl, assetId, ext)
           : `${IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId)}/full/max/0/default.jpg`;
 
@@ -1084,8 +1190,22 @@ const processNode = async (
             let imageWidth: number = DEFAULT_INGEST_PREFS.defaultCanvasWidth;
             let imageHeight: number = DEFAULT_INGEST_PREFS.defaultCanvasHeight;
 
-            if (file.type.startsWith('image/')) {
-                // Read actual dimensions from image file
+            if (isSvgFile(file)) {
+                // SVG: parse dimensions from XML, rasterize thumbnail as PNG
+                try {
+                    const dims = await parseSvgDimensions(file);
+                    imageWidth = dims.width;
+                    imageHeight = dims.height;
+                } catch (e) {
+                    console.warn(`Could not read SVG dimensions for ${file.name}, using defaults`);
+                }
+
+                const preset = getDerivativePreset();
+                const thumb = await rasterizeSvg(file, preset.thumbnailWidth);
+                if (thumb) await storage.saveDerivative(assetId, 'thumb', thumb);
+                // No larger derivatives needed — SVG scales infinitely
+            } else if (isRasterImage(file)) {
+                // Raster image: use createImageBitmap for dimensions and derivatives
                 try {
                     const bitmap = await createImageBitmap(file);
                     imageWidth = bitmap.width;
@@ -1111,10 +1231,11 @@ const processNode = async (
 
             const extractedMeta = await extractMetadata(file);
             const iiifType = MIME_TYPE_MAP[ext]?.type || 'Image';
-            const isImage = iiifType === 'Image';
+            const fileSvg2 = isSvgFile(file);
+            const isImage = iiifType === 'Image' && !fileSvg2;
             const preset = getDerivativePreset();
 
-            const thumbnails = isImage ? [
+            const thumbnails = (isImage || fileSvg2) ? [
                 {
                     id: `${IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId)}/full/${preset.thumbnailWidth},/0/default.jpg`,
                     type: "Image" as const,
@@ -1123,9 +1244,10 @@ const processNode = async (
                 }
             ] : undefined;
 
-            // Use MEDIA_SERVICE for audio/video, IMAGE_SERVICE for images
+            // Use MEDIA_SERVICE for audio/video/SVG, IMAGE_SERVICE for raster images
             const isAudioVideo = iiifType === 'Sound' || iiifType === 'Video';
-            const bodyId = isAudioVideo
+            const useMediaService = isAudioVideo || fileSvg2;
+            const bodyId = useMediaService
               ? IIIF_CONFIG.ID_PATTERNS.MEDIA_SERVICE(baseUrl, assetId, ext)
               : `${IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId)}/full/max/0/default.jpg`;
 
@@ -1139,7 +1261,7 @@ const processNode = async (
                     id: bodyId,
                     type: iiifType as any,
                     format: MIME_TYPE_MAP[ext]?.format || 'image/jpeg',
-                    // Use centralized Image API service reference
+                    // Use centralized Image API service reference (not for SVG — served raw)
                     service: isImage ? [
                         createImageServiceReference(IIIF_CONFIG.ID_PATTERNS.IMAGE_SERVICE(baseUrl, assetId), 'level2')
                     ] : undefined
@@ -1651,8 +1773,8 @@ export async function buildManifestFromFiles(
       target: canvas.id,
       body: {
         id: `blob:${file.name}`,
-        type: file.type.startsWith('image/') ? 'Image' : 'Video',
-        format: file.type,
+        type: isImageFile(file) ? 'Image' : (isVideoFile(file) ? 'Video' : (isAudioFile(file) ? 'Sound' : 'Image')),
+        format: resolveFileFormat(file),
       },
     });
 

@@ -337,7 +337,17 @@ export interface IIIFAnnotation {
   _layout?: { x: number; y: number; w: number; h: number };
 }
 
-export type IIIFAnnotationBody = IIIFTextualBody | IIIFExternalWebResource;
+/**
+ * IIIF Choice - allows alternate representations of the same content
+ * Used for multispectral imaging, alternate language tracks, etc.
+ * @see https://iiif.io/api/presentation/3.0/#choice
+ */
+export interface IIIFChoice {
+  type: "Choice";
+  items: (IIIFExternalWebResource | IIIFTextualBody)[];
+}
+
+export type IIIFAnnotationBody = IIIFTextualBody | IIIFExternalWebResource | IIIFChoice;
 
 export interface IIIFTextualBody {
   type: "TextualBody";
@@ -433,7 +443,14 @@ export function isTextualBody(body: IIIFAnnotationBody): body is IIIFTextualBody
  * Type guard for ExternalWebResource annotation bodies
  */
 export function isExternalWebResource(body: IIIFAnnotationBody): body is IIIFExternalWebResource {
-  return body?.type !== 'TextualBody' && 'id' in body;
+  return body?.type !== 'TextualBody' && body?.type !== 'Choice' && 'id' in body;
+}
+
+/**
+ * Type guard for Choice annotation bodies
+ */
+export function isChoice(body: IIIFAnnotationBody): body is IIIFChoice {
+  return body?.type === 'Choice';
 }
 
 /**
@@ -729,3 +746,63 @@ export type {
   RestoreOptions,
   EmptyTrashResult
 } from '@/src/entities/manifest/model/vault/types';
+
+// ============================================================================
+// CSV Import Types (moved from features/ingest for FSD compliance)
+// ============================================================================
+
+export interface CSVColumnMapping {
+  csvColumn: string;
+  iiifProperty: string;
+  language?: string;
+}
+
+// ============================================================================
+// Ingest Checkpoint Types (moved from entities/manifest for FSD compliance)
+// ============================================================================
+
+export interface CheckpointFile {
+  /** File path relative to root */
+  path: string;
+  /** SHA-256 hash of file content */
+  hash: string;
+  /** Whether this file has been processed */
+  processed: boolean;
+  /** Error message if processing failed */
+  error?: string;
+  /** File size in bytes */
+  size?: number;
+  /** Last modified timestamp */
+  lastModified?: number;
+}
+
+export interface IngestCheckpoint {
+  /** Unique checkpoint ID */
+  id: string;
+  /** Creation timestamp */
+  timestamp: number;
+  /** Last updated timestamp */
+  updatedAt: number;
+  /** Source identifier (e.g., folder path or import ID) */
+  sourceId: string;
+  /** Human-readable source name */
+  sourceName: string;
+  /** Files being imported */
+  files: CheckpointFile[];
+  /** Associated manifest ID if created */
+  manifestId?: string;
+  /** Import metadata (settings, mappings, etc.) */
+  metadata: Record<string, unknown>;
+  /** Current import progress (0-100) */
+  progress: number;
+  /** Import status */
+  status: 'in_progress' | 'completed' | 'failed' | 'paused';
+  /** Error message if failed */
+  errorMessage?: string;
+  /** Total files count (for progress calculation) */
+  totalFiles: number;
+  /** Processed files count */
+  processedFiles: number;
+  /** Failed files count */
+  failedFiles: number;
+}

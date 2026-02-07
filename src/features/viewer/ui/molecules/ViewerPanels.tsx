@@ -19,7 +19,7 @@
  */
 
 import React from 'react';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import { type SearchResult, type SearchService, ViewerSearchPanel } from './ViewerSearchPanel';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFManifest } from '@/src/shared/types';

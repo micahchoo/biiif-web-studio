@@ -22,6 +22,8 @@ import React from 'react';
 import { PageCounter } from '@/src/features/viewer/ui/atoms';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 
+export type ViewingDirection = 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top';
+
 export interface FilmstripNavigatorProps {
   /** Current canvas index (0-based) */
   currentIndex: number;
@@ -37,6 +39,8 @@ export interface FilmstripNavigatorProps {
   cx: ContextualClassNames;
   /** Current field mode */
   fieldMode: boolean;
+  /** IIIF viewingDirection from manifest */
+  viewingDirection?: ViewingDirection;
 }
 
 /**
@@ -59,14 +63,19 @@ export const FilmstripNavigator: React.FC<FilmstripNavigatorProps> = ({
   onPageChange,
   cx,
   fieldMode,
+  viewingDirection = 'left-to-right',
 }) => {
   if (totalItems <= 1) return null;
+
+  const isRTL = viewingDirection === 'right-to-left';
+  const directionStyle: React.CSSProperties = isRTL ? { direction: 'rtl' } : {};
 
   return (
     <div
       className={`h-12 border-t flex items-center justify-between px-4 ${
         fieldMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-800 border-slate-700'
       }`}
+      style={directionStyle}
     >
       <PageCounter
         current={currentIndex + 1}
@@ -75,7 +84,14 @@ export const FilmstripNavigator: React.FC<FilmstripNavigatorProps> = ({
         label={label}
         cx={cx}
       />
-      <div className="text-xs text-slate-500">{loadingStatus}</div>
+      <div className="text-xs text-slate-500" style={{ direction: 'ltr' }}>
+        {loadingStatus}
+        {viewingDirection !== 'left-to-right' && (
+          <span className={`ml-2 text-[9px] font-bold uppercase ${fieldMode ? 'text-yellow-400/60' : 'text-slate-600'}`}>
+            {isRTL ? '\u2190 RTL' : viewingDirection === 'top-to-bottom' ? '\u2193 TTB' : '\u2191 BTT'}
+          </span>
+        )}
+      </div>
     </div>
   );
 };

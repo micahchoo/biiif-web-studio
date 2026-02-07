@@ -188,7 +188,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
   return (
     <>
       {/* Main header */}
-      <div className={`h-16 border-b px-6 flex items-center justify-between shadow-sm z-10 shrink-0 ${cx.headerBg || cx.surface} ${cx.border || 'border-slate-200 dark:border-slate-700'}`}>
+      <div className={`h-header border-b px-6 flex items-center justify-between shadow-sm z-10 shrink-0 ${cx.headerBg || cx.surface} ${cx.border || 'border-slate-200 dark:border-slate-700'}`}>
         <div className="flex items-center gap-4">
           <h2 className={`font-bold text-lg ${cx.accent}`}>Archive</h2>
           {!isMobile && !hasSelection && !showReorderMode && (

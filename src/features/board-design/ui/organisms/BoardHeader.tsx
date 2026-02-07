@@ -8,12 +8,13 @@
  * FAILURE PREVENTED: Lost work (no undo), unclear tool state
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button, Icon } from '@/src/shared/ui/atoms';
 import { ViewToggle } from '@/src/shared/ui/molecules/ViewToggle';
 import { Toolbar } from '@/src/shared/ui/molecules/Toolbar';
 import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import { ActionButton } from '@/src/shared/ui/molecules/ActionButton';
+import type { LayoutArrangement } from '../../model';
 
 export type BackgroundMode = 'grid' | 'dark' | 'light';
 
@@ -48,6 +49,12 @@ export interface BoardHeaderProps {
   onBgModeChange?: (mode: BackgroundMode) => void;
   /** Alignment callbacks (when item selected) */
   onAlign?: (type: 'center' | 'left' | 'top' | 'right' | 'bottom') => void;
+  /** Whether snap-to-grid is enabled */
+  snapEnabled?: boolean;
+  /** Toggle snap-to-grid */
+  onSnapToggle?: () => void;
+  /** Auto-arrange items in a layout */
+  onAutoArrange?: (arrangement: LayoutArrangement) => void;
   /** Contextual styles from template */
   cx: {
     surface: string;
@@ -77,9 +84,21 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   bgMode = 'grid',
   onBgModeChange,
   onAlign,
+  snapEnabled,
+  onSnapToggle,
+  onAutoArrange,
   cx,
   fieldMode,
 }) => {
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
+
+  const layoutOptions: { value: LayoutArrangement; icon: string; label: string }[] = [
+    { value: 'grid', icon: 'grid_view', label: 'Grid' },
+    { value: 'continuous', icon: 'view_day', label: 'Strip' },
+    { value: 'paged', icon: 'menu_book', label: 'Book' },
+    { value: 'circle', icon: 'radio_button_unchecked', label: 'Circle' },
+    { value: 'timeline', icon: 'view_timeline', label: 'Timeline' },
+  ];
   const toolOptions = [
     { value: 'select', icon: 'mouse', label: 'Select', shortcut: 'V' },
     { value: 'connect', icon: 'timeline', label: 'Connect', shortcut: 'C' },
@@ -104,7 +123,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   return (
     <div
       className={`
-        h-16 border-b px-4 flex items-center justify-between
+        h-header border-b px-4 flex items-center justify-between
         ${fieldMode ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-200'}
       `}
     >
@@ -214,6 +233,76 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
               ))}
             </div>
           </>
+        )}
+
+        {/* Separator */}
+        <div className={`w-px h-6 ${fieldMode ? 'bg-stone-700' : 'bg-stone-200'}`} />
+
+        {/* Snap-to-Grid Toggle */}
+        {onSnapToggle && (
+          <Button variant="ghost" size="bare"
+            onClick={onSnapToggle}
+            className={`
+              flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all
+              ${snapEnabled
+                ? fieldMode
+                  ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
+                  : 'bg-amber-100 text-amber-700 ring-1 ring-amber-500/30'
+                : fieldMode
+                  ? 'text-stone-500 hover:bg-stone-800 hover:text-stone-300'
+                  : 'text-stone-500 hover:bg-stone-100 hover:text-stone-700'
+              }
+            `}
+            title="Snap to Grid (G)"
+          >
+            <Icon name="grid_on" className="text-sm" />
+            <span className="hidden md:inline">Snap</span>
+          </Button>
+        )}
+
+        {/* Layout Tool */}
+        {onAutoArrange && (
+          <div className="relative">
+            <Button variant="ghost" size="bare"
+              onClick={() => setShowLayoutMenu((s) => !s)}
+              className={`
+                flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all
+                ${fieldMode
+                  ? 'text-stone-400 hover:bg-stone-800 hover:text-stone-200'
+                  : 'text-stone-500 hover:bg-stone-100 hover:text-stone-700'
+                }
+              `}
+              title="Auto Layout (L)"
+            >
+              <Icon name="auto_fix_high" className="text-sm" />
+              <span className="hidden md:inline">Layout</span>
+            </Button>
+            {showLayoutMenu && (
+              <div className={`absolute top-full left-0 mt-1 z-50 rounded-lg shadow-lg border py-1 min-w-[140px] ${
+                fieldMode ? 'bg-stone-800 border-stone-700' : 'bg-white border-stone-200'
+              }`}>
+                {layoutOptions.map((opt) => (
+                  <Button variant="ghost" size="bare"
+                    key={opt.value}
+                    onClick={() => {
+                      onAutoArrange(opt.value);
+                      setShowLayoutMenu(false);
+                    }}
+                    className={`
+                      w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-all
+                      ${fieldMode
+                        ? 'text-stone-300 hover:bg-stone-700'
+                        : 'text-stone-700 hover:bg-stone-50'
+                      }
+                    `}
+                  >
+                    <Icon name={opt.icon} className="text-sm" />
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Button, Icon } from '@/src/shared/ui/atoms';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 
 export interface HeaderUserMenuProps {
   /** Current field mode - affects avatar styling */

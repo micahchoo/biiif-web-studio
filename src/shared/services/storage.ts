@@ -1,7 +1,6 @@
 
 import { DBSchema, IDBPDatabase, openDB } from 'idb';
-import { IIIFItem } from '@/src/shared/types';
-import { IngestCheckpoint } from '@/src/entities/manifest/model/ingest/ingestState';
+import { IIIFItem, IngestCheckpoint } from '@/src/shared/types';
 import { OPFSStorage } from './opfsStorage';
 
 export const DB_NAME = 'biiif-archive-db';

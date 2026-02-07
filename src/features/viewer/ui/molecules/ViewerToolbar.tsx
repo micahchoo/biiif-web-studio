@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { Icon } from '@/src/shared/ui/atoms';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import { ZoomControl } from '@/src/features/viewer/ui/atoms';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 

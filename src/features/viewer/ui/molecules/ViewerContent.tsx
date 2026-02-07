@@ -19,11 +19,13 @@
  */
 
 import React from 'react';
-import { EmptyState } from '@/src/shared/ui/molecules';
+import { EmptyState } from '@/src/shared/ui/molecules/EmptyState';
 import { MediaPlayer } from './MediaPlayer';
 import { AnnotationOverlay } from './AnnotationOverlay';
+import { ChoiceSelector } from '../atoms/ChoiceSelector';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 import type { IIIFAnnotation, IIIFCanvas } from '@/src/shared/types';
+import type { ChoiceItem } from '../../model';
 
 export interface ViewerContentProps {
   /** Canvas to display */
@@ -56,6 +58,14 @@ export interface ViewerContentProps {
   onTimeRangeChange?: (range: { start: number; end?: number } | null) => void;
   /** Callback to report current playback time */
   onPlaybackTimeUpdate?: (time: number) => void;
+  /** Whether this canvas has Choice bodies */
+  hasChoice?: boolean;
+  /** Choice items for selector */
+  choiceItems?: ChoiceItem[];
+  /** Active choice index */
+  activeChoiceIndex?: number;
+  /** Callback when choice selection changes */
+  onChoiceSelect?: (index: number) => void;
   /** Contextual styles from template */
   cx: ContextualClassNames;
   /** Current field mode */
@@ -92,6 +102,10 @@ export const ViewerContent: React.FC<ViewerContentProps> = ({
   timeRange,
   onTimeRangeChange,
   onPlaybackTimeUpdate,
+  hasChoice,
+  choiceItems,
+  activeChoiceIndex,
+  onChoiceSelect,
   cx,
   fieldMode,
 }) => {
@@ -113,6 +127,15 @@ export const ViewerContent: React.FC<ViewerContentProps> = ({
             canvasHeight={canvasHeight}
             selectedId={selectedAnnotationId}
             onAnnotationClick={onAnnotationClick as any}
+            fieldMode={fieldMode}
+          />
+        )}
+        {/* Choice Selector */}
+        {hasChoice && choiceItems && choiceItems.length > 1 && onChoiceSelect && (
+          <ChoiceSelector
+            items={choiceItems}
+            activeIndex={activeChoiceIndex ?? 0}
+            onSelect={onChoiceSelect}
             fieldMode={fieldMode}
           />
         )}

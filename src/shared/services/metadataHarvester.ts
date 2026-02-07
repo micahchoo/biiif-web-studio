@@ -1,9 +1,10 @@
 
 import ExifReader from 'exifreader';
 import { IIIFItem } from '@/src/shared/types';
+import { isImageFile } from '@/src/shared/constants';
 
 export const extractMetadata = async (file: File): Promise<Partial<IIIFItem>> => {
-    if (!file.type.startsWith('image/')) return {};
+    if (!isImageFile(file)) return {};
 
     try {
         const tags = await ExifReader.load(file);

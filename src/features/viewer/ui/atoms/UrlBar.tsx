@@ -14,7 +14,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { IconButton } from '@/src/shared/ui/molecules';
+import { IconButton } from '@/src/shared/ui/molecules/IconButton';
 import { UrlSegment } from './UrlSegment';
 import type { ContextualClassNames } from '@/src/shared/lib/hooks/useContextualStyles';
 

@@ -15,7 +15,7 @@
 
 import React from 'react';
 import { Icon } from '../atoms';
-import type { MetadataField } from './MetadataCard';
+import type { MetadataField } from './metadataTypes';
 
 export interface MetadataFieldRendererProps {
   /** Field definition */

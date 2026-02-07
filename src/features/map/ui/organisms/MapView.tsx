@@ -111,7 +111,7 @@ export const MapView: React.FC<MapViewProps> = ({
   return (
     <div className={`flex flex-col h-full ${fieldMode ? 'bg-black' : 'bg-slate-200'}`}>
       {/* Header */}
-      <div className={`h-16 ${cx.headerBg} border-b ${cx.border} flex items-center justify-between px-6 shadow-sm z-10 shrink-0`}>
+      <div className={`h-header ${cx.headerBg} border-b ${cx.border} flex items-center justify-between px-6 shadow-sm z-10 shrink-0`}>
         <div className="flex items-center gap-4">
           <h2 className={`font-bold text-lg ${cx.accent}`}>Map</h2>
           <div className={`h-4 w-px ${fieldMode ? 'bg-yellow-700' : 'bg-slate-500'}`} />
