@@ -128,12 +128,12 @@ bun.lockb
 *.tsbuildinfo
 
 # Compiled output
-dist/
-lib/
-esm/
-cjs/
-out/
-target/
+./dist/
+./lib/
+./esm/
+./cjs/
+./out/
+./target/
 
 # ----------------------------------------------------------------------
 # Project-specific directories
@@ -146,13 +146,13 @@ target/
 .roo/
 
 # Archived full project
-archive-full-*/
+./archive-full-*/
 _archived
 # Temporary stuff
 Stuff/
 
 # Template directory (if it's generated content)
-template/
+./template/
 
 # Test images and assets
 .Images iiif test/
