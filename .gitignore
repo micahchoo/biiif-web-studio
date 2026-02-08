@@ -104,8 +104,6 @@ pids
 # Package manager files
 # ----------------------------------------------------------------------
 
-# npm
-package-lock.json
 
 # yarn
 yarn.lock
